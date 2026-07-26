@@ -6,6 +6,193 @@
 <title>MOC Dashboard — Ministry of Culture</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getFirestore, collection, getDocs, setDoc, deleteDoc, doc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBXAquszNDNuaWgSzEehr7i8uYcftBlz3o",
+  authDomain: "moc-dashboard-a385d.firebaseapp.com",
+  projectId: "moc-dashboard-a385d",
+  storageBucket: "moc-dashboard-a385d.firebasestorage.app",
+  messagingSenderId: "722386134929",
+  appId: "1:722386134929:web:4ab3fe6a6c1be53eeb9c30",
+  measurementId: "G-71M9XWH253"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// ── Auth state ──────────────────────────────────────────────────────────────
+window._fbIsAdmin = false;
+
+onAuthStateChanged(auth, (user) => {
+  window._fbIsAdmin = !!user;
+  updateAdminUI();
+});
+
+function updateAdminUI() {
+  const isAdmin = window._fbIsAdmin;
+  // Show/hide edit buttons based on auth state
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
+  // Update login button
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (loginBtn) loginBtn.style.display = isAdmin ? 'none' : '';
+  if (logoutBtn) logoutBtn.style.display = isAdmin ? '' : 'none';
+}
+
+// ── Login / Logout ──────────────────────────────────────────────────────────
+window._fbLogin = async function(email, password) {
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    closeLoginModal();
+    showInfoToast('Logged in as admin ✓');
+  } catch(e) {
+    document.getElementById('loginError').textContent = 'Invalid email or password.';
+  }
+};
+
+window._fbLogout = async function() {
+  await signOut(auth);
+  showInfoToast('Logged out');
+};
+
+// ── Firestore helpers ────────────────────────────────────────────────────────
+// Serialize a MOC_DATA item (history array → JSON string for Firestore)
+function serializeInit(item) {
+  return { ...item, history: JSON.stringify(item.history) };
+}
+function deserializeInit(data) {
+  return { ...data, history: JSON.parse(data.history || '[]') };
+}
+
+// Save entire MOC_DATA to Firestore (batch write)
+window._fbSaveAllInits = async function() {
+  const batch = writeBatch(db);
+  MOC_DATA.forEach(item => {
+    const ref = doc(db, 'initiatives', item.name.replace(/\s+/g,'_'));
+    batch.set(ref, serializeInit(item));
+  });
+  await batch.commit();
+};
+
+// Save single initiative
+window._fbSaveInit = async function(item) {
+  const id = item.name.replace(/\s+/g,'_');
+  await setDoc(doc(db, 'initiatives', id), serializeInit(item));
+};
+
+// Delete single initiative
+window._fbDeleteInit = async function(name) {
+  const id = name.replace(/\s+/g,'_');
+  await deleteDoc(doc(db, 'initiatives', id));
+};
+
+// Save single task
+window._fbSaveTask = async function(task) {
+  await setDoc(doc(db, 'tasks', task.id), task);
+};
+
+// Delete single task
+window._fbDeleteTask = async function(id) {
+  await deleteDoc(doc(db, 'tasks', id));
+};
+
+// Save single risk
+window._fbSaveRisk = async function(risk) {
+  await setDoc(doc(db, 'risks', risk.id), risk);
+};
+
+// Delete single risk
+window._fbDeleteRisk = async function(id) {
+  await deleteDoc(doc(db, 'risks', id));
+};
+
+// Save single MAPE task
+window._fbSaveMapeTask = async function(task) {
+  const id = task.title.replace(/\s+/g,'_').substring(0,80);
+  await setDoc(doc(db, 'mapetasks', id), task);
+};
+
+// Delete single MAPE task
+window._fbDeleteMapeTask = async function(title) {
+  const id = title.replace(/\s+/g,'_').substring(0,80);
+  await deleteDoc(doc(db, 'mapetasks', id));
+};
+
+// ── Load data from Firestore on startup ─────────────────────────────────────
+async function loadFromFirestore() {
+  showInfoToast('Loading data…');
+  try {
+    // Load initiatives
+    const initsSnap = await getDocs(collection(db, 'initiatives'));
+    if (!initsSnap.empty) {
+      MOC_DATA = initsSnap.docs.map(d => deserializeInit(d.data()));
+    } else {
+      // First run — seed Firestore with built-in demo data
+      await window._fbSaveAllInits();
+    }
+
+    // Load tasks
+    const tasksSnap = await getDocs(collection(db, 'tasks'));
+    if (!tasksSnap.empty) {
+      TASKS_DATA = tasksSnap.docs.map(d => d.data());
+    } else {
+      const batch = writeBatch(db);
+      TASKS_DATA.forEach(t => batch.set(doc(db, 'tasks', t.id), t));
+      await batch.commit();
+    }
+
+    // Load risks
+    const risksSnap = await getDocs(collection(db, 'risks'));
+    if (!risksSnap.empty) {
+      RISK_REGISTER_DATA = risksSnap.docs.map(d => d.data());
+    } else {
+      const batch = writeBatch(db);
+      RISK_REGISTER_DATA.forEach(r => batch.set(doc(db, 'risks', r.id), r));
+      await batch.commit();
+    }
+
+    // Load MAPE tasks
+    const mapeSnap = await getDocs(collection(db, 'mapetasks'));
+    if (!mapeSnap.empty) {
+      MAPE_TASKS = mapeSnap.docs.map(d => d.data());
+    } else {
+      const batch = writeBatch(db);
+      MAPE_TASKS.forEach(t => {
+        const id = t.title.replace(/\s+/g,'_').substring(0,80);
+        batch.set(doc(db, 'mapetasks', id), t);
+      });
+      await batch.commit();
+    }
+
+    // Re-render everything with fresh data
+    renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
+    renderDepartments(); renderDelta(); renderTimeline(); renderRisk();
+    renderTeamLens(); renderPivot(); renderAlerts(); renderTasks();
+    renderRiskRegister(); renderMapeView();
+    showInfoToast('Data loaded ✓');
+  } catch(e) {
+    console.error('Firestore load error:', e);
+    showInfoToast('Using local data (offline mode)');
+  }
+}
+
+// Run after DOM is ready
+window.addEventListener('load', () => {
+  loadFromFirestore();
+});
+
+// Expose db + auth globally so inline handlers can use them
+window._db = db;
+window._auth = auth;
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
@@ -700,6 +887,8 @@ tr[data-idx]:hover td{background:#EEF2F8;}
 }
 .print-btn:hover{background:rgba(255,255,255,.22);}
 
+/* ---------- Admin-only elements (hidden until logged in) ---------- */
+.admin-only { display: none; }
 /* ---------- Print output ---------- */
 #printHeader{display:none;}
 @media print{
@@ -813,6 +1002,8 @@ tr[data-idx]:hover td{background:#EEF2F8;}
       <input type="text" id="globalSearchInput" class="global-search-input" placeholder="🔍 Search initiatives, tasks, risks...">
       <div class="global-search-results" id="globalSearchResults"></div>
     </div>
+    <button id="loginBtn" class="print-btn" title="Admin login" onclick="openLoginModal()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);">🔐 Login</button>
+    <button id="logoutBtn" class="print-btn" title="Logout" onclick="window._fbLogout()" style="display:none;background:rgba(192,38,106,0.3);border:1px solid var(--pink);">🔓 Logout</button>
     <button id="darkModeToggle" class="print-btn dark-toggle" title="Toggle dark mode">🌙</button>
     <button id="importAllBtn" class="print-btn" title="Upload an Excel file to replace the dashboard's data">📤 Import</button>
     <input type="file" id="importFileInput" accept=".xlsx,.xls" style="display:none;">
@@ -826,6 +1017,26 @@ tr[data-idx]:hover td{background:#EEF2F8;}
 </div>
 
 <div id="printHeader"></div>
+
+<!-- ── Login Modal ──────────────────────────────────────────────────────── -->
+<div id="loginModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:32px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <h3 style="margin:0 0 20px;color:#1B2A4A;font-size:18px;">🔐 Admin Login</h3>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:12px;font-weight:600;color:#66748F;margin-bottom:4px;">EMAIL</label>
+      <input id="loginEmail" type="email" placeholder="admin@example.com" style="width:100%;padding:10px 12px;border:1px solid #D8E2EC;border-radius:8px;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="display:block;font-size:12px;font-weight:600;color:#66748F;margin-bottom:4px;">PASSWORD</label>
+      <input id="loginPassword" type="password" placeholder="••••••••" style="width:100%;padding:10px 12px;border:1px solid #D8E2EC;border-radius:8px;font-size:14px;outline:none;">
+    </div>
+    <div id="loginError" style="color:#C0392B;font-size:13px;margin-bottom:12px;min-height:18px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="window._fbLogin(document.getElementById('loginEmail').value, document.getElementById('loginPassword').value)" style="flex:1;padding:10px;background:#1B2A4A;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Login</button>
+      <button onclick="closeLoginModal()" style="flex:1;padding:10px;background:#F4F6F9;color:#1B2A4A;border:1px solid #D8E2EC;border-radius:8px;font-size:14px;cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
 <div id="undoToast" class="undo-toast"></div>
 
 <div class="shell">
@@ -862,7 +1073,7 @@ tr[data-idx]:hover td{background:#EEF2F8;}
       <div class="mape-phase-strip" id="mapePhaseStrip"></div>
       <div class="mape-controls">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <button class="btn" id="addMapeTaskBtn">+ Add Task</button>
+          <button class="btn" id="addMapeTaskBtn" class="btn admin-only">+ Add Task</button>
           <div class="view-toggle" id="mapeScopeToggle">
             <button data-scope="week" class="active">📌 This Week</button>
             <button data-scope="all">🗂️ All Tasks</button>
@@ -909,7 +1120,7 @@ tr[data-idx]:hover td{background:#EEF2F8;}
     <!-- WORKSTREAMS -->
     <div class="view report-zone" id="view-workstreams">
       <div class="filters">
-        <button class="btn" id="addInitBtn">+ Add Initiative</button>
+        <button class="btn" id="addInitBtn" class="btn admin-only">+ Add Initiative</button>
         <select id="wsDeptFilter"></select>
         <select id="wsRiskFilter"></select>
       </div>
@@ -1083,7 +1294,7 @@ tr[data-idx]:hover td{background:#EEF2F8;}
     <div class="modal-actions">
       <button class="btn danger" id="deleteTaskBtn" style="display:none;margin-inline-end:auto;">🗑️ Delete Task</button>
       <button class="btn secondary" id="cancelTaskBtn">Cancel</button>
-      <button class="btn" id="saveTaskBtn">Add Task</button>
+      <button class="btn" id="saveTaskBtn" class="admin-only">Add Task</button>
     </div>
   </div>
 </div>
@@ -1139,7 +1350,7 @@ tr[data-idx]:hover td{background:#EEF2F8;}
     <div class="modal-actions">
       <button class="btn danger" id="deleteInitBtn" style="display:none;margin-inline-end:auto;">🗑️ Delete Initiative</button>
       <button class="btn secondary" id="cancelInitBtn">Cancel</button>
-      <button class="btn" id="saveInitBtn">Add Initiative</button>
+      <button class="btn" id="saveInitBtn" class="admin-only">Add Initiative</button>
     </div>
   </div>
 </div>
@@ -1191,7 +1402,7 @@ tr[data-idx]:hover td{background:#EEF2F8;}
     <div class="modal-actions">
       <button class="btn danger" id="deleteRiskBtn" style="display:none;margin-inline-end:auto;">🗑️ Delete Risk</button>
       <button class="btn secondary" id="cancelRiskBtn">Cancel</button>
-      <button class="btn" id="saveRiskBtn">Add Risk</button>
+      <button class="btn" id="saveRiskBtn" class="admin-only">Add Risk</button>
     </div>
   </div>
 </div>
@@ -1243,7 +1454,7 @@ tr[data-idx]:hover td{background:#EEF2F8;}
     <div class="modal-actions">
       <button class="btn danger" id="deleteMapeTaskBtn" style="display:none;margin-inline-end:auto;">🗑️ Delete Task</button>
       <button class="btn secondary" id="cancelMapeTaskBtn">Cancel</button>
-      <button class="btn" id="saveMapeTaskBtn">Add Task</button>
+      <button class="btn" id="saveMapeTaskBtn" class="admin-only">Add Task</button>
     </div>
   </div>
 </div>
@@ -3185,7 +3396,7 @@ function renderTasks(){
   el.classList.add('report-zone');
   el.innerHTML = `
     <div class="task-toolbar">
-      <button class="btn" id="addTaskBtn">+ Add Task</button>
+      <button class="btn" id="addTaskBtn" class="btn admin-only">+ Add Task</button>
       <input type="text" id="taskSearchInput" placeholder="Search by title or notes...">
       <div id="msContainer" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
       <div class="view-toggle" style="margin-inline-start:auto;">
@@ -3495,7 +3706,7 @@ function renderRiskRegister(){
   el.classList.add('report-zone');
   el.innerHTML = `
     <div class="task-toolbar">
-      <button class="btn" id="addRiskBtn">+ Add Risk</button>
+      <button class="btn" id="addRiskBtn" class="btn admin-only">+ Add Risk</button>
       <input type="text" id="regSearchInput" placeholder="Search by description or category...">
       <div id="regMsContainer" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
     </div>
@@ -3674,7 +3885,7 @@ function openTaskModal(taskToEdit){
     $('#taskModalTitle').textContent = 'Edit Task';
     $('#taskModalSub').textContent = 'Demo mode: changes update the in-memory list only — nothing is saved to a server yet.';
     $('#saveTaskBtn').textContent = 'Save Changes';
-    $('#deleteTaskBtn').style.display = 'inline-block';
+    $('#deleteTaskBtn').style.display = window._fbIsAdmin ? 'inline-block' : 'none';
     $('#f_title').value = taskToEdit.title;
     $('#f_description').value = taskToEdit.description || '';
     $('#f_department').value = taskToEdit.department;
@@ -3761,6 +3972,7 @@ window.editTaskFromDetail = function(taskId){
   if(t) openTaskModal(t);
 };
 window.duplicateTask = function(taskId){
+  if(!window._fbIsAdmin){showInfoToast("Login as admin to edit");return;}
   const t = TASKS_DATA.find(x=>x.id===taskId);
   if(!t) return;
   const clone = { ...t, id:'T-'+String(taskIdCounter++).padStart(2,'0'), title: t.title + ' (Copy)', tags:[...t.tags] };
@@ -3787,7 +3999,7 @@ function openInitModal(initToEdit){
     $('#initModalTitle').textContent = 'Edit Initiative';
     $('#initModalSub').textContent = 'Demo mode: changes update the in-memory list only — nothing is saved to a server yet.';
     $('#saveInitBtn').textContent = 'Save Changes';
-    $('#deleteInitBtn').style.display = 'inline-block';
+    $('#deleteInitBtn').style.display = window._fbIsAdmin ? 'inline-block' : 'none';
     $('#i_name').value = initToEdit.name;
     $('#i_workstreamGroup').value = initToEdit.workstreamGroup || WORKSTREAM_GROUPS[0];
     $('#i_department').value = initToEdit.department;
@@ -3873,6 +4085,7 @@ window.editInitFromDetail = function(name){
   if(item) openInitModal(item);
 };
 window.duplicateInit = function(name){
+  if(!window._fbIsAdmin){showInfoToast("Login as admin to edit");return;}
   const item = MOC_DATA.find(i=>i.name===name);
   if(!item) return;
   const clone = { ...item, name: item.name + ' (Copy)', history:[...item.history] };
@@ -3901,7 +4114,7 @@ function openRiskModal(riskToEdit){
     $('#riskModalTitle').textContent = 'Edit Risk';
     $('#riskModalSub').textContent = 'Demo mode: changes update the in-memory list only — nothing is saved to a server yet.';
     $('#saveRiskBtn').textContent = 'Save Changes';
-    $('#deleteRiskBtn').style.display = 'inline-block';
+    $('#deleteRiskBtn').style.display = window._fbIsAdmin ? 'inline-block' : 'none';
     $('#rk_category').value = riskToEdit.category;
     $('#rk_initiative').value = riskToEdit.initiative || '';
     $('#rk_description').value = riskToEdit.description;
@@ -3976,6 +4189,7 @@ window.editRiskFromDetail = function(riskId){
   if(r) openRiskModal(r);
 };
 window.duplicateRisk = function(riskId){
+  if(!window._fbIsAdmin){showInfoToast("Login as admin to edit");return;}
   const r = RISK_REGISTER_DATA.find(x=>x.id===riskId);
   if(!r) return;
   const clone = { ...r, id:'R-'+String(riskIdCounter++).padStart(3,'0') };
@@ -4006,7 +4220,7 @@ function openMapeTaskModal(taskToEdit){
     $('#mapeTaskModalTitle').textContent = 'Edit MAPE Task';
     $('#mapeTaskModalSub').textContent = 'Demo mode: changes update the in-memory list only — nothing is saved to a server yet.';
     $('#saveMapeTaskBtn').textContent = 'Save Changes';
-    $('#deleteMapeTaskBtn').style.display = 'inline-block';
+    $('#deleteMapeTaskBtn').style.display = window._fbIsAdmin ? 'inline-block' : 'none';
     $('#mt_title').value = taskToEdit.title;
     $('#mt_phase').value = taskToEdit.phase;
     $('#mt_pillar').value = taskToEdit.pillar;
@@ -4086,6 +4300,7 @@ window.editMapeTaskFromDetail = function(idx){
   if(t) openMapeTaskModal(t);
 };
 window.duplicateMapeTask = function(idx){
+  if(!window._fbIsAdmin){showInfoToast("Login as admin to edit");return;}
   const t = MAPE_TASKS[idx];
   if(!t) return;
   const clone = { ...t, title: t.title + ' (Copy)', activeWeeks: t.activeWeeks?[...t.activeWeeks]:[0,0] };
@@ -4460,6 +4675,107 @@ document.addEventListener('click', (e)=>{
 document.addEventListener('keydown', (e)=>{
   if(e.key==='Escape'){ $('#globalSearchResults').classList.remove('open'); $('#globalSearchInput').blur(); }
 });
+
+// ── Login Modal helpers ──────────────────────────────────────────────────────
+function openLoginModal() {
+  const m = document.getElementById('loginModal');
+  m.style.display = 'flex';
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').textContent = '';
+  setTimeout(()=>document.getElementById('loginEmail').focus(), 100);
+}
+function closeLoginModal() {
+  document.getElementById('loginModal').style.display = 'none';
+}
+document.getElementById('loginModal').addEventListener('click', function(e){
+  if(e.target === this) closeLoginModal();
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='Enter' && document.getElementById('loginModal').style.display==='flex'){
+    window._fbLogin(
+      document.getElementById('loginEmail').value,
+      document.getElementById('loginPassword').value
+    );
+  }
+});
+
+// ── Patch CRUD functions to also write to Firestore ─────────────────────────
+// (Only runs if _fbSaveInit etc. are defined — they come from the ES module above)
+
+const _origSaveInitBtn = $('#saveInitBtn').onclick;
+$('#saveInitBtn').onclick = async ()=>{
+  _origSaveInitBtn && _origSaveInitBtn();
+  // After local array update, sync the affected item to Firestore
+  const name = $('#i_name').value.trim();
+  if(name && window._fbSaveInit){
+    const item = MOC_DATA.find(i=>i.name===name);
+    if(item) window._fbSaveInit(item).catch(console.error);
+  }
+};
+
+const _origDeleteInitBtn = $('#deleteInitBtn').onclick;
+$('#deleteInitBtn').onclick = async ()=>{
+  const nameToDelete = editingInitName;
+  _origDeleteInitBtn && _origDeleteInitBtn();
+  if(nameToDelete && window._fbDeleteInit){
+    window._fbDeleteInit(nameToDelete).catch(console.error);
+  }
+};
+
+const _origSaveTaskBtn = $('#saveTaskBtn').onclick;
+$('#saveTaskBtn').onclick = async ()=>{
+  _origSaveTaskBtn && _origSaveTaskBtn();
+  if(window._fbSaveTask){
+    // Find the task that was just added/updated (last modified)
+    const tid = editingTaskId || (TASKS_DATA[TASKS_DATA.length-1] && TASKS_DATA[TASKS_DATA.length-1].id);
+    const task = TASKS_DATA.find(t=>t.id===tid);
+    if(task) window._fbSaveTask(task).catch(console.error);
+  }
+};
+
+const _origDeleteTaskBtn = $('#deleteTaskBtn').onclick;
+$('#deleteTaskBtn').onclick = async ()=>{
+  const tid = editingTaskId;
+  _origDeleteTaskBtn && _origDeleteTaskBtn();
+  if(tid && window._fbDeleteTask) window._fbDeleteTask(tid).catch(console.error);
+};
+
+const _origSaveRiskBtn = $('#saveRiskBtn').onclick;
+$('#saveRiskBtn').onclick = async ()=>{
+  _origSaveRiskBtn && _origSaveRiskBtn();
+  if(window._fbSaveRisk){
+    const rid = editingRiskId || (RISK_REGISTER_DATA[RISK_REGISTER_DATA.length-1] && RISK_REGISTER_DATA[RISK_REGISTER_DATA.length-1].id);
+    const risk = RISK_REGISTER_DATA.find(r=>r.id===rid);
+    if(risk) window._fbSaveRisk(risk).catch(console.error);
+  }
+};
+
+const _origDeleteRiskBtn = $('#deleteRiskBtn').onclick;
+$('#deleteRiskBtn').onclick = async ()=>{
+  const rid = editingRiskId;
+  _origDeleteRiskBtn && _origDeleteRiskBtn();
+  if(rid && window._fbDeleteRisk) window._fbDeleteRisk(rid).catch(console.error);
+};
+
+const _origSaveMapeBtn = $('#saveMapeTaskBtn').onclick;
+$('#saveMapeTaskBtn').onclick = async ()=>{
+  const prevTitle = editingMapeTitle;
+  _origSaveMapeBtn && _origSaveMapeBtn();
+  if(window._fbSaveMapeTask){
+    const title = $('#m_title').value.trim() || prevTitle;
+    const task = MAPE_TASKS.find(t=>t.title===title);
+    if(task) window._fbSaveMapeTask(task).catch(console.error);
+  }
+};
+
+const _origDeleteMapeBtn = $('#deleteMapeTaskBtn').onclick;
+$('#deleteMapeTaskBtn').onclick = async ()=>{
+  const title = editingMapeTitle;
+  _origDeleteMapeBtn && _origDeleteMapeBtn();
+  if(title && window._fbDeleteMapeTask) window._fbDeleteMapeTask(title).catch(console.error);
+};
+
 
 </script>
 </body>
