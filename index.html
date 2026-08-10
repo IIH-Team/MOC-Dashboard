@@ -528,7 +528,13 @@ body.dark,.app.dark,[data-theme="dark"]{
 .mape-phase-pills{display:flex;gap:6px;flex-wrap:wrap;}
 .mape-phase-pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer;}
 .mape-phase-pill.active{background:var(--navy);color:#fff;border-color:var(--navy);}
-.mape-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px;}
+.mape-grid{display:flex;flex-direction:column;gap:18px;}
+.mape-grid-inner{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px;}
+.mape-phase-group{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(20,33,61,.05);}
+.mape-phase-group-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid var(--phase,var(--navy));}
+.mpg-dot{width:10px;height:10px;border-radius:50%;background:var(--phase,var(--navy));flex-shrink:0;}
+.mpg-title{font-weight:800;font-size:13px;color:var(--navy);flex:1;}
+.mpg-count{font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:2px 8px;}
 .mape-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 14px;cursor:pointer;transition:box-shadow .15s,transform .15s;border-inline-start:4px solid var(--navy);display:flex;flex-direction:column;gap:8px;min-height:108px;}
 .mape-card:hover{box-shadow:0 4px 14px rgba(20,33,61,.12);transform:translateY(-1px);}
 .mape-card.mape-milestone{border-inline-start-color:var(--amber);background:#FFFBF3;}
@@ -615,8 +621,9 @@ body.dark,.app.dark,[data-theme="dark"]{
 .init-card .init-meta{font-size:11px;color:var(--muted);margin-top:6px;}
 .dept-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
 .dept-col{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 2px 12px rgba(20,33,61,.06);}
-.dept-col h4{margin:0 0 12px;font-size:13.5px;color:var(--navy);display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--navy);padding-bottom:8px;font-weight:800;}
-.dept-col h4 .dept-count{background:var(--navy);color:#fff;border-radius:99px;font-size:10px;padding:2px 8px;font-weight:700;}
+.dept-col h4{margin:0 0 12px;font-size:13px;color:var(--navy);display:flex;align-items:flex-start;gap:8px;border-bottom:2px solid var(--navy);padding-bottom:8px;font-weight:800;line-height:1.35;}
+.dept-col h4 .dept-name{flex:1;min-width:0;}
+.dept-col h4 .dept-count{background:var(--navy);color:#fff;border-radius:99px;font-size:10px;padding:2px 8px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:1px;}
 .risk-card-row{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px;margin-bottom:10px;display:grid;grid-template-columns:8px 1fr auto;gap:13px;align-items:start;}
 .risk-stripe{width:8px;min-height:68px;border-radius:99px;}
 .alert-row{display:grid;grid-template-columns:45px 1fr auto;gap:12px;align-items:center;padding:13px;border-bottom:1px solid var(--border);}
@@ -661,9 +668,11 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .popup-header .badge.stage{background:rgba(255,255,255,.18);color:#fff;}
 .popup-body{padding:22px 24px;}
 
-/* ── Detail modal shell: no padding, header flush to top ── */
-.modal.detail-modal{max-width:720px;padding:0;overflow:hidden;border-radius:18px;}
-.modal.detail-modal #detailModalContent{background:var(--surface);border-radius:18px;overflow:hidden;}
+/* ── Detail modal shell: fixed header, scrollable body ── */
+.modal.detail-modal{max-width:760px;padding:0;overflow:hidden;border-radius:18px;display:flex;flex-direction:column;max-height:90vh;}
+.modal.detail-modal #detailModalContent{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;border-radius:18px;}
+.modal.detail-modal .popup-header{flex-shrink:0;}
+.modal.detail-modal .popup-body{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;}
 
 /* ── Copy-as-image button inside a popup: float top-right INSIDE the header, never above it ── */
 
@@ -691,14 +700,10 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .zone-hotspot:hover + .zone-shot-btn{opacity:1;pointer-events:auto;}
 .zone-shot-btn:hover{opacity:1;pointer-events:auto;}
 
-/* Inside a detail popup the button sits in the navy header, left of the ✕ */
+/* Inside a detail popup — zone-hotspot hidden, Copy button always visible in header */
 .modal.detail-modal{position:relative;}
-.modal.detail-modal .zone-hotspot{top:0;right:0;left:auto;width:140px;height:56px;}
-.modal.detail-modal .zone-shot-btn{
-  top:14px;right:52px;left:auto;
-  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);
-  box-shadow:none;
-}
+.modal.detail-modal .zone-hotspot{display:none;}
+.modal.detail-modal .zone-shot-btn{display:none;} /* replaced by inline 📷 Copy button in popupHeaderHTML */
 
 
 /* ═══ Sidebar layout guard — desktop is in-flow, mobile is a drawer ═══ */
@@ -2206,24 +2211,47 @@ function renderMapePhasePills(){
 
 function renderMapeTaskGrid(){
   const currentWeek = getCurrentMapeWeek();
-  let tasks = MAPE_TASKS.filter(t=>mapePhaseFilter==='All' || t.phase===mapePhaseFilter);
-  if(mapeScope==='week'){
-    tasks = tasks.filter(t=>mapeTaskStatus(t, currentWeek));
-  }
-  $('#mapeGrid').innerHTML = tasks.length ? tasks.map(t=>{
+  const makeCard = t => {
     const status = mapeTaskStatus(t, currentWeek);
     const idx = MAPE_TASKS.indexOf(t);
-    return `
-      <div class="mape-card ${t.isGate?'mape-milestone':''}" data-idx="${idx}">
-        <div class="mape-card-title">${t.isGate?'🚩 ':''}${t.title}</div>
-        <div class="mape-card-owner">${mapeOwnerFull(t.owner)}</div>
-        <div class="mape-card-foot">
-          <span class="mape-pillar-tag" title="${escapeHtml(t.pillar.split('/').map(c=>MAPE_PILLAR_NAME[c]||c).join(' + '))}">${t.pillar}</span>
-          ${status ? `<span class="mape-badge ${status.cls}">${status.label}</span>` : `<span class="mape-badge mape-idle">${t.phase}</span>`}
-        </div>
+    return `<div class="mape-card ${t.isGate?'mape-milestone':''}" data-idx="${idx}">
+      <div class="mape-card-title">${t.isGate?'🚩 ':''}${t.title}</div>
+      <div class="mape-card-owner">${mapeOwnerFull(t.owner)}</div>
+      <div class="mape-card-foot">
+        <span class="mape-pillar-tag" title="${escapeHtml(t.pillar.split('/').map(c=>MAPE_PILLAR_NAME[c]||c).join(' + '))}">${t.pillar}</span>
+        ${status ? `<span class="mape-badge ${status.cls}">${status.label}</span>` : `<span class="mape-badge mape-idle">${t.phase}</span>`}
       </div>
-    `;
-  }).join('') : `<p style="grid-column:1/-1;color:var(--muted);font-size:13px;">No tasks match this filter.</p>`;
+    </div>`;
+  };
+
+  let tasks = MAPE_TASKS.filter(t=>mapePhaseFilter==='All' || t.phase===mapePhaseFilter);
+  if(mapeScope==='week') tasks = tasks.filter(t=>mapeTaskStatus(t, currentWeek));
+
+  if(!tasks.length){
+    $('#mapeGrid').innerHTML = `<p style="color:var(--muted);font-size:13px;">No tasks match this filter.</p>`;
+  } else if(mapePhaseFilter !== 'All'){
+    // Filtered to one phase — flat grid, no group box
+    $('#mapeGrid').innerHTML = `<div class="mape-grid-inner">${tasks.map(makeCard).join('')}</div>`;
+  } else {
+    // All phases — group into phase boxes
+    const phases = MAPE_PHASES.map(p=>p.key);
+    let html = '';
+    phases.forEach(phase=>{
+      const phaseTasks = tasks.filter(t=>t.phase===phase);
+      if(!phaseTasks.length) return;
+      const phaseObj = MAPE_PHASES.find(p=>p.key===phase);
+      html += `<div class="mape-phase-group">
+        <div class="mape-phase-group-header" style="--phase:${phaseObj?.color||'var(--navy)'}">
+          <span class="mpg-dot"></span>
+          <span class="mpg-title">${phase}</span>
+          <span class="mpg-count">${phaseTasks.length} task${phaseTasks.length===1?'':'s'}</span>
+        </div>
+        <div class="mape-grid-inner">${phaseTasks.map(makeCard).join('')}</div>
+      </div>`;
+    });
+    $('#mapeGrid').innerHTML = html;
+  }
+
   $$('#mapeGrid .mape-card').forEach(card=>{
     card.addEventListener('click', ()=> openMapeTaskDetail(parseInt(card.dataset.idx,10)));
   });
@@ -2475,7 +2503,7 @@ function renderDepartments(){
   $('#deptGrid').innerHTML = DEPARTMENTS.map(dep=>{
     const items = MOC_DATA.filter(i=>i.department===dep);
     return `<div class="dept-col">
-      <h4>${dep} <span class="dept-count">${items.length} initiative${items.length===1?'':'s'}</span></h4>
+      <h4><span class="dept-name">${dep}</span><span class="dept-count">${items.length} initiative${items.length===1?'':'s'}</span></h4>
       ${items.map(i=>{
         const idx = MOC_DATA.indexOf(i);
         return `
