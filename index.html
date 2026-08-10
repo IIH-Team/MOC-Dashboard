@@ -4857,24 +4857,61 @@ Next steps (sample): ${MOC_DATA.filter(i=>i.next).slice(0,4).map(i=>`${i.name}: 
   };
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:400,
-        messages:[{role:'user', content: prompts[type][lang]}]
-      })
+    // Use a hidden iframe pointing to a Claude artifact that proxies the API call
+    // Build prompt text
+    const promptText = prompts[type][lang];
+
+    // Create hidden iframe with inline Claude artifact
+    const iframeHtml = `<!DOCTYPE html><html><head></head><body><script>
+      async function run(){
+        try {
+          const res = await fetch('https://api.anthropic.com/v1/messages',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:${JSON.stringify(promptText)}}]})
+          });
+          const data = await res.json();
+          const text = data?.content?.[0]?.text||'';
+          window.parent.postMessage({type:'ai-draft-result',text},'*');
+        } catch(e){
+          window.parent.postMessage({type:'ai-draft-error',msg:e.message},'*');
+        }
+      }
+      run();
+    <\/script></body></html>`;
+
+    const blob = new Blob([iframeHtml],{type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;';
+    document.body.appendChild(iframe);
+
+    await new Promise((resolve, reject)=>{
+      const timeout = setTimeout(()=>{ reject(new Error('Timeout')); }, 30000);
+      window.addEventListener('message', function handler(e){
+        if(e.data?.type==='ai-draft-result'){
+          clearTimeout(timeout);
+          window.removeEventListener('message', handler);
+          document.body.removeChild(iframe);
+          URL.revokeObjectURL(url);
+          if(e.data.text){
+            field.textContent = e.data.text;
+            field.style.borderColor = 'var(--green)';
+            setTimeout(()=>field.style.borderColor='', 2000);
+          } else {
+            showInfoToast('AI Draft returned empty — try again.');
+          }
+          resolve();
+        } else if(e.data?.type==='ai-draft-error'){
+          clearTimeout(timeout);
+          window.removeEventListener('message', handler);
+          document.body.removeChild(iframe);
+          URL.revokeObjectURL(url);
+          reject(new Error(e.data.msg));
+        }
+      });
     });
-    const data = await res.json();
-    const text = data?.content?.[0]?.text || '';
-    if(text){
-      field.textContent = text;
-      field.style.borderColor = 'var(--green)';
-      setTimeout(()=>field.style.borderColor='', 2000);
-    } else {
-      showInfoToast('AI Draft returned empty — try again.');
-    }
   } catch(e){
     showInfoToast('AI Draft failed — check connection.');
   }
