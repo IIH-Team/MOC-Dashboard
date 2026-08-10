@@ -653,6 +653,9 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .editable-field{border:1px dashed var(--border);border-radius:6px;padding:8px 10px;min-height:20px;font-size:13px;color:var(--text);background:#FCFDFE;line-height:1.6;outline:none;}
 .editable-field:focus{border-color:var(--blue);background:#fff;}
 .editable-field:empty::before{content:attr(data-placeholder);color:var(--muted);font-style:italic;}
+.ai-draft-btn{margin-left:10px;padding:3px 10px;font-size:11px;border-radius:99px;border:1px solid var(--green);color:var(--green);background:transparent;cursor:pointer;font-weight:600;transition:all .15s;vertical-align:middle;}
+.ai-draft-btn:hover{background:var(--green);color:#fff;}
+.ai-draft-btn.loading{opacity:.6;pointer-events:none;}
 
 
 /* ── Popup header (used by popupHeaderHTML) — same look as .modal-head ── */
@@ -2809,11 +2812,11 @@ function buildReportText(){
   // ---- FINAL COMMENTS (editable — requires human judgment, not auto-generated) ----
   const finalComments = `
     <h2 class="report-h2">Final Comments</h2>
-    <div class="editable-label">Execution Outlook</div>
+    <div class="editable-label">Execution Outlook <button class="ai-draft-btn" onclick="aiDraftField(this,'execution','en')">✨ AI Draft</button></div>
     <div class="editable-field editable-field-en" contenteditable="true" data-placeholder="Type your execution outlook commentary here before sending..."></div>
-    <div class="editable-label">Risk &amp; Accountability</div>
+    <div class="editable-label">Risk &amp; Accountability <button class="ai-draft-btn" onclick="aiDraftField(this,'risk','en')">✨ AI Draft</button></div>
     <div class="editable-field editable-field-en" contenteditable="true" data-placeholder="Type risk &amp; accountability commentary here before sending..."></div>
-    <div class="editable-label">Next Week Targets</div>
+    <div class="editable-label">Next Week Targets <button class="ai-draft-btn" onclick="aiDraftField(this,'nextweek','en')">✨ AI Draft</button></div>
     <div class="editable-field editable-field-en" contenteditable="true" data-placeholder="Type next week's targets here before sending..."></div>
   `;
 
@@ -2865,11 +2868,11 @@ function buildReportText(){
       ${narrativeSectionsAr}
 
       <h2 class="report-h2">الملاحظات الختامية</h2>
-      <div class="editable-label" style="text-align:right;">نظرة على التنفيذ</div>
+      <div class="editable-label" style="text-align:right;">نظرة على التنفيذ <button class="ai-draft-btn" onclick="aiDraftField(this,'execution','ar')">✨ AI Draft</button></div>
       <div class="editable-field editable-field-ar" dir="rtl" contenteditable="true" data-placeholder="اكتب هنا ملاحظاتك عن سير التنفيذ قبل الإرسال..."></div>
-      <div class="editable-label" style="text-align:right;">المخاطر والمساءلة</div>
+      <div class="editable-label" style="text-align:right;">المخاطر والمساءلة <button class="ai-draft-btn" onclick="aiDraftField(this,'risk','ar')">✨ AI Draft</button></div>
       <div class="editable-field editable-field-ar" dir="rtl" contenteditable="true" data-placeholder="اكتب هنا ملاحظاتك عن المخاطر والمساءلة قبل الإرسال..."></div>
-      <div class="editable-label" style="text-align:right;">أهداف الأسبوع القادم</div>
+      <div class="editable-label" style="text-align:right;">أهداف الأسبوع القادم <button class="ai-draft-btn" onclick="aiDraftField(this,'nextweek','ar')">✨ AI Draft</button></div>
       <div class="editable-field editable-field-ar" dir="rtl" contenteditable="true" data-placeholder="اكتب هنا أهداف الأسبوع القادم قبل الإرسال..."></div>
 
       <p class="lead-line" style="margin-top:14px;">لا تترددوا بالتواصل معنا في حال وجود أي استفسارات أو الحاجة لمزيد من التفاصيل.</p>
@@ -4806,6 +4809,78 @@ $('#deleteMapeTaskBtn').onclick = async ()=>{
   const title = editingMapeTitle;
   _origDeleteMapeBtn && _origDeleteMapeBtn();
   if(title && window._fbDeleteMapeTask) window._fbDeleteMapeTask(title).catch(console.error);
+};
+/* ═══ AI Draft for Final Comments ═══ */
+window.aiDraftField = async function(btn, type, lang){
+  // Find the editable field right after the label that contains this button
+  const label = btn.closest('.editable-label');
+  const field = label.nextElementSibling;
+  if(!field) return;
+
+  btn.classList.add('loading');
+  btn.textContent = '⏳ Drafting…';
+
+  // Build data snapshot
+  const overallPct = Math.round(MOC_DATA.reduce((s,i)=>s+i.pct,0)/MOC_DATA.length);
+  const onTrack   = MOC_DATA.filter(i=>i.risk==='On Track');
+  const atRisk    = MOC_DATA.filter(i=>i.risk==='At Risk');
+  const delayed   = MOC_DATA.filter(i=>i.risk==='Delayed');
+  const blocked   = MOC_DATA.filter(i=>i.risk==='Blocked');
+  const movers    = MOC_DATA.filter(i=>i.pct !== i.pctLastWeek).map(i=>({name:i.name,from:i.pctLastWeek,to:i.pct,delta:i.pct-i.pctLastWeek})).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
+  const openTasks = TASKS_DATA.filter(t=>t.status!=='Completed');
+  const overdue   = TASKS_DATA.filter(t=>t.due && new Date(t.due)<new Date() && t.status!=='Completed');
+
+  const snapshot = `
+Ministry of Culture (MOC) — Weekly Portfolio Snapshot
+Overall Progress: ${overallPct}%
+Initiatives: ${MOC_DATA.length} total | On Track: ${onTrack.length} | At Risk: ${atRisk.length} | Delayed: ${delayed.length} | Blocked: ${blocked.length}
+Blocked initiatives: ${blocked.map(i=>`${i.name} (${i.pct}%, Lead: ${i.lead}${i.notes?', Note: '+i.notes:''})`).join('; ') || 'None'}
+At Risk: ${atRisk.map(i=>`${i.name} (${i.pct}%, Lead: ${i.lead}${i.notes?', Note: '+i.notes:''})`).join('; ') || 'None'}
+This week's movers: ${movers.slice(0,5).map(m=>`${m.name} ${m.delta>0?'+':''}${m.delta}% (${m.from}%→${m.to}%)`).join('; ') || 'No movement'}
+Open tasks: ${openTasks.length} | Overdue: ${overdue.length}
+Next steps (sample): ${MOC_DATA.filter(i=>i.next).slice(0,4).map(i=>`${i.name}: ${i.next}`).join('; ')}
+`;
+
+  const prompts = {
+    execution: {
+      en: `Based on the portfolio data below, write a concise Execution Outlook paragraph (3-5 sentences) for a ministry weekly report. Focus on overall delivery momentum, highlight what's moving well, and flag any execution concerns. Professional, factual, no fluff.\n\n${snapshot}`,
+      ar: `بناءً على بيانات المحفظة أدناه، اكتب فقرة موجزة عن "نظرة التنفيذ" (3-5 جمل) لتقرير وزاري أسبوعي. ركّز على زخم الإنجاز العام، وأبرز ما يسير بشكل جيد، واستشهد بأي مخاوف تنفيذية. أسلوب احترافي وموضوعي.\n\n${snapshot}`
+    },
+    risk: {
+      en: `Based on the portfolio data below, write a concise Risk & Accountability paragraph (3-5 sentences) for a ministry weekly report. Name specific blocked or at-risk initiatives, who owns them, and what escalation or action is needed. Be direct.\n\n${snapshot}`,
+      ar: `بناءً على بيانات المحفظة أدناه، اكتب فقرة موجزة عن "المخاطر والمساءلة" (3-5 جمل) لتقرير وزاري أسبوعي. اذكر المبادرات المعطّلة أو المهددة بالاسم، وصاحبها، والتصعيد أو الإجراء المطلوب. كن مباشراً.\n\n${snapshot}`
+    },
+    nextweek: {
+      en: `Based on the portfolio data below, write a concise Next Week Targets paragraph (3-5 sentences) for a ministry weekly report. State specific, actionable priorities for the coming week based on what's blocked, at risk, or has upcoming next steps. Keep it concrete.\n\n${snapshot}`,
+      ar: `بناءً على بيانات المحفظة أدناه، اكتب فقرة موجزة عن "أهداف الأسبوع القادم" (3-5 جمل) لتقرير وزاري أسبوعي. حدّد أولويات قابلة للتنفيذ للأسبوع القادم بناءً على ما هو معطّل أو مهدد أو لديه خطوات قادمة. كن محدداً.\n\n${snapshot}`
+    }
+  };
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:400,
+        messages:[{role:'user', content: prompts[type][lang]}]
+      })
+    });
+    const data = await res.json();
+    const text = data?.content?.[0]?.text || '';
+    if(text){
+      field.textContent = text;
+      field.style.borderColor = 'var(--green)';
+      setTimeout(()=>field.style.borderColor='', 2000);
+    } else {
+      showInfoToast('AI Draft returned empty — try again.');
+    }
+  } catch(e){
+    showInfoToast('AI Draft failed — check connection.');
+  }
+
+  btn.classList.remove('loading');
+  btn.textContent = '✨ AI Draft';
 };
 
 
