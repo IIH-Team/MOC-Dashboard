@@ -209,7 +209,7 @@ body.dark{
 }
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
 button,input,select,textarea{font:inherit}.app{min-height:100vh}.sidebar{background:linear-gradient(180deg,var(--navy2),var(--navy));color:#fff;padding:22px 14px;overflow:auto}
-.brand{display:flex;gap:12px;align-items:center;padding:2px 8px 22px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:18px}.brand-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--pink),#E86FA1);display:grid;place-items:center;font-weight:800;font-size:18px;box-shadow:0 8px 20px rgba(192,38,106,.35)}.brand h1{font-size:14px;margin:0;line-height:1.3}.brand p{margin:4px 0 0;font-size:11px;color:#C7D2E5}
+.sidebar .brand{display:flex;gap:12px;align-items:center;padding:2px 8px 22px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:18px}.brand-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--pink),#E86FA1);display:grid;place-items:center;font-weight:800;font-size:18px;box-shadow:0 8px 20px rgba(192,38,106,.35)}.brand h1{font-size:14px;margin:0;line-height:1.3}.brand p{margin:4px 0 0;font-size:11px;color:#C7D2E5}
 .nav-label{font-size:10px;font-weight:800;letter-spacing:.13em;color:#9DAEC7;padding:8px 10px 6px}.nav-btn{width:100%;display:flex;align-items:center;gap:10px;border:0;background:transparent;color:#DCE6F5;padding:10px 11px;border-radius:10px;text-align:left;cursor:pointer;margin:2px 0;transition:.18s}.nav-btn:hover{background:rgba(255,255,255,.08)}.nav-btn.active{background:#fff;color:var(--navy);font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,.16)}.nav-btn .icon{width:19px;text-align:center}.nav-btn .badge{margin-left:auto;background:var(--pink);color:#fff;border-radius:999px;font-size:10px;padding:2px 6px}
 .main{min-height:100vh}.search-wrap{position:relative;flex:1;max-width:650px}.search-wrap input{width:100%;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:12px;padding:11px 14px 11px 39px;outline:none}.search-icon{position:absolute;left:14px;top:11px;color:var(--muted)}.top-actions{margin-left:auto;display:flex;gap:8px}.icon-btn,.btn{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:700}.icon-btn:hover,.btn:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(20,33,61,.09)}.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.green{background:var(--green);color:#fff;border-color:var(--green)}.btn.pink{background:var(--pink);color:#fff;border-color:var(--pink)}.btn.small{padding:6px 9px;font-size:12px}.btn.ghost{background:transparent}.btn.danger{color:var(--red);border-color:color-mix(in srgb,var(--red) 35%,var(--border))}
 .content{padding:22px 24px 50px}.demo-banner{display:flex;align-items:center;gap:12px;border:1px solid #F3C36B;background:#FFF7E8;color:#754A00;border-radius:13px;padding:10px 14px;margin-bottom:18px}.dark .demo-banner{background:#3A2D16;color:#FFD98D;border-color:#72551E}.demo-banner strong{letter-spacing:.04em}.page{display:none}.page.active{display:block}.page-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:18px}.page-head h2{margin:0;font-size:25px;color:var(--navy)}.dark .page-head h2{color:#fff}.page-head p{margin:6px 0 0;color:var(--muted);max-width:760px;line-height:1.5}.actions{display:flex;gap:8px;flex-wrap:wrap}
@@ -237,6 +237,14 @@ button,input,select,textarea{font:inherit}.app{min-height:100vh}.sidebar{backgro
 
 /* Enhanced governance, validation, mobile and evidence features */
 .mobile-menu{display:none}.meta-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:-6px 0 18px}.meta-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-shadow:0 5px 18px rgba(20,33,61,.05)}.meta-item span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:850}.meta-item strong{display:block;margin-top:5px;font-size:12px}.validation{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:850;white-space:nowrap}.validation.demo{background:#FCEAEA;color:#A2251B}.validation.pending{background:#FFF3DB;color:#955B00}.validation.validated{background:#EAF0FE;color:#2855B8}.validation.approved{background:#E8F5F0;color:#006B49}.decision-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;background:linear-gradient(110deg,#FFF3DB,#FFF9EE);border:1px solid #F3C36B;border-radius:14px;padding:14px 16px;margin:14px 0}.dark .decision-banner{background:#352B1A;border-color:#72551E}.decision-banner h3{margin:0 0 3px;font-size:14px}.decision-banner p{margin:0;color:var(--muted);font-size:11px}.decision-list{display:grid;gap:10px}.decision-row{display:grid;grid-template-columns:80px minmax(180px,1.4fr) minmax(160px,1fr) 150px 110px 110px;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border)}.decision-row:last-child{border-bottom:0}.decision-row.header{position:sticky;top:0;background:var(--surface2);z-index:2;color:var(--muted);font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}.decision-row h4{margin:0 0 3px;font-size:12px}.decision-row p{margin:0;color:var(--muted);font-size:10px;line-height:1.4}.alignment-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.alignment-card{padding:15px}.alignment-card h4{margin:7px 0 8px}.alignment-card .objective{font-size:11px;line-height:1.55;color:var(--muted);min-height:52px}.evidence-list,.activity-list{display:grid;gap:7px}.evidence-link{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface2);text-decoration:none;color:var(--text)}.evidence-link:hover{border-color:var(--blue)}.activity-item{position:relative;padding:8px 10px 8px 27px;border-left:2px solid var(--border);margin-left:5px}.activity-item:before{content:"";position:absolute;width:9px;height:9px;border-radius:50%;background:var(--blue);left:-6px;top:12px}.activity-item strong{font-size:11px}.activity-item p{margin:3px 0 0;font-size:10px;color:var(--muted)}.score-box{display:inline-grid;place-items:center;min-width:34px;height:28px;border-radius:8px;font-weight:900}.score-low{background:#E8F5F0;color:#006B49}.score-medium{background:#FFF3DB;color:#955B00}.score-high{background:#FCEAEA;color:#A2251B}.calendar-toolbar{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px}.calendar-toolbar strong{min-width:150px;text-align:center}.cal-day.outside{background:var(--surface2);opacity:.55}.cal-day.today{box-shadow:inset 0 0 0 2px var(--pink)}.subsection{border-top:1px solid var(--border);margin-top:16px;padding-top:4px}.wide-table table{min-width:1750px}.risk-table table{min-width:1900px}.unsaved-dot{display:inline-block!important;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px}.link-input-help{font-size:9px;color:var(--muted);margin-top:3px}.form-section-title{grid-column:1/-1;margin:7px 0 -2px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--navy);font-weight:900;text-transform:uppercase;letter-spacing:.06em}.dark .form-section-title{color:#D9E6FF}.compact-actions{display:flex;gap:5px;justify-content:flex-end}.sidebar-overlay{display:none}
+.color-legend{padding:4px 10px 10px;display:flex;flex-direction:column;gap:5px;}
+.cl-item{display:flex;align-items:center;gap:8px;font-size:11px;color:#C8D6E8;}
+.cl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;display:inline-block;}
+.mape-active-dot{background:#00845A;}
+.mape-gate-dot{background:#E88B00;}
+.mape-escalate-dot{background:#C0392B;}
+.mape-advisory-dot{background:#7B8FAB;}
+.cl-divider{height:1px;background:rgba(255,255,255,.1);margin:3px 0;}
 @media(max-width:1100px){.meta-strip{grid-template-columns:repeat(2,1fr)}.alignment-grid{grid-template-columns:repeat(2,1fr)}.decision-row{grid-template-columns:70px minmax(180px,1fr) 130px 100px}.decision-row>*:nth-child(3),.decision-row>*:nth-child(6){display:none}}
 @media(max-width:860px){.mobile-menu{display:inline-flex}.sidebar{width:252px;transform:translateX(-105%);transition:transform .24s;box-shadow:0 20px 60px rgba(0,0,0,.4)}.sidebar.open,.sidebar.mobile-open{transform:translateX(0)}.sidebar-overlay{position:fixed;inset:0;background:rgba(8,15,28,.48);z-index:19}.sidebar-overlay.show{display:block}.meta-strip{grid-template-columns:1fr 1fr}.alignment-grid{grid-template-columns:1fr}.decision-row{grid-template-columns:58px 1fr 90px}.decision-row>*:nth-child(3),.decision-row>*:nth-child(4),.decision-row>*:nth-child(6){display:none}.top-actions .desktop-label{display:none}}
 @media(max-width:520px){.meta-strip{grid-template-columns:1fr}.topbar{gap:7px}.icon-btn{padding:9px}.search-wrap input{padding-left:34px}.decision-row{grid-template-columns:52px 1fr}.decision-row>*:nth-child(5){display:none}}
@@ -288,15 +296,15 @@ button,input,select,textarea{font:inherit}.app{min-height:100vh}.sidebar{backgro
 .undo-toast button{background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;}
 
 /* ── Shell layout (our sidebar style) ── */
-.shell{display:flex;align-items:stretch;max-width:100%;margin:0;min-height:calc(100vh - 90px);}
+.shell{display:flex;align-items:stretch;max-width:100%;margin:0;min-height:calc(100vh - var(--header-h,74px));}
 .sidebar{
   width:220px;flex-shrink:0;
   background:linear-gradient(180deg,var(--navy2),var(--navy)) !important;
   border-inline-end:none;
-  min-height:calc(100vh - 78px);
+  min-height:calc(100vh - var(--header-h,74px));
   padding:16px 10px;
   position:sticky;
-  top:90px;
+  top:var(--header-h,74px);
   overflow:auto;
 }
 .sidebar .nav-label,.sidebar .label{font-size:10px;color:#9DAEC7;padding:8px 10px 6px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;}
@@ -346,9 +354,11 @@ body.dark,.app.dark,[data-theme="dark"]{
 }
 
 /* ── Popup / Detail Modal ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(20,33,61,.45);z-index:200;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(20,33,61,.55);z-index:200;display:none;align-items:center;justify-content:center;padding:24px 16px;}
 .modal-overlay.open{display:flex;}
-.modal{background:var(--surface);border-radius:18px;max-width:700px;width:100%;box-shadow:0 30px 90px rgba(20,33,61,.3);border:1px solid var(--border);}
+.modal{background:var(--surface);border-radius:18px;max-width:780px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 30px 90px rgba(20,33,61,.35);border:1px solid var(--border);}
+.modal .modal-head{flex-shrink:0;}
+.modal .modal-body{overflow-y:auto;flex:1;}
 .modal-head{background:linear-gradient(90deg,var(--navy2),var(--navy));padding:16px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-radius:18px 18px 0 0;}
 .modal-head h3{margin:0 0 2px;color:#fff;font-size:15.5px;line-height:1.3;}
 .modal-head .modal-sub{color:#B9C3DA;font-size:11.5px;margin:0;line-height:1.4;}
@@ -594,11 +604,19 @@ body.dark,.app.dark,[data-theme="dark"]{
 .donut-legend-item{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text);}
 .donut-legend-item .swatch{width:11px;height:11px;border-radius:3px;flex-shrink:0;}
 .donut-legend-item b{margin-inline-start:auto;color:var(--navy);}
-.init-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:box-shadow .15s,transform .15s;}
-.init-card:hover{box-shadow:0 4px 14px rgba(20,33,61,.12);transform:translateY(-1px);}
-.init-card .name{font-weight:700;font-size:13.5px;margin-bottom:6px;color:var(--navy);}
-.dept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
-.dept-col h4{margin:0 0 10px;font-size:14px;color:var(--navy);display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--navy);padding-bottom:6px;}
+.init-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:box-shadow .15s,transform .15s;border-left:4px solid var(--border);}
+.init-card:hover{box-shadow:0 4px 14px rgba(20,33,61,.12);transform:translateY(-1px);border-left-color:var(--navy);}
+.init-card.risk-on-track{border-left-color:var(--green);}
+.init-card.risk-at-risk{border-left-color:var(--amber);}
+.init-card.risk-delayed{border-left-color:var(--red);}
+.init-card.risk-blocked{border-left-color:var(--pink);}
+.init-card .name{font-weight:700;font-size:13px;margin-bottom:7px;color:var(--navy);line-height:1.35;}
+.init-card .dept-pct{font-size:22px;font-weight:900;color:var(--navy);margin:6px 0 4px;}
+.init-card .init-meta{font-size:11px;color:var(--muted);margin-top:6px;}
+.dept-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
+.dept-col{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 2px 12px rgba(20,33,61,.06);}
+.dept-col h4{margin:0 0 12px;font-size:13.5px;color:var(--navy);display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--navy);padding-bottom:8px;font-weight:800;}
+.dept-col h4 .dept-count{background:var(--navy);color:#fff;border-radius:99px;font-size:10px;padding:2px 8px;font-weight:700;}
 .risk-card-row{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px;margin-bottom:10px;display:grid;grid-template-columns:8px 1fr auto;gap:13px;align-items:start;}
 .risk-stripe{width:8px;min-height:68px;border-radius:99px;}
 .alert-row{display:grid;grid-template-columns:45px 1fr auto;gap:12px;align-items:center;padding:13px;border-bottom:1px solid var(--border);}
@@ -687,7 +705,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 @media(min-width:861px){
   .sidebar{
     position:sticky !important;
-    top:90px;
+    top:var(--header-h,74px);
     transform:none !important;
     width:220px !important;
     box-shadow:none !important;
@@ -707,6 +725,97 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .report-table td{padding:8px 10px;border:1px solid #D8E2EC;color:#172033;}
 .report-table tr:hover td{background:transparent;}
 
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LIGHT HEADER — the navy sidebar is the single dark anchor; the header
+   opens the space above it. Cool off-white, never pure white, so the pink
+   rule underneath does not read as harsh.
+   ═══════════════════════════════════════════════════════════════════════ */
+.topbar{
+  background:#FAFBFD !important;
+  color:var(--navy);
+  padding:14px 26px !important;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;
+  position:sticky;top:0;z-index:50;
+  border-bottom:3px solid var(--pink);
+  box-shadow:0 2px 6px rgba(20,33,61,.06);
+  backdrop-filter:none !important;
+}
+
+/* Brand — logo needs no white plate on a light ground */
+.topbar .brand{display:flex;align-items:center;gap:14px;padding:0;border:none;margin:0;}
+.topbar .brand .mark{background:transparent;border-radius:0;padding:0;box-shadow:none;}
+.topbar .brand .mark img{height:42px;width:auto;display:block;}
+.topbar .brand h1{font-size:19px;margin:0;font-weight:700;color:var(--navy);}
+.topbar .brand p{margin:3px 0 0;font-size:12px;color:#5F7085;}
+.topbar .placeholder-badge{
+  background:#FFF4E2;border:1px solid var(--amber);color:#9A5B00;
+  font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;
+  margin-inline-start:8px;vertical-align:middle;
+}
+
+/* Meta block */
+.topbar .meta{display:flex;align-items:center;gap:12px;}
+.topbar .meta-right{text-align:right;line-height:1.45;}
+.topbar .meta-right .meta-date{font-size:15px;color:var(--navy);font-weight:800;}
+.topbar .meta-right .meta-sub{font-size:11.5px;color:#5F7085;margin-top:1px;}
+.topbar .meta-right .last-update-line{font-size:10.5px;color:#7C8AA0;margin-top:2px;white-space:nowrap;}
+
+/* Search */
+.topbar .global-search-input{
+  background:#fff;border:1px solid #DCE4EF;color:var(--navy);
+  border-radius:9px;padding:8px 13px;font-family:inherit;font-size:12.5px;width:250px;
+}
+.topbar .global-search-input::placeholder{color:#93A0B4;}
+.topbar .global-search-input:focus{
+  outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(27,42,74,.08);
+}
+
+/* Buttons — labelled, not icon-only: Import and Export must stay distinguishable */
+.topbar .print-btn{
+  background:#fff;border:1px solid #DCE4EF;color:var(--navy);
+  border-radius:9px;padding:8px 15px;font-family:inherit;
+  font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:background .14s,border-color .14s;
+}
+.topbar .print-btn:hover{background:#F0F4FA;border-color:#C3CFE0;}
+.topbar .print-btn:active{background:#E7EDF6;}
+
+/* ── Dark mode: header returns to a dark surface ── */
+[data-theme="dark"] .topbar,body.dark .topbar{
+  background:var(--navy2) !important;
+  border-bottom-color:#2D3A53;
+  box-shadow:none;
+}
+[data-theme="dark"] .topbar .brand h1,body.dark .topbar .brand h1{color:#fff;}
+[data-theme="dark"] .topbar .brand p,body.dark .topbar .brand p{color:#93A5BF;}
+[data-theme="dark"] .topbar .meta-right .meta-date,body.dark .topbar .meta-right .meta-date{color:#fff;}
+[data-theme="dark"] .topbar .meta-right .meta-sub,body.dark .topbar .meta-right .meta-sub{color:#93A5BF;}
+[data-theme="dark"] .topbar .meta-right .last-update-line,body.dark .topbar .meta-right .last-update-line{color:#7E8FA8;}
+[data-theme="dark"] .topbar .print-btn,body.dark .topbar .print-btn{
+  background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.20);color:#EAF0F8;
+}
+[data-theme="dark"] .topbar .print-btn:hover,body.dark .topbar .print-btn:hover{background:rgba(255,255,255,.18);}
+[data-theme="dark"] .topbar .global-search-input,body.dark .topbar .global-search-input{
+  background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.20);color:#fff;
+}
+[data-theme="dark"] .topbar .global-search-input::placeholder,body.dark .topbar .global-search-input::placeholder{color:#93A5BF;}
+[data-theme="dark"] .topbar .placeholder-badge,body.dark .topbar .placeholder-badge{
+  background:rgba(232,139,0,.18);border-color:var(--amber);color:#FFD08A;
+}
+[data-theme="dark"] .topbar .brand .mark img,body.dark .topbar .brand .mark img{
+  background:#fff;border-radius:8px;padding:4px 8px;
+}
+
+@media(max-width:860px){
+  .topbar{padding:11px 14px !important;}
+  .topbar .brand .mark img{height:34px;}
+  .topbar .brand h1{font-size:15px;}
+  .topbar .brand p{display:none;}
+  .topbar .global-search-input{width:150px;}
+}
+
 </style>
 
 </head>
@@ -720,22 +829,22 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
       <p>Strategy, Mission &amp; Vision — Weekly Report &amp; Team Tracking</p>
     </div>
   </div>
-  <div class="meta" style="display:flex;align-items:center;gap:14px;">
+  <div class="meta">
     <div class="global-search-wrap">
       <input type="text" id="globalSearchInput" class="global-search-input" placeholder="🔍 Search initiatives, tasks, risks...">
       <div class="global-search-results" id="globalSearchResults"></div>
     </div>
-    <button class="icon-btn" id="themeBtn" title="Toggle dark mode">☾</button>
-    <button class="icon-btn desktop-only" id="importAllBtn" title="Import">↥</button>
+    <button class="print-btn" id="themeBtn" title="Toggle dark mode">🌙</button>
+    <button class="print-btn desktop-only" id="importAllBtn" title="Upload an Excel file to replace the dashboard's data">📤 Import</button>
     <input type="file" id="importFileInput" accept=".xlsx,.xls" style="display:none;">
-    <button class="icon-btn desktop-only" id="exportAllBtn" title="Export">⇩</button>
-    <button class="icon-btn desktop-only" id="printBtn" title="Print">⎙</button>
-    <div style="text-align:right;line-height:1.4;">
-      <div class="meta-date" id="currentDateDisplay" style="font-size:15px;color:#fff;font-weight:700;"></div>
-      <div style="font-size:11px;color:#7898B0;">Weekly Progress Report</div>
-      <div id="lastUpdateDisplay" style="font-size:10.5px;color:#9FB3CC;margin-top:1px;">Last Update: —</div>
+    <button class="print-btn desktop-only" id="exportAllBtn" title="Download all dashboard data as an Excel file">📥 Export</button>
+    <button class="print-btn desktop-only" id="printBtn" title="Print or save this view as PDF">🖨️ Print</button>
+    <div class="meta-right">
+      <div class="meta-date" id="currentDateDisplay"></div>
+      <div class="meta-sub">Weekly Progress Report</div>
+      <div class="last-update-line" id="lastUpdateDisplay">Last Update: —</div>
     </div>
-    <button class="icon-btn mobile-only" id="mobileMenuBtn" title="Open navigation" style="color:var(--muted);">☰</button>
+    <button class="print-btn mobile-only" id="mobileMenuBtn" title="Open navigation">☰</button>
   </div>
 </div>
 <div id="sidebarOverlay" onclick="closeMobileMenu()"></div>
@@ -784,6 +893,20 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
     <button class="tabbtn" data-tab="pivot">📊 Pivot</button>
     <button class="tabbtn" data-tab="alerts">⚠️ Alerts</button>
     <button class="tabbtn" data-tab="tasks">✅ Tasks</button>
+
+    <hr class="sidebar-divider">
+    <div class="label">Color Guide</div>
+    <div class="color-legend">
+      <div class="cl-item"><span class="cl-dot" style="background:#00845A;"></span><span>On Track</span></div>
+      <div class="cl-item"><span class="cl-dot" style="background:#E88B00;"></span><span>At Risk</span></div>
+      <div class="cl-item"><span class="cl-dot" style="background:#C0392B;"></span><span>Delayed</span></div>
+      <div class="cl-item"><span class="cl-dot" style="background:#C0266A;"></span><span>Blocked</span></div>
+      <div class="cl-divider"></div>
+      <div class="cl-item"><span class="cl-dot mape-active-dot"></span><span>Active This Week</span></div>
+      <div class="cl-item"><span class="cl-dot mape-gate-dot"></span><span>Gate / Decision</span></div>
+      <div class="cl-item"><span class="cl-dot mape-escalate-dot"></span><span>Escalation</span></div>
+      <div class="cl-item"><span class="cl-dot mape-advisory-dot"></span><span>MoC Advisory</span></div>
+    </div>
   </div>
 
   <div class="main">
@@ -1566,19 +1689,79 @@ function daysLeftBadgeShort(due, isDone){
 }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-// Set today's date in header
+// Today's date in the header
 document.getElementById('currentDateDisplay').textContent = fmtDate(new Date());
-// Last Update tracker
+
+/* ── Last Update ───────────────────────────────────────────────────────
+   Shows when the data was last touched. Seeded on load from the most
+   recent progress snapshot in the dataset, so it is never blank, then
+   moved to "now" by any Add / Edit / Delete / Import.
+   ─────────────────────────────────────────────────────────────────── */
 window._lastUpdateTime = null;
-function setLastUpdate(){
-  window._lastUpdateTime = new Date();
-  const d = window._lastUpdateTime;
+
+function formatLastUpdate(d){
   const pad = n => String(n).padStart(2,'0');
   const h = d.getHours(), m = d.getMinutes();
-  const ampm = h>=12?'PM':'AM', h12=h%12||12;
-  const el = document.getElementById('lastUpdateDisplay');
-  if(el) el.innerHTML = `Last Update:<br>${fmtDate(d)}<br>${h12}:${pad(m)} ${ampm}`;
+  const ampm = h >= 12 ? 'PM' : 'AM', h12 = h % 12 || 12;
+  return `Last Update: ${fmtDate(d)} · ${h12}:${pad(m)} ${ampm}`;
 }
+
+function paintLastUpdate(){
+  const el = document.getElementById('lastUpdateDisplay');
+  if(el && window._lastUpdateTime) el.textContent = formatLastUpdate(window._lastUpdateTime);
+}
+
+// Called by every data-changing action
+function setLastUpdate(){
+  window._lastUpdateTime = new Date();
+  paintLastUpdate();
+}
+
+// Seed on load: newest progress snapshot in the data, else now
+(function seedLastUpdate(){
+  let newest = null;
+  MOC_DATA.forEach(i => (i.history||[]).forEach(p => {
+    if(p && p.date && (!newest || p.date > newest)) newest = p.date;
+  }));
+  window._lastUpdateTime = newest || new Date();
+  paintLastUpdate();
+})();
+
+/* Catch every mutation from one place rather than chasing each handler.
+   Adds, deletes, duplicates and undo-restores all go through push/splice,
+   so patching those on the data arrays covers them — including any code
+   added later. Direct index assignment (edit-in-place) calls
+   setLastUpdate() explicitly at its two save points. */
+/* Publish the real header height so the sticky sidebar lines up exactly,
+   whatever the logo or font ends up rendering at. */
+(function trackHeaderHeight(){
+  const bar = document.querySelector('.topbar');
+  if(!bar) return;
+  const apply = () => document.documentElement.style
+    .setProperty('--header-h', Math.round(bar.getBoundingClientRect().height) + 'px');
+  apply();
+  window.addEventListener('resize', apply);
+  if(window.ResizeObserver) new ResizeObserver(apply).observe(bar);
+})();
+
+(function trackDataMutations(){
+  const arrays = [MOC_DATA, TASKS_DATA, RISK_REGISTER_DATA, MAPE_TASKS];
+  const methods = ['push','splice','pop','shift','unshift'];
+  arrays.forEach(arr=>{
+    if(!Array.isArray(arr)) return;
+    methods.forEach(m=>{
+      const original = arr[m].bind(arr);
+      Object.defineProperty(arr, m, {
+        value: function(...args){
+          const result = original(...args);
+          if(typeof setLastUpdate === 'function') setLastUpdate();
+          return result;
+        },
+        writable: true, configurable: true, enumerable: false
+      });
+    });
+  });
+})();
 
 /* =====================================================================
    TAB SWITCHING
@@ -1614,7 +1797,10 @@ function popupHeaderHTML(title, subtitleHTML){
         <h3>${title}</h3>
         <p class="modal-sub">${subtitleHTML}</p>
       </div>
-      <button class="modal-close-x" onclick="closeDetailModal()">✕</button>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <button onclick="captureModalFull()" title="Copy full popup as image" style="background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">📷 Copy</button>
+        <button class="modal-close-x" onclick="closeDetailModal()">✕</button>
+      </div>
     </div>
   `;
 }
@@ -2285,20 +2471,22 @@ function renderWorkstreamsTable(){
    RENDER: Departments cards
    ===================================================================== */
 function renderDepartments(){
+  const riskClass = r => r==='On Track'?'risk-on-track':r==='At Risk'?'risk-at-risk':r==='Delayed'?'risk-delayed':r==='Blocked'?'risk-blocked':'';
   $('#deptGrid').innerHTML = DEPARTMENTS.map(dep=>{
     const items = MOC_DATA.filter(i=>i.department===dep);
     return `<div class="dept-col">
-      <h4>${dep} <span style="font-size:11px;color:var(--muted);font-weight:400;">${items.length} initiative${items.length===1?'':'s'}</span></h4>
+      <h4>${dep} <span class="dept-count">${items.length} initiative${items.length===1?'':'s'}</span></h4>
       ${items.map(i=>{
         const idx = MOC_DATA.indexOf(i);
         return `
-        <div class="init-card" data-idx="${idx}">
+        <div class="init-card ${riskClass(i.risk)}" data-idx="${idx}">
           <div class="name">${i.name}</div>
-          <div class="row"><span>${badge(i.risk)}</span><span><span class="badge stage">${i.stage}</span></span></div>
-          <div class="row">${progressBar(i.pct)}<span>${i.pct}%</span></div>
-          <div class="row"><span>Lead: ${i.lead}</span></div>
+          <div class="row" style="gap:6px;margin-bottom:4px;">${badge(i.risk)}<span class="badge stage">${i.stage}</span></div>
+          <div class="dept-pct">${i.pct}%</div>
+          <div style="margin-bottom:6px;">${progressBar(i.pct)}</div>
+          <div class="init-meta">Lead: ${i.lead}</div>
         </div>
-      `;}).join('') || `<p style="color:var(--muted);font-size:12.5px;">No initiatives registered yet.</p>`}
+      `;}).join('') || `<p style="color:var(--muted);font-size:12.5px;margin:8px 0 0;">No initiatives registered yet.</p>`}
     </div>`;
   }).join('');
   $$('#deptGrid .init-card').forEach(card=>{
@@ -2950,6 +3138,35 @@ window.captureZone = function(elOrId){
         const a = document.createElement('a'); a.href = canvas.toDataURL('image/png');
         a.download = (typeof elOrId==='string'?elOrId:'screenshot') + '.png'; a.click();
       }
+    });
+  });
+};
+
+/* Captures the full popup content (scrollable) by temporarily expanding it */
+window.captureModalFull = function(){
+  const modal = document.querySelector('#detailModalOverlay .modal.detail-modal');
+  if(!modal || typeof html2canvas==='undefined') return;
+  const body = modal.querySelector('.modal-body');
+  const prevMaxH = modal.style.maxHeight;
+  const prevOverflow = body ? body.style.overflow : '';
+  // Temporarily remove scroll constraints
+  modal.style.maxHeight = 'none';
+  if(body){ body.style.overflow = 'visible'; }
+  showInfoToast('📷 Preparing full screenshot…');
+  requestAnimationFrame(()=>{
+    html2canvas(modal, {backgroundColor:'#ffffff', scale:2, useCORS:true}).then(canvas=>{
+      modal.style.maxHeight = prevMaxH;
+      if(body){ body.style.overflow = prevOverflow; }
+      canvas.toBlob(blob=>{
+        if(!blob) return;
+        if(navigator.clipboard && window.ClipboardItem){
+          navigator.clipboard.write([new ClipboardItem({'image/png':blob})])
+            .then(()=> showInfoToast('📷 Full popup copied — paste into your email.'))
+            .catch(()=>{ const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='popup.png';a.click(); });
+        } else {
+          const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='popup.png';a.click();
+        }
+      });
     });
   });
 };
