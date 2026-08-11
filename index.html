@@ -640,9 +640,13 @@ body.dark,.app.dark,[data-theme="dark"]{
 .dept-chart-bars{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:space-around;padding:0 6px;}
 .dept-bar-col{display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;flex:1;max-width:100px;}
 .dept-bar-rect{width:65%;min-width:40px;border-radius:5px;display:flex;align-items:flex-start;justify-content:center;padding-top:8px;box-sizing:border-box;}
-.dept-bar-rect .bar-val{font-size:12.5px;font-weight:800;color:#fff;}
+.dept-bar-rect .bar-val{font-size:12px;font-weight:400;color:#fff;}
 .dept-chart-xaxis{display:flex;justify-content:space-around;margin-inline-start:38px;padding:0 6px;margin-top:8px;}
-.dept-chart-xaxis span{flex:1;max-width:100px;text-align:center;font-size:10.5px;color:var(--muted);white-space:nowrap;}
+.dept-chart-xaxis span{flex:1;max-width:100px;text-align:center;font-size:10.5px;color:var(--muted);white-space:normal;word-break:break-word;padding:0 3px;}
+.dept-chart-xaxis--angled{display:flex;justify-content:space-around;margin-inline-start:38px;padding:0 6px;margin-top:4px;height:60px;align-items:flex-start;}
+.dept-chart-xaxis--angled span{flex:1;max-width:100px;font-size:10.5px;color:var(--muted);transform:rotate(-35deg);transform-origin:top left;white-space:nowrap;display:inline-block;margin-top:4px;}
+.dept-bar-rect.dbc-active{filter:brightness(1.15);box-shadow:0 0 0 3px rgba(0,0,0,.18);}
+.dept-bar-info-row{margin:4px 0 0 38px;min-height:26px;padding:6px 12px;background:var(--surface2);border-radius:8px;font-size:12.5px;color:var(--navy2);border:1px solid var(--border);}
 .grouped-bar-legend{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);margin-bottom:10px;flex-wrap:wrap;}
 .gbl-dot{display:inline-block;width:12px;height:12px;border-radius:3px;flex-shrink:0;}
 .grouped-bar-pair{display:flex;align-items:flex-end;gap:3px;width:100%;height:100%;justify-content:center;}
@@ -2289,25 +2293,20 @@ const DEPT_COLORS = ['var(--navy)','var(--green)','var(--blue)','var(--amber)','
 // department name) — keeps bar-chart x-axis labels on a single line, like the
 // reference dashboard, without ever renaming DEPARTMENTS itself.
 const DEPT_CHART_LABEL = {
-  "Human Resources - Operations":"HR Ops",
+  "Human Resources - Operations":         "HR Ops",
   "Human Resources - Learning & Training":"HR L&T",
-  "Human Resources - Recruitment":"HR Recruit.",
-  "Finance - Revenue":"Fin. Revenue",
-  "Finance - Reporting":"Fin. Reporting",
-  "Heritage":"Heritage",
-  "Digital Transformation":"Digital Transf.",
-  "PMO":"PMO",
-  "Cultural Scholarship":"Cultural Sch."
+  "Human Resources - Recruitment":        "HR Recruit.",
+  "Finance - Revenue":                    "Fin. Revenue",
+  "Finance - Reporting":                  "Fin.|Reporting",
+  "Heritage":                             "Heritage",
+  "Digital Transformation":               "Digital|Transf.",
+  "PMO":                                  "PMO",
+  "Cultural Scholarship":                 "Cultural|Sch."
 };
 
 function renderDeptBarChart(){
-  // Department is looked up from TASKS first (tasks have real dept data).
-  // For each dept: avg pct of completed tasks / total tasks.
-  const DEPTS_IN_USE = DEPARTMENTS.filter(dep =>
-    TASKS_DATA.some(t=>t.department===dep)
-  );
-
-  const rows = DEPTS_IN_USE.map((dep, i)=>{
+  const DEPTS_IN_USE = DEPARTMENTS.filter(dep => TASKS_DATA.some(t=>t.department===dep));
+  const rows = DEPTS_IN_USE.map((dep,i)=>{
     const dTasks = TASKS_DATA.filter(t=>t.department===dep);
     const done   = dTasks.filter(t=>t.status==='Completed').length;
     const pct    = dTasks.length ? Math.round(done/dTasks.length*100) : 0;
@@ -2315,18 +2314,19 @@ function renderDeptBarChart(){
   });
 
   const yTicks = [100,90,80,70,60,50,40,30,20,10,0];
+
   const barsHTML = rows.map(r=>`
     <div class="dept-bar-col">
-      <div class="dept-bar-rect"
-        style="height:${Math.max(r.pct,r.pct>0?0:0)}%;background:${r.color};"
-        title="${r.dep}: ${r.done} of ${r.total} tasks completed (${r.pct}%)">
+      <div class="dept-bar-rect" style="height:${r.pct}%;background:${r.color};">
         ${r.pct>8?`<span class="bar-val">${r.pct}%</span>`:''}
       </div>
     </div>`).join('');
 
-  const xHTML = rows.map(r=>
-    `<span title="${r.dep} — ${r.done}/${r.total} tasks">${DEPT_CHART_LABEL[r.dep]||r.dep}</span>`
-  ).join('');
+  // Label under each bar: short name + done/total
+  const xHTML = rows.map(r=>{
+    const lbl = (DEPT_CHART_LABEL[r.dep]||r.dep).split('|').join('<br>');
+    return `<span title="${r.dep}">${lbl}<br><b style="color:var(--navy2);font-size:11px;">${r.done}/${r.total}</b></span>`;
+  }).join('');
 
   $('#deptBarChart').innerHTML = `
     <div class="dept-chart-row">
@@ -2338,9 +2338,7 @@ function renderDeptBarChart(){
         <div class="dept-chart-bars">${barsHTML}</div>
       </div>
     </div>
-    <div class="dept-chart-xaxis">${xHTML}</div>
-    <p style="font-size:11px;color:var(--muted);margin:6px 0 0 38px;">
-      % of tasks completed per department. Hover any bar for details.</p>
+    <div class="dept-chart-xaxis" style="line-height:1.5;">${xHTML}</div>
   `;
 }
 
