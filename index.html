@@ -639,10 +639,16 @@ body.dark,.app.dark,[data-theme="dark"]{
 .dept-chart-gridline{position:absolute;left:0;right:0;border-top:1px solid var(--border);}
 .dept-chart-bars{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:space-around;padding:0 6px;}
 .dept-bar-col{display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;flex:1;max-width:100px;}
-.dept-bar-rect{width:82%;min-width:52px;border-radius:5px;display:flex;align-items:flex-start;justify-content:center;padding-top:8px;box-sizing:border-box;}
+.dept-bar-rect{width:65%;min-width:40px;border-radius:5px;display:flex;align-items:flex-start;justify-content:center;padding-top:8px;box-sizing:border-box;}
 .dept-bar-rect .bar-val{font-size:12.5px;font-weight:800;color:#fff;}
 .dept-chart-xaxis{display:flex;justify-content:space-around;margin-inline-start:38px;padding:0 6px;margin-top:8px;}
 .dept-chart-xaxis span{flex:1;max-width:100px;text-align:center;font-size:10.5px;color:var(--muted);white-space:nowrap;}
+.grouped-bar-legend{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);margin-bottom:10px;flex-wrap:wrap;}
+.gbl-dot{display:inline-block;width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+.grouped-bar-pair{display:flex;align-items:flex-end;gap:3px;width:100%;height:100%;justify-content:center;}
+.grouped-bar-single{width:42%;min-width:20px;border-radius:4px 4px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:5px;box-sizing:border-box;transition:opacity .15s;}
+.grouped-bar-single:hover{opacity:.8;}
+.grouped-bar-single .bar-val{font-size:11px;font-weight:800;color:#fff;}
 th{text-align:left;padding:10px;background:var(--surface2);color:var(--muted);font-size:11px;font-weight:600;border-bottom:1px solid var(--border);text-transform:uppercase;position:sticky;top:0;z-index:8;user-select:none;}
 th.sortable{cursor:pointer;}
 th.sortable:hover{color:var(--navy);}
@@ -949,6 +955,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
       <p class="view-sub">Computed live from the current Tasks and Workstreams data — no hardcoded numbers.</p>
       <div id="execSummary"></div>
       <div id="healthScoreBanner"></div>
+      <div id="scopeProgressBanner"></div>
       <div class="card">
         <h3>By Department</h3>
         <div class="dept-row" id="ovDeptRow"></div>
@@ -977,7 +984,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
     <!-- WORKSTREAMS -->
     <div class="view report-zone" id="view-workstreams">
       <div class="filters">
-        <button class="btn" id="addInitBtn" class="btn admin-only">+ Add Initiative</button>
+        <button class="btn" id="addInitBtn" class="btn admin-only">+ Add Workstream</button>
         <select id="wsDeptFilter"></select>
         <select id="wsRiskFilter"></select>
       </div>
@@ -1103,11 +1110,11 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
         <input type="text" id="f_workstream" placeholder="Workstream name, or leave blank">
       </div>
       <div class="form-field">
-        <label>Engagement Stage *</label>
+        <label>Framework Stage *</label>
         <select id="f_stage"></select>
       </div>
       <div class="form-field">
-        <label>Status *</label>
+        <label>Task Status *</label>
         <select id="f_status"></select>
       </div>
       <div class="form-field">
@@ -1156,34 +1163,44 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
   </div>
 </div>
 
-<!-- ADD/EDIT INITIATIVE (WORKSTREAM) MODAL -->
+<!-- ADD/EDIT WORKSTREAM MODAL — a MOC_DATA row is a Workstream, the middle
+     level of Initiative -> Workstream -> Task. Element ids kept as i_* for
+     backward compatibility with existing handlers. -->
 <div class="modal-overlay" id="initModalOverlay">
   <div class="modal">
-    <h3 id="initModalTitle">New Initiative</h3>
+    <h3 id="initModalTitle">New Workstream</h3>
     <p class="modal-sub" id="initModalSub">Demo mode: changes update the in-memory list only — nothing is saved to a server yet.</p>
     <div class="form-grid">
       <div class="form-field full">
-        <label>Initiative Name *</label>
-        <input type="text" id="i_name" placeholder="e.g. Digital Records Modernization">
+        <label>Workstream Name *</label>
+        <input type="text" id="i_name" placeholder="e.g. Stakeholder interviews & discovery">
       </div>
       <div class="form-field">
-        <label>Workstream</label>
+        <label>Initiative *</label>
         <select id="i_workstreamGroup"></select>
       </div>
       <div class="form-field">
-        <label>Department *</label>
+        <label>Pillar (if part of AI Strategy Assessment)</label>
+        <select id="i_pillar"><option value="">— none —</option></select>
+      </div>
+      <div class="form-field">
+        <label>Department</label>
         <select id="i_department"></select>
       </div>
       <div class="form-field">
-        <label>Engagement Stage *</label>
+        <label>Work Type *</label>
+        <select id="i_workType"></select>
+      </div>
+      <div class="form-field">
+        <label>Framework Stage *</label>
         <select id="i_stage"></select>
       </div>
       <div class="form-field">
-        <label>Lead *</label>
+        <label>Assignee *</label>
         <select id="i_lead"></select>
       </div>
       <div class="form-field">
-        <label>Risk Status *</label>
+        <label>Risk *</label>
         <select id="i_risk"></select>
       </div>
       <div class="form-field full">
@@ -1207,7 +1224,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
     <div class="modal-actions">
       <button class="btn danger" id="deleteInitBtn" style="display:none;margin-inline-end:auto;">🗑️ Delete Initiative</button>
       <button class="btn secondary" id="cancelInitBtn">Cancel</button>
-      <button class="btn" id="saveInitBtn" class="admin-only">Add Initiative</button>
+      <button class="btn" id="saveInitBtn" class="admin-only">Add Workstream</button>
     </div>
   </div>
 </div>
@@ -1319,7 +1336,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 <script>
 /* =====================================================================
    CENTRAL CONFIG — single source of truth for all expandable value lists.
-   Edit only here when team names arrive or Engagement Stage values change.
+   Edit only here when team names arrive or Framework Stage values change.
    ===================================================================== */
 const TEAM_LEADS = [
   "Mohammad Kaddoura",
@@ -1343,30 +1360,55 @@ const DEPARTMENTS = [
   "Cultural Scholarship"
 ];
 
-// PLACEHOLDER — real workstream group names to arrive later and replace
-// these; only this list and the workstreamGroup value on each MOC_DATA
-// item need updating (single source of truth, nowhere else in the code).
-const WORKSTREAM_GROUPS = [
-  "Use Case",
-  "AI Cloud Infrastructure",
+// Real initiatives (the top level of the hierarchy: Initiative -> Workstream ->
+// Task), reconstructed from the Final PM Sheet. "PMO / Delivery Management"
+// is a NEW bucket added here to hold delivery-management workstreams (Risk
+// Register upkeep, status meetings, presentations, the AI Discovery Report,
+// the Discovery Sign-Off gate) that had no initiative assigned in the sheet —
+// flagged for confirmation, see MOC_Dashboard_Notes.md decision D6.
+const INITIATIVES = [
+  "AI Strategy Assessment",
   "Copilot Productivity",
-  "Strategy",
   "Cultural Universe",
+  "Use Case",
   "Ad Hoc",
-  "BRD"
+  "BRD",
+  "PMO / Delivery Management"
 ];
 
-const ENGAGEMENT_STAGES = [
-  "AI Strategy",
-  "AI Ready Data & Infrastructure",
-  "Workforce & Culture",
-  "Governance & Responsible AI",
-  "AI Impact",
-  "Monitor",
-  "Analyze",
-  "Plan",
-  "Execute"
+// Work Type — split out from Department (see decision D5). A large share of
+// tasks were logged against "AI Strategy Team", which is US (the delivery
+// team), not a MoC department — that collapsed every By-Department chart
+// into one giant bar. Department now only holds real MoC departments;
+// internal/advisory work carries a Work Type instead.
+const WORK_TYPES = ["Client Engagement", "Internal Delivery", "Advisory"];
+
+// Framework Stage — the MAPE delivery phase only (Monitor/Analyze/Plan/
+// Execute). Previously merged with the 5 pillars into one 9-value list,
+// which meant every row could only carry one or the other. See PILLARS below
+// for the other half of that split (decision, see project notes section 3).
+const FRAMEWORK_STAGES = ["Monitor", "Analyze", "Plan", "Execute"];
+
+// Pillars (P1–P5) — orthogonal to Framework Stage. A task is both a stage AND
+// a pillar at the same time (e.g. "Monitor" + "P2 AI Ready Data &
+// Infrastructure"), so this can never be merged back into FRAMEWORK_STAGES.
+const PILLARS = [
+  { code: "P1", name: "AI Strategy" },
+  { code: "P2", name: "AI Ready Data & Infrastructure" },
+  { code: "P3", name: "Workforce & Culture" },
+  { code: "P4", name: "Governance & Responsible AI" },
+  { code: "P5", name: "AI Impact" }
 ];
+const PILLAR_NAME_BY_CODE = Object.fromEntries(PILLARS.map(p=>[p.code, p.name]));
+// Builds the composite "M - P2 - AI Ready Data & Infrastructure - <activity>"
+// label on demand — this is DERIVED, never typed, so it can never drift or
+// misspell the pillar name the way the hand-typed version did.
+function mapeCompositeLabel(stage, pillarCode, activity){
+  if(!stage || !pillarCode) return activity;
+  const letter = stage[0];
+  const pillarName = PILLAR_NAME_BY_CODE[pillarCode] || pillarCode;
+  return `${letter} - ${pillarCode} - ${pillarName} - ${activity}`;
+}
 
 const RISK_LEVELS = ["On Track", "At Risk", "Delayed", "Blocked"];
 
@@ -1384,11 +1426,6 @@ const DEPARTMENTS_AR = {
   "Cultural Scholarship": "الابتعاث الثقافي"
 };
 const STAGES_AR = {
-  "AI Strategy": "استراتيجية الذكاء الاصطناعي",
-  "AI Ready Data & Infrastructure": "جاهزية البيانات والبنية التحتية",
-  "Workforce & Culture": "القوى العاملة والثقافة",
-  "Governance & Responsible AI": "الحوكمة والذكاء الاصطناعي المسؤول",
-  "AI Impact": "أثر الذكاء الاصطناعي",
   "Monitor": "مراقبة",
   "Analyze": "تحليل",
   "Plan": "تخطيط",
@@ -1441,17 +1478,59 @@ function daysFromToday(n){
 function h(daysAgo, pct){ return { date: daysFromToday(-daysAgo), pct }; }
 
 let MOC_DATA = [
-  { name:"Ministry Strategic Document", workstreamGroup:WORKSTREAM_GROUPS[0], department:"PMO", stage:"Monitor", lead:TEAM_LEADS[0], risk:"On Track", pct:65, history:[h(21,35),h(14,45),h(7,55),h(0,65)], past:"Completed vision & mission draft", next:"Present draft to senior leadership", notes:"" },
-  { name:"Vision & Mission Workshop", workstreamGroup:WORKSTREAM_GROUPS[1], department:"PMO", stage:"Monitor", lead:TEAM_LEADS[1], risk:"On Track", pct:80, history:[h(21,70),h(14,75),h(7,80),h(0,80)], past:"Held second workshop with departments", next:"Summarize and circulate outputs", notes:"" },
-  { name:"Proposed Organizational Structure", workstreamGroup:WORKSTREAM_GROUPS[2], department:"PMO", stage:"Analyze", lead:TEAM_LEADS[2], risk:"At Risk", pct:35, history:[h(21,25),h(14,30),h(7,33),h(0,35)], past:"First draft of senior department structure", next:"Review with HR", notes:"Delayed pending leadership feedback" },
-  { name:"HR Operating Framework", workstreamGroup:WORKSTREAM_GROUPS[3], department:"Human Resources - Operations", stage:"Analyze", lead:TEAM_LEADS[3], risk:"On Track", pct:40, history:[h(21,15),h(14,22),h(7,28),h(0,40)], past:"Defined core hiring policies", next:"Align framework with org structure", notes:"" },
-  { name:"Hiring & Recruitment Policy", workstreamGroup:WORKSTREAM_GROUPS[4], department:"Human Resources - Recruitment", stage:"Monitor", lead:TEAM_LEADS[4], risk:"On Track", pct:55, history:[h(21,35),h(14,45),h(7,50),h(0,55)], past:"Drafted initial recruitment principles", next:"Legal review", notes:"" },
-  { name:"Operating Financial Model", workstreamGroup:WORKSTREAM_GROUPS[5], department:"Finance - Reporting", stage:"Analyze", lead:TEAM_LEADS[5], risk:"Delayed", pct:20, history:[h(21,15),h(14,18),h(7,20),h(0,20)], past:"Collected initial financial data", next:"Build estimation model", notes:"Awaiting data from central finance department" },
-  { name:"2026 Initial Initiatives Budget", workstreamGroup:WORKSTREAM_GROUPS[6], department:"Finance - Revenue", stage:"Monitor", lead:TEAM_LEADS[0], risk:"On Track", pct:70, history:[h(21,40),h(14,50),h(7,60),h(0,70)], past:"Approved preliminary budget ceiling", next:"Allocate budget across initiatives", notes:"" },
-  { name:"National Heritage Protection Program", workstreamGroup:WORKSTREAM_GROUPS[0], department:"Heritage", stage:"Monitor", lead:TEAM_LEADS[1], risk:"On Track", pct:60, history:[h(21,45),h(14,52),h(7,60),h(0,60)], past:"Inventoried priority sites", next:"Prepare initial protection plan", notes:"" },
-  { name:"Heritage Site Classification Guide", workstreamGroup:WORKSTREAM_GROUPS[1], department:"Heritage", stage:"Analyze", lead:TEAM_LEADS[2], risk:"Blocked", pct:15, history:[h(21,10),h(14,12),h(7,15),h(0,15)], past:"First draft of classification", next:"Awaiting approval from relevant authority", notes:"Blocked pending external approvals" },
-  { name:"Communications & Media Strategy", workstreamGroup:WORKSTREAM_GROUPS[2], department:"Digital Transformation", stage:"Monitor", lead:TEAM_LEADS[3], risk:"On Track", pct:45, history:[h(21,20),h(14,30),h(7,38),h(0,45)], past:"Defined key messages", next:"Build monthly content plan", notes:"" },
-  { name:"AI Strategy Assessment", workstreamGroup:WORKSTREAM_GROUPS[3], department:"Digital Transformation", stage:"Plan", lead:TEAM_LEADS[2], risk:"At Risk", pct:55, history:[h(21,30),h(14,40),h(7,48),h(0,55)], past:"Completed discovery workshops and closed the workshop-scheduling risk", next:"Resolve open Data and Governance risks; finalize EA and SAP dependency reviews", notes:"Tracked via a dedicated 9-item Risk Register (see PM View → Risk Register)" }
+  { id:"WS-01", name:"AI maturity baseline assessment", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-02", name:"Stakeholder interviews & discovery", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Yaseen Alquraan", risk:"Delayed", pct:82, history:[h(0,82)], past:"", next:"", notes:"" },
+  { id:"WS-03", name:"Inventory & classify critical data assets", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-04", name:"Assess data readiness for AI solutions", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"Blocked", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-05", name:"Assess workforce AI skills gaps", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-06", name:"Talent landscape review & benchmarking", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-07", name:"Identify & capture Cyber Security requirements and gaps", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-08", name:"Identify compliance gaps & regulatory exposure", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:50, history:[h(0,50)], past:"", next:"", notes:"" },
+  { id:"WS-09", name:"Define metrics of value for the organization", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Mohammad Kaddoura", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-10", name:"Measure & capture data on value of each use case", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Mohammad Kaddoura", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-11", name:"Map & prioritize use case portfolio", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:80, history:[h(0,80)], past:"", next:"", notes:"" },
+  { id:"WS-12", name:"Define AI vision & ambition statement", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-13", name:"ready data foundation strategy", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-14", name:"Define AI infrastructure platform strategy", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-15", name:"Define AI workforce & talent strategy", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-16", name:"Identify & recruit AI Champions per unit", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-17", name:"Establish AI governance framework & principles", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-18", name:"in-the-Loop decision rights", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-19", name:"Calculate value of each use case via impact framework", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-20", name:"Prioritize solutions by feasibility & impact", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-21", name:"Appoint AI Leader & establish CoE", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-22", name:"Define AI target operating model", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-23", name:"ready data pipelines", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-24", name:"Establish data governance & quality framework", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-25", name:"Design AI literacy training programs", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-26", name:"Define change management & culture plan", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-27", name:"Conduct risk assessments per use case", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-28", name:"Draft & publish core AI ethics policies", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-29", name:"Define adoption plan & assess solution combinations", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-30", name:"Calculate ROI models & impact frameworks per use case", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-31", name:"Portfolio governance & investment discipline", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-32", name:"Executive AI strategy review cadence", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-33", name:"Deploy MLOps for continuous model monitoring", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-34", name:"AI workload capacity planning & GPU forecasting", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-35", name:"Launch AI literacy training across the org", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-36", name:"Review 100% of roles for AI impact & redesign", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-37", name:"Implement bias evaluation for all production models", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-38", name:"Establish AI Ethics Board & meeting cadence", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-39", name:"time execution monitoring to validate impact", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-40", name:"Deploy live impact dashboards & report to stakeholders", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-41", name:"Application Migration", initiative:"Cultural Universe", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-42", name:"Capture Use Cases", initiative:"Use Case", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Omar Alsmadi", risk:"Delayed", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-43", name:"Microsoft Copilot Rollout in MoC", initiative:"Copilot Productivity", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:97, history:[h(0,97)], past:"", next:"", notes:"" },
+  { id:"WS-44", name:"Ad Hoc Requests", initiative:"Ad Hoc", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-45", name:"BRD", initiative:"BRD", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-46", name:"Risk Register", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:99, history:[h(0,99)], past:"", next:"", notes:"" },
+  { id:"WS-47", name:"D&T Progress & Updates Meetings", initiative:"PMO / Delivery Management", pillar:null, department:"Digital Transformation", workType:"Client Engagement", stage:"Monitor", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-48", name:"Presentations", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-49", name:"AI Strategy Team Follow ups", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-50", name:"AI Discovery Report - Draft Review", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-51", name:"AI Discovery Report - Final Submission", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-52", name:"DISCOVERY SIGN-OFF · Client Gate", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-53", name:"General AI Strategy Assessment activities", initiative:"AI Strategy Assessment", pillar:"P1", department:"Digital Transformation", workType:"Client Engagement", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:33, history:[h(0,33)], past:"", next:"", notes:"" }
 ];
 
 /* Rolling N-day lookback: finds the latest history snapshot at or before
@@ -1476,17 +1555,79 @@ function weeklyDelta(item){
    Mutable at runtime via the "+ Add Task" modal (in-memory only, demo mode).
    ===================================================================== */
 let TASKS_DATA = [
-  { id:"T-01", title:"Review strategic document draft with leadership", workstream:"Ministry Strategic Document", department:"PMO", assignee:TEAM_LEADS[0], status:"In Progress", risk:"On Track", priority:"Critical High", stage:"Monitor", tags:["strategy","leadership"], pct:70, due:daysFromToday(3), notes:"Awaiting leadership meeting date" },
-  { id:"T-02", title:"Summarize vision & mission workshop outputs", workstream:"Vision & Mission Workshop", department:"PMO", assignee:TEAM_LEADS[1], status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:["workshop"], pct:100, due:daysFromToday(-2), notes:"Delivered" },
-  { id:"T-03", title:"Prepare second draft of org structure", workstream:"Proposed Organizational Structure", department:"PMO", assignee:TEAM_LEADS[2], status:"In Progress", risk:"At Risk", priority:"Critical High", stage:"Analyze", tags:["structure"], pct:35, due:daysFromToday(-1), notes:"Behind the target date" },
-  { id:"T-04", title:"Align HR framework with org structure", workstream:"HR Operating Framework", department:"Human Resources - Operations", assignee:TEAM_LEADS[3], status:"Not Started", risk:"On Track", priority:"Medium", stage:"Analyze", tags:["HR"], pct:0, due:daysFromToday(10), notes:"" },
-  { id:"T-05", title:"Legal review of hiring policy", workstream:"Hiring & Recruitment Policy", department:"Human Resources - Recruitment", assignee:TEAM_LEADS[4], status:"In Progress", risk:"On Track", priority:"High", stage:"Monitor", tags:["legal","HR"], pct:55, due:daysFromToday(6), notes:"" },
-  { id:"T-06", title:"Collect financial data from departments", workstream:"Operating Financial Model", department:"Finance - Reporting", assignee:TEAM_LEADS[5], status:"Blocked", risk:"Delayed", priority:"Critical High", stage:"Analyze", tags:["finance"], pct:20, due:daysFromToday(-5), notes:"Awaiting central finance department" },
-  { id:"T-07", title:"Allocate budget across initial initiatives", workstream:"2026 Initial Initiatives Budget", department:"Finance - Revenue", assignee:TEAM_LEADS[0], status:"In Progress", risk:"On Track", priority:"High", stage:"Monitor", tags:["budget"], pct:70, due:daysFromToday(4), notes:"" },
-  { id:"T-08", title:"Prepare initial protection plan for heritage sites", workstream:"National Heritage Protection Program", department:"Heritage", assignee:TEAM_LEADS[1], status:"In Progress", risk:"On Track", priority:"High", stage:"Monitor", tags:["heritage"], pct:60, due:daysFromToday(12), notes:"" },
-  { id:"T-09", title:"Follow up on authority approval for classification guide", workstream:"Heritage Site Classification Guide", department:"Heritage", assignee:TEAM_LEADS[2], status:"Blocked", risk:"Blocked", priority:"Critical High", stage:"Analyze", tags:["heritage","approvals"], pct:15, due:daysFromToday(1), notes:"Blocked pending external party" },
-  { id:"T-10", title:"Build monthly content plan for communications", workstream:"Communications & Media Strategy", department:"Digital Transformation", assignee:TEAM_LEADS[3], status:"In Progress", risk:"On Track", priority:"Medium", stage:"Monitor", tags:["media"], pct:45, due:daysFromToday(8), notes:"" }
+  { id:"T-01", title:"Stakeholder interviews & discovery — Heritage focus area", workstream:"Stakeholder interviews & discovery", department:"Heritage", workType:"Client Engagement", assignee:"Mohammad Kaddoura", status:"Blocked", risk:"Delayed", priority:"Medium", stage:"Monitor", tags:[], pct:30, due:parseAnyDate("2026-05-03"), notes:"" },
+  { id:"T-02", title:"Stakeholder interviews & discovery — HR Training -  First Engagement", workstream:"Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-05-21"), notes:"" },
+  { id:"T-03", title:"Stakeholder interviews & discovery — HR  Recruitment - First Engagement", workstream:"Stakeholder interviews & discovery", department:"Human Resources - Recruitment", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-05-21"), notes:"" },
+  { id:"T-04", title:"Stakeholder interviews & discovery — HR Operations - First Engagement", workstream:"Stakeholder interviews & discovery", department:"Human Resources - Operations", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-05-24"), notes:"" },
+  { id:"T-05", title:"Stakeholder interviews & discovery — HR Operations -Demo", workstream:"Stakeholder interviews & discovery", department:"Human Resources - Operations", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-06-07"), notes:"" },
+  { id:"T-06", title:"Stakeholder interviews & discovery — HR Training -  Demo", workstream:"Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-06-08"), notes:"" },
+  { id:"T-07", title:"Stakeholder interviews & discovery — HR  Recruitment - Demo", workstream:"Stakeholder interviews & discovery", department:"Human Resources - Recruitment", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-06-08"), notes:"" },
+  { id:"T-08", title:"Stakeholder interviews & discovery — HR Operations - Second Engagement", workstream:"Stakeholder interviews & discovery", department:"Human Resources - Operations", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-06-15"), notes:"" },
+  { id:"T-09", title:"Stakeholder interviews & discovery — Finance Revenues - First Engagement", workstream:"Stakeholder interviews & discovery", department:"Finance - Revenue", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-06-17"), notes:"" },
+  { id:"T-10", title:"Infrastructure Capabilities", workstream:"Assess data readiness for AI solutions", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-06-21"), notes:"" },
+  { id:"T-11", title:"Stakeholder interviews & discovery — Finance Reporting - First Engagement", workstream:"Stakeholder interviews & discovery", department:"Finance - Reporting", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-06-21"), notes:"" },
+  { id:"T-12", title:"SAP AI Discussion", workstream:"Assess data readiness for AI solutions", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"Blocked", priority:"Critical High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-06-23"), notes:"" },
+  { id:"T-13", title:"Stakeholder interviews & discovery — Finance Reporting - Demo", workstream:"Stakeholder interviews & discovery", department:"Finance - Reporting", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-06-24"), notes:"" },
+  { id:"T-14", title:"Stakeholder interviews & discovery — HR  Recruitment - Second Demo", workstream:"Stakeholder interviews & discovery", department:"Human Resources - Recruitment", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-06-25"), notes:"" },
+  { id:"T-15", title:"Stakeholder interviews & discovery — PMO PMO - First Engagement", workstream:"Stakeholder interviews & discovery", department:"PMO", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-06-25"), notes:"" },
+  { id:"T-16", title:"Stakeholder interviews & discovery — RPA - First Engagement", workstream:"Stakeholder interviews & discovery", department:"Digital Transformation", workType:"Client Engagement", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-02"), notes:"" },
+  { id:"T-17", title:"AI Strategy - Updates & Blockers Meeting", workstream:"D&T Progress & Updates Meetings", department:"Digital Transformation", workType:"Client Engagement", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-07"), notes:"" },
+  { id:"T-18", title:"Meeting with Microsoft For Copilot", workstream:"Microsoft Copilot Rollout in MoC", department:"", workType:"Internal Delivery", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-07"), notes:"" },
+  { id:"T-19", title:"Discuss the new DT Strategy", workstream:"Assess data readiness for AI solutions", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-12"), notes:"" },
+  { id:"T-20", title:"MoC AI Enterprise Models with Microsoft", workstream:"Microsoft Copilot Rollout in MoC", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-16"), notes:"" },
+  { id:"T-21", title:"MoC AI Enterprise Models with DMO", workstream:"Assess data readiness for AI solutions", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-19"), notes:"" },
+  { id:"T-22", title:"Stakeholder - Workshop Closure - Finance", workstream:"Stakeholder interviews & discovery", department:"Finance - Revenue", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-20"), notes:"" },
+  { id:"T-23", title:"Stakeholder - Workshop Closure - HR Operations - First Meeting", workstream:"Stakeholder interviews & discovery", department:"Human Resources - Operations", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-21"), notes:"" },
+  { id:"T-24", title:"Stakeholder - Workshop Closure - HR Operations - Second Meeting", workstream:"Stakeholder interviews & discovery", department:"Human Resources - Operations", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-22"), notes:"" },
+  { id:"T-25", title:"Stakeholder - Workshop Closure - HR Recruitment", workstream:"Stakeholder interviews & discovery", department:"Human Resources - Recruitment", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-22"), notes:"" },
+  { id:"T-26", title:"Stakeholder interviews & discovery — Scholarship  - First Meeting", workstream:"Stakeholder interviews & discovery", department:"Cultural Scholarship", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"In Progress", risk:"On Track", priority:"Medium", stage:"Monitor", tags:[], pct:30, due:parseAnyDate("2026-07-23"), notes:"" },
+  { id:"T-27", title:"Stakeholder - Workshop Closure - HR Training", workstream:"Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-23"), notes:"" },
+  { id:"T-28", title:"Stakeholder interviews & discovery — PMO - Demo", workstream:"Stakeholder interviews & discovery", department:"Finance - Revenue", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-23"), notes:"" },
+  { id:"T-29", title:"Stakeholder interviews & discovery — Scholarships - Demo", workstream:"Stakeholder interviews & discovery", department:"Cultural Scholarship", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"In Progress", risk:"On Track", priority:"Medium", stage:"Monitor", tags:[], pct:50, due:parseAnyDate("2026-07-26"), notes:"" },
+  { id:"T-30", title:"Microsoft 365 Copilot - Pilot Planning & Alignment", workstream:"Microsoft Copilot Rollout in MoC", department:"", workType:"Internal Delivery", assignee:"Mohammad Kaddoura", status:"In Progress", risk:"On Track", priority:"Critical High", stage:"Plan", tags:[], pct:60, due:parseAnyDate("2026-07-27"), notes:"" },
+  { id:"T-31", title:"Stakeholder interviews & discovery — PMO BA - First Meeting", workstream:"Stakeholder interviews & discovery", department:"Finance - Revenue", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-28"), notes:"" },
+  { id:"T-32", title:"Meeting with MS Partner to discuss the prerequisites and the copilot free trial", workstream:"Microsoft Copilot Rollout in MoC", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-29"), notes:"" },
+  { id:"T-33", title:"Meeting with CS regarding copilot approval", workstream:"Microsoft Copilot Rollout in MoC", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-29"), notes:"" },
+  { id:"T-34", title:"Meeting with infra team regarding Copilot Licencing", workstream:"Microsoft Copilot Rollout in MoC", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-29"), notes:"" },
+  { id:"T-35", title:"Update the Copilot rollout plan", workstream:"Microsoft Copilot Rollout in MoC", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-29"), notes:"" },
+  { id:"T-36", title:"Prepare the executive-plan presentation of Copliot", workstream:"Microsoft Copilot Rollout in MoC", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-29"), notes:"" },
+  { id:"T-37", title:"Stakeholder interviews & discovery — PMO BA - Second Meeting", workstream:"Stakeholder interviews & discovery", department:"Finance - Revenue", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-29"), notes:"" },
+  { id:"T-38", title:"Stakeholder - Workshop Closure - PMO BA", workstream:"Stakeholder interviews & discovery", department:"Finance - Revenue", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-29"), notes:"" },
+  { id:"T-39", title:"Stakeholder - Workshop Closure - PMO PMO", workstream:"Stakeholder interviews & discovery", department:"Finance - Revenue", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-29"), notes:"" },
+  { id:"T-40", title:"Meeting with Mahmoud and Abu Basheer to discuss the meeting with Sara tomorrow", workstream:"Microsoft Copilot Rollout in MoC", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-30"), notes:"" },
+  { id:"T-41", title:"Change the executive-plan presentation of Copliot to the ministry format", workstream:"Microsoft Copilot Rollout in MoC", department:"", workType:"Internal Delivery", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-31"), notes:"" },
+  { id:"T-42", title:"Meeting with Sara to explain and discuss the copilot plan and challenges", workstream:"Microsoft Copilot Rollout in MoC", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-31"), notes:"" },
+  { id:"T-43", title:"Meeting with Sara to explain and discuss the copilot plan and challenges", workstream:"Microsoft Copilot Rollout in MoC", department:"", workType:"Internal Delivery", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-31"), notes:"" },
+  { id:"T-44", title:"Review PMO-PMO discovery report", workstream:"AI Strategy Team Follow ups", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-07-31"), notes:"" },
+  { id:"T-45", title:"Discuss the PMO report notes with Yasin", workstream:"AI Strategy Team Follow ups", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-08-03"), notes:"" },
+  { id:"T-47", title:"Establish KPI framework & success metrics (5-pillar aligned)", workstream:"Define metrics of value for the organization", department:"", workType:"Internal Delivery", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-08-06"), notes:"" },
+  { id:"T-48", title:"Assess AI providers, models & platforms; compare deployment, KSA data residency, security, interoperability, TCO & vendor lock-in", workstream:"Inventory & classify critical data assets", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-08-06"), notes:"" },
+  { id:"T-49", title:"AI Discovery Report — ↑K review with Kaddoura before client submission", workstream:"Measure & capture data on value of each use case", department:"", workType:"Internal Delivery", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"Critical High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-08-06"), notes:"" },
+  { id:"T-50", title:"Prepare the phase 1 presentation", workstream:"Presentations", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:parseAnyDate("2026-08-09"), notes:"" },
+  { id:"T-51", title:"Weekly client status meeting — facilitate, minutes & action log", workstream:"Stakeholder interviews & discovery", department:"Digital Transformation", workType:"Client Engagement", assignee:"Mahmoud Abukhamseh", status:"In Progress", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:50, due:parseAnyDate("2026-11-30"), notes:"" },
+  { id:"T-52", title:"Inventory AI-relevant structured/unstructured data sources & governed access/integration paths across MoC (SAP, DWH, SharePoint/FileOrbis, APIs, files)", workstream:"Assess data readiness for AI solutions", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:null, notes:"" },
+  { id:"T-53", title:"Assess EA, application, integration & hosting landscape; identify AI architecture constraints, reusable services & dependencies", workstream:"Identify compliance gaps & regulatory exposure", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:null, notes:"" },
+  { id:"T-54", title:"Assess AI infrastructure & operations readiness: compute, container platform, model serving, RAG/vector capabilities, CI/CD, MLOps/LLMOps, observability & support", workstream:"Assess data readiness for AI solutions", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:null, notes:"" },
+  { id:"T-55", title:"Assess workforce AI skills gaps across MoC departments", workstream:"Assess workforce AI skills gaps", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:null, notes:"" },
+  { id:"T-56", title:"Talent landscape review & benchmarking", workstream:"Talent landscape review & benchmarking", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:null, notes:"" },
+  { id:"T-57", title:"Identify & capture Cyber Security requirements and gaps", workstream:"Identify & capture Cyber Security requirements and gaps", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:null, notes:"" },
+  { id:"T-58", title:"Identify compliance gaps & regulatory exposure", workstream:"Identify compliance gaps & regulatory exposure", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"In Progress", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:0, due:null, notes:"" },
+  { id:"T-59", title:"Build Risk Register (political, data, legal, procurement, delivery), Update it", workstream:"Risk Register", department:"", workType:"Internal Delivery", assignee:"Mahmoud Abukhamseh", status:"In Progress", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:99, due:parseAnyDate("2026-08-06"), notes:"" },
+  { id:"T-60", title:"Define metrics of value for the organization (per focus area)", workstream:"General AI Strategy Assessment activities", department:"", workType:"Internal Delivery", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:null, notes:"" },
+  { id:"T-61", title:"Measure & capture baseline data on value of each use case", workstream:"Capture Use Cases", department:"", workType:"Internal Delivery", assignee:"Omar Alsmadi", status:"In Progress", risk:"Delayed", priority:"High", stage:"Monitor", tags:[], pct:0, due:null, notes:"" },
+  { id:"T-62", title:"Measure & capture baseline data on value of each use case", workstream:"Capture Use Cases", department:"", workType:"Internal Delivery", assignee:"Yaseen Alquraan", status:"In Progress", risk:"Delayed", priority:"High", stage:"Monitor", tags:[], pct:0, due:null, notes:"" },
+  { id:"T-63", title:"Workshop Closure — Heritage session", workstream:"Stakeholder interviews & discovery", department:"Heritage", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"In Progress", risk:"Delayed", priority:"Medium", stage:"Monitor", tags:[], pct:0, due:null, notes:"" },
+  { id:"T-64", title:"Workshop Closure — PMO", workstream:"Stakeholder interviews & discovery", department:"PMO", workType:"Client Engagement", assignee:"Yaseen Alquraan", status:"In Progress", risk:"Delayed", priority:"Medium", stage:"Monitor", tags:[], pct:0, due:null, notes:"" },
+  { id:"T-65", title:"Workshop agenda, materials & pre-reads — Cultulral Scholarship", workstream:"Stakeholder interviews & discovery", department:"Cultural Scholarship", workType:"Client Engagement", assignee:"Omar Alsmadi", status:"In Progress", risk:"Delayed", priority:"Medium", stage:"Monitor", tags:[], pct:0, due:null, notes:"" },
+  { id:"T-66", title:"AI Discovery Report — compile & draft", workstream:"General AI Strategy Assessment activities", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:100, due:null, notes:"" },
+  { id:"T-67", title:"DISCOVERY SIGN-OFF · Client Gate", workstream:"General AI Strategy Assessment activities", department:"Digital Transformation", workType:"Client Engagement", assignee:"Mohammad Kaddoura", status:"In Progress", risk:"On Track", priority:"Critical High", stage:"Monitor", tags:[], pct:0, due:null, notes:"" },
+  { id:"T-68", title:"Rectify the notes on the scoring sheet of the AI maturity", workstream:"Map & prioritize use case portfolio", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"In Progress", risk:"On Track", priority:"High", stage:"Analyze", tags:[], pct:80, due:null, notes:"" },
+  { id:"T-69", title:"Prepare the AI maturity report for phase 2", workstream:"Define AI vision & ambition statement", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"In Progress", risk:"On Track", priority:"High", stage:"Analyze", tags:[], pct:0, due:null, notes:"" },
+  { id:"T-70", title:"Prepare the target state of AI maturity/enablement", workstream:"General AI Strategy Assessment activities", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"In Progress", risk:"On Track", priority:"High", stage:"Analyze", tags:[], pct:0, due:null, notes:"" },
+  { id:"T-71", title:"Prepare the technical operating model", workstream:"General AI Strategy Assessment activities", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"In Progress", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:0, due:null, notes:"" },
+  { id:"T-72", title:"Prepare the full AI strategy", workstream:"General AI Strategy Assessment activities", department:"", workType:"Internal Delivery", assignee:"Salah Assi", status:"In Progress", risk:"On Track", priority:"High", stage:"Monitor", tags:[], pct:0, due:null, notes:"" }
 ];
+
 let taskIdCounter = TASKS_DATA.length + 1;
 
 /* =====================================================================
@@ -1672,12 +1813,14 @@ function avg(arr){ return arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.l
 function badge(risk){ return `<span class="badge ${RISK_CLASS[risk]}">${risk}</span>`; }
 function progressBar(pct){ return `<div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>`; }
 function fmtDate(d){
+  if(!d) return '—';
   const day = d.getDate();
   const month = d.toLocaleDateString('en-US',{month:'short'});
   const year = d.getFullYear();
   return `${day} ${month} ${year}`;
 }
 function daysLeftBadge(due, isDone){
+  if(!due) return `<span style="color:var(--muted);font-size:12px;">No due date</span>`;
   const dateStr = fmtDate(due);
   if(isDone) return `<span style="color:var(--muted);font-size:12px;">${dateStr}</span>`;
   const today = new Date(); today.setHours(0,0,0,0);
@@ -1690,6 +1833,7 @@ function daysLeftBadge(due, isDone){
   return `<div><span style="color:${color};font-weight:700;font-size:12px;">${label}</span></div><div style="color:var(--muted);font-size:10px;">${dateStr}</div>`;
 }
 function daysLeftBadgeShort(due, isDone){
+  if(!due) return 'No due date';
   if(isDone) return fmtDate(due);
   const today = new Date(); today.setHours(0,0,0,0);
   const diffDays = Math.round((due - today)/86400000);
@@ -1879,7 +2023,7 @@ function sparklineSVG(history, {width=120, height=32, color=null, strokeWidth=2}
 function buildInitiativeDetailHTML(idx){
   const item = MOC_DATA[idx];
   const linkedTasks = TASKS_DATA.filter(t=>t.workstream===item.name);
-  const linkedRisks = RISK_REGISTER_DATA.filter(r=>r.initiative===item.name);
+  const linkedRisks = RISK_REGISTER_DATA.filter(r=>r.initiative===item.initiative);
 
   // Activity log
   const actHTML = item.activities && item.activities.length
@@ -1902,15 +2046,15 @@ function buildInitiativeDetailHTML(idx){
     <div class="modal-head">
       <div>
         <h3>${escapeHtml(item.name)}</h3>
-        <p class="modal-sub">${escapeHtml(item.department)} &nbsp;·&nbsp; <span class="badge stage">${escapeHtml(item.stage)}</span></p>
+        <p class="modal-sub">${escapeHtml(item.initiative||'—')}${item.pillar?` &nbsp;·&nbsp; ${item.pillar} — ${escapeHtml(PILLAR_NAME_BY_CODE[item.pillar]||'')}`:''} &nbsp;·&nbsp; <span class="badge stage">${escapeHtml(item.stage)}</span>${item.department?` &nbsp;·&nbsp; ${escapeHtml(item.department)}`:''}</p>
       </div>
       <button class="modal-close-x" onclick="closeDetailModal()">✕</button>
     </div>
     <div class="modal-body">
       <div class="detail-stat-grid">
-        <div class="stat-box"><div class="stat-lbl">Status</div><div class="stat-val">${badge(item.risk)}</div></div>
-        <div class="stat-box"><div class="stat-lbl">Progress</div><div class="stat-val" style="font-size:18px;">${item.pct}%</div></div>
-        <div class="stat-box"><div class="stat-lbl">Lead</div><div class="stat-val" style="font-size:13px;">${escapeHtml(item.lead)}</div></div>
+        <div class="stat-box"><div class="stat-lbl">Risk</div><div class="stat-val">${badge(item.risk)}</div></div>
+        <div class="stat-box"><div class="stat-lbl">WS Progress</div><div class="stat-val" style="font-size:18px;">${item.pct}%</div></div>
+        <div class="stat-box"><div class="stat-lbl">Assignee</div><div class="stat-val" style="font-size:13px;">${escapeHtml(item.lead)}</div></div>
         <div class="stat-box"><div class="stat-lbl">7-Day Change</div><div class="stat-val">${deltaBadgeHTML(item)}</div></div>
       </div>
       <div class="progress-wrap" style="width:100%;height:10px;margin-bottom:18px;"><div class="progress-bar" style="width:${item.pct}%"></div></div>
@@ -1928,7 +2072,7 @@ function buildInitiativeDetailHTML(idx){
           </div>`).join('') : '<p class="note">No linked tasks yet.</p>'}
       </div>
       ${(()=>{
-        const linkedRisks2 = RISK_REGISTER_DATA.filter(r=>r.initiative===item.name);
+        const linkedRisks2 = RISK_REGISTER_DATA.filter(r=>r.initiative===item.initiative);
         if(!linkedRisks2.length) return '';
         return `<div class="detail-section">
           <h4>Risk Register (${linkedRisks2.length})</h4>
@@ -1939,7 +2083,7 @@ function buildInitiativeDetailHTML(idx){
         </div>`;
       })()}
       <div class="modal-actions">
-        <button class="btn secondary" onclick="editInitFromDetail('${item.name.replace(/'/g,"\'")}')">✏️ Edit Initiative</button>
+        <button class="btn secondary" onclick="editInitFromDetail('${item.name.replace(/'/g,"\'")}')">✏️ Edit Workstream</button>
         <button class="btn secondary" onclick="duplicateInit('${item.name.replace(/'/g,"\'")}')">📋 Duplicate</button>
       </div>
     </div>
@@ -2041,7 +2185,7 @@ function computeHealthScore(){
   const onTrackCount = MOC_DATA.filter(i=>i.risk==='On Track').length;
   const onTrackRatio = MOC_DATA.length ? onTrackCount/MOC_DATA.length : 0;
   const today = new Date(); today.setHours(0,0,0,0);
-  const overdueTasks = TASKS_DATA.filter(t=>t.due<today && t.status!=='Completed').length;
+  const overdueTasks = TASKS_DATA.filter(t=>t.due&&t.due<today && t.status!=='Completed').length;
   const overdueRatio = TASKS_DATA.length ? overdueTasks/TASKS_DATA.length : 0;
   const raw = avgProgress*0.6 + onTrackRatio*100*0.3 + (1-overdueRatio)*100*0.1;
   return {
@@ -2059,7 +2203,7 @@ function renderHealthBanner(){
   const h = computeHealthScore();
   const lbl = healthLabel(h.score);
   const today = new Date(); today.setHours(0,0,0,0);
-  const overdueCount = TASKS_DATA.filter(t=>t.due<today && t.status!=='Completed').length;
+  const overdueCount = TASKS_DATA.filter(t=>t.due&&t.due<today && t.status!=='Completed').length;
   $('#healthScoreBanner').innerHTML = `
     <div class="health-banner">
       <div class="hb-score-wrap">
@@ -2074,6 +2218,48 @@ function renderHealthBanner(){
           <div><b>${Math.round(h.onTrackRatio*100)}%</b>Initiatives on track</div>
           <div><b>${overdueCount}</b>Overdue tasks</div>
         </div>
+      </div>
+    </div>
+  `;
+}
+
+/* =====================================================================
+   TWO PROGRESS NUMBERS — one headline metric always misleads one of the
+   two audiences here. Tested on the real data: averaging every workstream
+   (including the ~35 that haven't started because we're still in Monitor)
+   gives ~27%; averaging only the workstreams that have tasks gives ~82%.
+   Neither alone is honest, so both are shown together (decision D3).
+   ===================================================================== */
+function activeScopeProgress(){
+  // Portfolio-wide: every workstream, across every initiative, that has at
+  // least one linked task. Answers "how is the team doing on what's
+  // actually underway?" — excludes future scope that hasn't started yet.
+  const withTasks = MOC_DATA.filter(i => TASKS_DATA.some(t=>t.workstream===i.name));
+  return withTasks.length ? avg(withTasks.map(i=>i.pct)) : 0;
+}
+function engagementCompletionProgress(){
+  // Scoped to the AI Strategy Assessment initiative only (the MAPE
+  // engagement), across ALL its workstreams — unstarted ones count as 0.
+  // Answers "how far through the whole engagement are we?"
+  const scoped = MOC_DATA.filter(i => i.initiative === 'AI Strategy Assessment');
+  return scoped.length ? avg(scoped.map(i=>i.pct)) : 0;
+}
+function renderScopeProgressBanner(){
+  const el = $('#scopeProgressBanner');
+  if(!el) return;
+  const active = activeScopeProgress();
+  const engagement = engagementCompletionProgress();
+  el.innerHTML = `
+    <div class="row" style="gap:12px;margin:12px 0;">
+      <div class="card" style="flex:1;min-width:220px;">
+        <div class="stat-lbl">Active scope progress</div>
+        <div class="stat-val" style="font-size:28px;">${active}%</div>
+        <p style="font-size:12px;color:var(--muted);margin:4px 0 0;">Workstreams with at least one task underway. How the team is doing on active work.</p>
+      </div>
+      <div class="card" style="flex:1;min-width:220px;">
+        <div class="stat-lbl">Engagement completion</div>
+        <div class="stat-val" style="font-size:28px;">${engagement}%</div>
+        <p style="font-size:12px;color:var(--muted);margin:4px 0 0;">All AI Strategy Assessment workstreams, unstarted counted as 0. How far through the full engagement.</p>
       </div>
     </div>
   `;
@@ -2115,11 +2301,33 @@ const DEPT_CHART_LABEL = {
 };
 
 function renderDeptBarChart(){
-  const rows = DEPARTMENTS.map((dep,i)=>{
-    const items = MOC_DATA.filter(x=>x.department===dep);
-    return { dep, avgPct: avg(items.map(x=>x.pct)), color: DEPT_COLORS[i % DEPT_COLORS.length] };
+  // Department is looked up from TASKS first (tasks have real dept data).
+  // For each dept: avg pct of completed tasks / total tasks.
+  const DEPTS_IN_USE = DEPARTMENTS.filter(dep =>
+    TASKS_DATA.some(t=>t.department===dep)
+  );
+
+  const rows = DEPTS_IN_USE.map((dep, i)=>{
+    const dTasks = TASKS_DATA.filter(t=>t.department===dep);
+    const done   = dTasks.filter(t=>t.status==='Completed').length;
+    const pct    = dTasks.length ? Math.round(done/dTasks.length*100) : 0;
+    return { dep, pct, total: dTasks.length, done, color: DEPT_COLORS[DEPARTMENTS.indexOf(dep) % DEPT_COLORS.length] };
   });
+
   const yTicks = [100,90,80,70,60,50,40,30,20,10,0];
+  const barsHTML = rows.map(r=>`
+    <div class="dept-bar-col">
+      <div class="dept-bar-rect"
+        style="height:${Math.max(r.pct,r.pct>0?0:0)}%;background:${r.color};"
+        title="${r.dep}: ${r.done} of ${r.total} tasks completed (${r.pct}%)">
+        ${r.pct>8?`<span class="bar-val">${r.pct}%</span>`:''}
+      </div>
+    </div>`).join('');
+
+  const xHTML = rows.map(r=>
+    `<span title="${r.dep} — ${r.done}/${r.total} tasks">${DEPT_CHART_LABEL[r.dep]||r.dep}</span>`
+  ).join('');
+
   $('#deptBarChart').innerHTML = `
     <div class="dept-chart-row">
       <div class="dept-chart-yaxis">
@@ -2127,28 +2335,20 @@ function renderDeptBarChart(){
       </div>
       <div class="dept-chart-plot">
         ${yTicks.map(t=>`<div class="dept-chart-gridline" style="top:${100-t}%;"></div>`).join('')}
-        <div class="dept-chart-bars">
-          ${rows.map(r=>`
-            <div class="dept-bar-col">
-              <div class="dept-bar-rect" style="height:${r.avgPct}%;background:${r.color};">
-                <span class="bar-val">${r.avgPct}%</span>
-              </div>
-            </div>
-          `).join('')}
-        </div>
+        <div class="dept-chart-bars">${barsHTML}</div>
       </div>
     </div>
-    <div class="dept-chart-xaxis">
-      ${rows.map(r=>`<span title="${r.dep}">${DEPT_CHART_LABEL[r.dep]||r.dep}</span>`).join('')}
-    </div>
+    <div class="dept-chart-xaxis">${xHTML}</div>
+    <p style="font-size:11px;color:var(--muted);margin:6px 0 0 38px;">
+      % of tasks completed per department. Hover any bar for details.</p>
   `;
 }
 
 function renderStageDonut(){
   const STAGE_COLOR_CYCLE = ['var(--green)','var(--blue)','var(--purple)','var(--amber)','var(--pink)','var(--navy)'];
   const stageColors = {};
-  ENGAGEMENT_STAGES.forEach((s,i)=>{ stageColors[s] = STAGE_COLOR_CYCLE[i % STAGE_COLOR_CYCLE.length]; });
-  const segments = ENGAGEMENT_STAGES.map(s=>({
+  FRAMEWORK_STAGES.forEach((s,i)=>{ stageColors[s] = STAGE_COLOR_CYCLE[i % STAGE_COLOR_CYCLE.length]; });
+  const segments = FRAMEWORK_STAGES.map(s=>({
     label:s, value: MOC_DATA.filter(i=>i.stage===s).length, color: stageColors[s]
   }));
   $('#stageDonutChart').innerHTML = `<div class="donut-row">
@@ -2341,13 +2541,22 @@ window.openMapeTaskDetail = function(idx){ openDetailModal(buildMapeTaskDetailHT
    RENDER: Overview
    ===================================================================== */
 function renderOvDeptCards(){
-  const deptsInUse = [...new Set(TASKS_DATA.map(t=>t.department))];
+  // Only real MoC departments — internal/advisory work (blank department)
+  // is shown separately below via the Work Type row, not mixed in here.
+  // See decision D5: Department used to double as "who's doing the work
+  // internally", which buried the 9 real departments under one giant bar.
+  const deptsInUse = [...new Set(TASKS_DATA.map(t=>t.department).filter(Boolean))];
   $('#ovDeptRow').innerHTML = deptsInUse.map(d=>`
     <div class="dept-tile">
       <div class="dt-name">${d}</div>
       <div class="dt-num">${TASKS_DATA.filter(t=>t.department===d).length}</div>
     </div>
-  `).join('');
+  `).join('') + `
+    <div class="dept-tile" style="opacity:.7;">
+      <div class="dt-name">Internal / advisory (no MoC department)</div>
+      <div class="dt-num">${TASKS_DATA.filter(t=>!t.department).length}</div>
+    </div>
+  `;
 }
 
 function renderOvStatusCards(){
@@ -2361,7 +2570,7 @@ function renderOvStatusCards(){
 }
 
 function renderOvDeptDonut(){
-  const deptsInUse = [...new Set(TASKS_DATA.map(t=>t.department))];
+  const deptsInUse = [...new Set(TASKS_DATA.map(t=>t.department).filter(Boolean))];
   const segments = deptsInUse.map((d,i)=>({
     label:d, value: TASKS_DATA.filter(t=>t.department===d).length, color: DEPT_COLORS[i % DEPT_COLORS.length]
   }));
@@ -2413,14 +2622,15 @@ function renderOvOwnerWorkload(){
 function renderExecSummary(){
   const h = computeHealthScore();
   const lbl = healthLabel(h.score);
-  const deptsCovered = new Set(MOC_DATA.map(i=>i.department)).size;
+  const deptsCovered = new Set(MOC_DATA.map(i=>i.department).filter(Boolean)).size;
   const today = new Date(); today.setHours(0,0,0,0);
-  const overdueCount = TASKS_DATA.filter(t=>t.due<today && t.status!=='Completed').length;
+  const overdueCount = TASKS_DATA.filter(t=>t.due&&t.due<today && t.status!=='Completed').length;
+  const active = activeScopeProgress();
   $('#execSummary').innerHTML = `
     <div class="exec-summary">
       <span class="es-icon">📌</span>
-      <span><b>${MOC_DATA.length} initiatives</b> across <b>${deptsCovered} department${deptsCovered===1?'':'s'}</b>,
-      average progress <b>${Math.round(h.avgProgress)}%</b>, <b>${overdueCount} overdue task${overdueCount===1?'':'s'}</b> —
+      <span><b>${MOC_DATA.length} workstreams</b> across <b>${deptsCovered} MoC department${deptsCovered===1?'':'s'}</b>,
+      active-scope progress <b>${active}%</b>, <b>${overdueCount} overdue task${overdueCount===1?'':'s'}</b> —
       portfolio health: <b style="color:${lbl.color==='var(--green)'?'#00845A':lbl.color==='var(--amber)'?'#E88B00':'#C0392B'};">${lbl.text}</b>.</span>
     </div>
   `;
@@ -2429,6 +2639,7 @@ function renderExecSummary(){
 function renderOverview(){
   renderExecSummary();
   renderHealthBanner();
+  renderScopeProgressBanner();
   renderOvDeptCards();
   renderOvStatusCards();
   renderDeptBarChart();
@@ -2461,20 +2672,22 @@ function renderWorkstreamsTable(){
     });
   }
   const cols = [
-    {key:'workstreamGroup', label:'Workstream'},
-    {key:'name', label:'Initiative'}, {key:'department', label:'Department'},
-    {key:'stage', label:'Stage'}, {key:null, label:'Lead'}, {key:'risk', label:'Status'},
-    {key:'pct', label:'Progress'}, {key:null, label:'Trend'}, {key:null, label:'Last Update'}, {key:null, label:'Next Step'}
+    {key:'initiative', label:'Initiative'},
+    {key:'name', label:'Workstream'}, {key:'pillar', label:'Pillar'}, {key:'department', label:'Department'},
+    {key:'stage', label:'Framework Stage'}, {key:'lead', label:'Assignee'}, {key:'risk', label:'Risk'},
+    {key:'pct', label:'WS Progress'}, {key:null, label:'Trend'}, {key:null, label:'Last Update'}, {key:null, label:'Next Step'}
   ];
   $('#wsTable').innerHTML = `
-    <tr>${cols.map(col=>`<th class="${col.key?'sortable':''}" data-sort="${col.key||''}" style="${col.key==='workstreamGroup'?'min-width:150px;':''}">${col.label}${wsSortKey===col.key?`<span class="sort-arrow">${wsSortDir===1?'▲':'▼'}</span>`:''}</th>`).join('')}</tr>
+    <tr>${cols.map(col=>`<th class="${col.key?'sortable':''}" data-sort="${col.key||''}" style="${col.key==='name'?'min-width:180px;':''}">${col.label}${wsSortKey===col.key?`<span class="sort-arrow">${wsSortDir===1?'▲':'▼'}</span>`:''}</th>`).join('')}</tr>
     ${rows.map(i=>{
       const idx = MOC_DATA.indexOf(i);
+      const pillarLabel = i.pillar ? `${i.pillar} · ${PILLAR_NAME_BY_CODE[i.pillar]||''}` : '—';
       return `
       <tr data-idx="${idx}">
-        <td style="font-weight:600;color:var(--navy2);">${i.workstreamGroup||'—'}</td>
+        <td style="font-weight:600;color:var(--navy2);">${i.initiative||'—'}</td>
         <td><b>${i.name}</b>${i.notes?`<div style="font-size:11px;color:var(--muted);">${i.notes}</div>`:''}</td>
-        <td>${i.department}</td>
+        <td style="font-size:12px;" title="${pillarLabel}">${i.pillar||'—'}</td>
+        <td>${i.department||'<span style="color:var(--muted);">—</span>'}</td>
         <td><span class="badge stage">${i.stage}</span></td>
         <td>${i.lead}</td>
         <td>${badge(i.risk)}</td>
@@ -2505,7 +2718,7 @@ function renderDepartments(){
   $('#deptGrid').innerHTML = DEPARTMENTS.map(dep=>{
     const items = MOC_DATA.filter(i=>i.department===dep);
     return `<div class="dept-col">
-      <h4><span class="dept-name">${dep}</span><span class="dept-count">${items.length} initiative${items.length===1?'':'s'}</span></h4>
+      <h4><span class="dept-name">${dep}</span><span class="dept-count">${items.length} workstream${items.length===1?'':'s'}</span></h4>
       ${items.map(i=>{
         const idx = MOC_DATA.indexOf(i);
         return `
@@ -2514,9 +2727,9 @@ function renderDepartments(){
           <div class="row" style="gap:6px;margin-bottom:4px;">${badge(i.risk)}<span class="badge stage">${i.stage}</span></div>
           <div class="dept-pct">${i.pct}%</div>
           <div style="margin-bottom:6px;">${progressBar(i.pct)}</div>
-          <div class="init-meta">Lead: ${i.lead}</div>
+          <div class="init-meta">Assignee: ${i.lead}</div>
         </div>
-      `;}).join('') || `<p style="color:var(--muted);font-size:12.5px;margin:8px 0 0;">No initiatives registered yet.</p>`}
+      `;}).join('') || `<p style="color:var(--muted);font-size:12.5px;margin:8px 0 0;">No workstreams tied to a single department here — many span several departments; see the workstream's linked tasks for the breakdown.</p>`}
     </div>`;
   }).join('');
   $$('#deptGrid .init-card').forEach(card=>{
@@ -2645,7 +2858,7 @@ function renderTimeline(){
     const color = DEPT_COLORS[DEPARTMENTS.indexOf(dep) % DEPT_COLORS.length];
     return `
       <div class="tl-swimlane">
-        <div class="tl-dept-label"><span>${dep}</span><span style="font-weight:400;color:var(--muted);">${items.length} initiative${items.length===1?'':'s'} · avg ${avg(items.map(i=>i.pct))}%</span></div>
+        <div class="tl-dept-label"><span>${dep}</span><span style="font-weight:400;color:var(--muted);">${items.length} workstream${items.length===1?'':'s'} · avg ${avg(items.map(i=>i.pct))}%</span></div>
         ${items.map(i=>{
           const idx = MOC_DATA.indexOf(i);
           return `
@@ -2701,7 +2914,8 @@ function buildReportText(){
   const todayStr = fmtDate(new Date());
   const currentWeek = getCurrentMapeWeek();
   const totalInit = MOC_DATA.length;
-  const overallPct = avg(MOC_DATA.map(i=>i.pct));
+  const activeScopePct = activeScopeProgress();
+  const engagementPct = engagementCompletionProgress();
   const onTrackCount = MOC_DATA.filter(i=>i.risk==='On Track').length;
   const RISK_STRIP_COLORS = {"On Track":"var(--green)","At Risk":"var(--amber)","Delayed":"var(--red)","Blocked":"var(--pink)"};
 
@@ -2713,34 +2927,34 @@ function buildReportText(){
   if(atRiskCount) riskBits.push(`${atRiskCount} At Risk`);
   if(delayedCount) riskBits.push(`${delayedCount} Delayed`);
   if(blockedCount) riskBits.push(`${blockedCount} Blocked`);
-  const riskSummary = riskBits.length ? riskBits.join(', ') : 'no initiatives currently flagged';
+  const riskSummary = riskBits.length ? riskBits.join(', ') : 'no workstreams currently flagged';
   const topMover = MOC_DATA.filter(i=>weeklyDelta(i)!==0).sort((a,b)=>Math.abs(weeklyDelta(b))-Math.abs(weeklyDelta(a)))[0];
   const topMoverLine = topMover
     ? `The biggest mover this week was <b>${topMover.name}</b>, which ${weeklyDelta(topMover)>0?'advanced':'dropped'} from ${getPctDaysAgo(topMover,7)}% to <b>${topMover.pct}%</b> (${weeklyDelta(topMover)>0?'+':''}${weeklyDelta(topMover)}%).`
-    : 'No initiative moved this week.';
+    : 'No workstream moved this week.';
 
   const leadIn = `
     <p class="lead-line">Dear Team,</p>
     <p class="lead-line">Please find the updated Executive Progress Report for <b>${todayStr}</b>.</p>
     <h2 class="report-h2">EXECUTIVE SUMMARY</h2>
     <ul class="report-ul">
-      <li>As of today, the portfolio is at <b style="color:var(--pink);">${overallPct}%</b> average completion across <b>${totalInit}</b> initiatives, with <b style="color:var(--green);">${onTrackCount} of ${totalInit}</b> On Track.</li>
+      <li>Active scope progress is <b style="color:var(--pink);">${activeScopePct}%</b> across the <b>${MOC_DATA.filter(i=>TASKS_DATA.some(t=>t.workstream===i.name)).length}</b> workstreams currently underway, with <b style="color:var(--green);">${onTrackCount} of ${totalInit}</b> On Track. Engagement completion (all AI Strategy Assessment workstreams, including scope not yet started) stands at <b>${engagementPct}%</b>.</li>
       <li>${topMoverLine}</li>
       <li>Risk profile: <b>${riskSummary}</b> (see Reporting Workstream table below for details).</li>
       <li>MAPE delivery is currently in <b>Week ${currentWeek} of ${MAPE_TOTAL_WEEKS}</b> (see MAPE section below).</li>
     </ul>
   `;
 
-  // ---- ZONE A: initiatives table only (banner / KPI cards / risk strips removed —
+  // ---- ZONE A: workstreams table only (banner / KPI cards / risk strips removed —
   //      this tab is text-only so it pastes cleanly into an email) ----
   const zoneA = `
-    <h2 class="report-h2">REPORTING WORKSTREAM — ALL ${totalInit} INITIATIVES</h2>
+    <h2 class="report-h2">REPORTING WORKSTREAM — ALL ${totalInit} WORKSTREAMS</h2>
     <table class="report-table">
       <thead>
-        <tr><th>Workstream</th><th>Department</th><th>Initiative</th><th>% Complete</th><th>Stage</th><th>Risk</th></tr>
+        <tr><th>Initiative</th><th>Department</th><th>Workstream</th><th>% Complete</th><th>Framework Stage</th><th>Risk</th></tr>
       </thead>
       <tbody>
-        ${MOC_DATA.map(i=>`<tr><td>${i.workstreamGroup||'—'}</td><td>${i.department}</td><td><b>${i.name}</b></td><td><b>${i.pct}%</b></td><td>${i.stage}</td><td>${i.risk}</td></tr>`).join('')}
+        ${MOC_DATA.map(i=>`<tr><td>${i.initiative||'—'}</td><td>${i.department||'—'}</td><td><b>${i.name}</b></td><td><b>${i.pct}%</b></td><td>${i.stage}</td><td>${i.risk}</td></tr>`).join('')}
       </tbody>
     </table>
   `;
@@ -2858,7 +3072,7 @@ function buildReportText(){
 
       <h3 class="report-h3">الملخص التنفيذي</h3>
       <ul class="report-ul">
-        <li>حتى تاريخه، تبلغ نسبة الإنجاز الإجمالية للمحفظة <b style="color:var(--pink);">${overallPct}%</b> عبر <b>${totalInit}</b> مبادرة، مع <b style="color:var(--green);">${onTrackCount} من ${totalInit}</b> على المسار الصحيح.</li>
+        <li>تبلغ نسبة إنجاز النطاق النشط <b style="color:var(--pink);">${activeScopePct}%</b> عبر مسارات العمل الجارية حالياً، مع <b style="color:var(--green);">${onTrackCount} من ${totalInit}</b> على المسار الصحيح. أما نسبة إنجاز الالتزام الكامل (كل مسارات تقييم استراتيجية الذكاء الاصطناعي، بما فيها ما لم يبدأ بعد) فتبلغ <b>${engagementPct}%</b>.</li>
         <li>${topMoverLineAr}</li>
         <li>ملف المخاطر: <b>${riskSummaryAr}</b> (التفاصيل ضمن جدول تقرير Reporting Workstream أعلاه).</li>
         <li>يمر تنفيذ إطار MAPE حالياً بـ<b>الأسبوع ${currentWeek} من ${MAPE_TOTAL_WEEKS}</b>.</li>
@@ -2967,7 +3181,8 @@ function buildReportWordHTML(){
   const todayStr = fmtDate(new Date());
   const currentWeek = getCurrentMapeWeek();
   const totalInit = MOC_DATA.length;
-  const overallPct = avg(MOC_DATA.map(i=>i.pct));
+  const activeScopePct = activeScopeProgress();
+  const engagementPct = engagementCompletionProgress();
   const onTrackCount = MOC_DATA.filter(i=>i.risk==='On Track').length;
 
   const atRiskCount = MOC_DATA.filter(i=>i.risk==='At Risk').length;
@@ -2981,24 +3196,24 @@ function buildReportWordHTML(){
   const topMover = MOC_DATA.filter(i=>weeklyDelta(i)!==0).sort((a,b)=>Math.abs(weeklyDelta(b))-Math.abs(weeklyDelta(a)))[0];
   const topMoverLine = topMover
     ? `The biggest mover this week was <b>${topMover.name}</b>, which ${weeklyDelta(topMover)>0?'advanced':'dropped'} from <b style="color:${c.green};">${getPctDaysAgo(topMover,7)}% to ${topMover.pct}%</b> (${weeklyDelta(topMover)>0?'+':''}${weeklyDelta(topMover)}%).`
-    : 'No initiative moved this week.';
+    : 'No workstream moved this week.';
 
   // Word export is text-only — screenshot placeholders replaced by real content.
   // Word does not render CSS grid/flex or CSS variables, so tables + literal hex are used.
   const wordTable = () => `
-    <h2 class="report-h2">REPORTING WORKSTREAM — ALL ${totalInit} INITIATIVES</h2>
+    <h2 class="report-h2">REPORTING WORKSTREAM — ALL ${totalInit} WORKSTREAMS</h2>
     <table cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;font-size:10pt;margin:8px 0 16px;">
       <tr style="background:${c.bg};">
-        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Workstream</th>
-        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Department</th>
         <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Initiative</th>
+        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Department</th>
+        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Workstream</th>
         <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">% Complete</th>
-        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Stage</th>
+        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Framework Stage</th>
         <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Risk</th>
       </tr>
       ${MOC_DATA.map(i=>`<tr>
-        <td style="border:1px solid ${c.border};">${i.workstreamGroup||'—'}</td>
-        <td style="border:1px solid ${c.border};">${i.department}</td>
+        <td style="border:1px solid ${c.border};">${i.initiative||'—'}</td>
+        <td style="border:1px solid ${c.border};">${i.department||'—'}</td>
         <td style="border:1px solid ${c.border};"><b>${i.name}</b></td>
         <td style="border:1px solid ${c.border};"><b>${i.pct}%</b></td>
         <td style="border:1px solid ${c.border};">${i.stage}</td>
@@ -3112,7 +3327,7 @@ function buildReportWordHTML(){
       <p class="lead-line">يرجى الاطلاع على تقرير التقدم التنفيذي المحدّث بتاريخ <b>${todayStrAr}</b>.</p>
       <h3 class="report-h3" style="text-align:right;">الملخص التنفيذي</h3>
       <ul class="report-ul" style="margin-right:22px;margin-left:0;">
-        <li>حتى تاريخه، تبلغ نسبة الإنجاز الإجمالية للمحفظة <b style="color:${c.green};">${overallPct}%</b> عبر ${totalInit} مبادرة، مع <b style="color:${c.green};">${onTrackCount} من ${totalInit}</b> على المسار الصحيح.</li>
+        <li>تبلغ نسبة إنجاز النطاق النشط <b style="color:${c.green};">${activeScopePct}%</b> عبر مسارات العمل الجارية حالياً، مع <b style="color:${c.green};">${onTrackCount} من ${totalInit}</b> على المسار الصحيح. أما نسبة إنجاز الالتزام الكامل فتبلغ <b>${engagementPct}%</b>.</li>
         <li>${topMoverLineAr}</li>
         <li>ملف المخاطر: <b>${riskSummaryAr}</b> (التفاصيل ضمن تقرير المبادرات حسب الإدارة أدناه).</li>
       </ul>
@@ -3136,7 +3351,7 @@ function buildReportWordHTML(){
     <p class="lead-line">Please find the updated Executive Progress Report for <b>${todayStr}</b>.</p>
     <h2 class="report-h2">EXECUTIVE SUMMARY</h2>
     <ul class="report-ul">
-      <li>As of today, the portfolio is at <b style="color:${c.green};">${overallPct}%</b> average completion across ${totalInit} initiatives, with <b style="color:${c.green};">${onTrackCount} of ${totalInit}</b> On Track.</li>
+      <li>Active scope progress is <b style="color:${c.green};">${activeScopePct}%</b> across the workstreams currently underway, with <b style="color:${c.green};">${onTrackCount} of ${totalInit}</b> On Track. Engagement completion stands at <b>${engagementPct}%</b>.</li>
       <li>${topMoverLine}</li>
       <li>Risk profile: <b>${riskSummary}</b> (see Reporting Workstream — Narrative below for details).</li>
       <li>MAPE delivery is currently in <b>Week ${currentWeek} of ${MAPE_TOTAL_WEEKS}</b>.</li>
@@ -3264,9 +3479,9 @@ function renderTeamLens(){
     const doneTasks = tasks.filter(t=>t.status==='Completed').length;
     return `<div class="team-card" data-lead="${escapeHtml(lead)}">
       <div class="name">${lead}</div>
-      <div class="stat"><span>Initiatives owned</span><b>${owned.length}</b></div>
+      <div class="stat"><span>Workstreams owned</span><b>${owned.length}</b></div>
       <div class="stat"><span>Average progress</span><b>${avgPct}%</b></div>
-      <div class="stat"><span>Initiatives at risk</span><b>${atRiskCount}</b></div>
+      <div class="stat"><span>Workstreams at risk</span><b>${atRiskCount}</b></div>
       <div class="stat"><span>Tasks (done/total)</span><b>${doneTasks}/${tasks.length}</b></div>
     </div>`;
   }).join('');
@@ -3285,12 +3500,12 @@ function renderPivot(){
     <div class="zone-hotspot"></div><button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
     <div class="shot-target">
     <h2 class="view-title">Pivot</h2>
-    <p class="view-sub">Group initiatives by the selected dimension.</p>
+    <p class="view-sub">Group workstreams by the selected dimension.</p>
     <div class="filters">
       <select id="pivotDim">
-        <option value="lead">Lead</option>
+        <option value="lead">Assignee</option>
         <option value="department">Department</option>
-        <option value="stage">Stage</option>
+        <option value="stage">Framework Stage</option>
         <option value="risk">Risk</option>
       </select>
     </div>
@@ -3302,13 +3517,13 @@ function renderPivot(){
     const dim = dimSel.value;
     const groups = {};
     MOC_DATA.forEach(i=>{
-      const key = i[dim];
+      const key = i[dim] || '—';
       if(!groups[key]) groups[key] = [];
       groups[key].push(i);
     });
-    const dimLabel = {lead:'Lead', department:'Department', stage:'Stage', risk:'Risk'}[dim];
+    const dimLabel = {lead:'Assignee', department:'Department', stage:'Framework Stage', risk:'Risk'}[dim];
     el.querySelector('#pivotTable').innerHTML = `
-      <tr><th>${dimLabel}</th><th>Initiative Count</th><th>Avg Progress</th><th>At Risk</th></tr>
+      <tr><th>${dimLabel}</th><th>Workstream Count</th><th>Avg Progress</th><th>At Risk</th></tr>
       ${Object.entries(groups).map(([key,items])=>`
         <tr>
           <td><b>${dim==='risk'?badge(key):key}</b></td>
@@ -3334,8 +3549,8 @@ function renderAlerts(){
   const atRisk = MOC_DATA.filter(i=>i.risk==='At Risk');
   const delayed = MOC_DATA.filter(i=>i.risk==='Delayed');
   const noProgress = MOC_DATA.filter(i=>weeklyDelta(i)===0);
-  const pastTarget = TASKS_DATA.filter(t=>t.due<today && t.status!=='Completed');
-  const dueSoon = TASKS_DATA.filter(t=>t.due>=today && t.due<=in14 && t.status!=='Completed');
+  const pastTarget = TASKS_DATA.filter(t=>t.due&&t.due<today && t.status!=='Completed');
+  const dueSoon = TASKS_DATA.filter(t=>t.due&&t.due>=today && t.due<=in14 && t.status!=='Completed');
 
   el.classList.add('report-zone');
   el.innerHTML = `
@@ -3894,7 +4109,7 @@ let editingTaskId = null; // null = Add mode, otherwise the task.id being edited
 
 function openTaskModal(taskToEdit){
   fillSelect('#f_department', DEPARTMENTS);
-  fillSelect('#f_stage', ENGAGEMENT_STAGES);
+  fillSelect('#f_stage', FRAMEWORK_STAGES);
   fillSelect('#f_status', TASK_STATUSES);
   fillSelect('#f_risk', RISK_LEVELS);
   fillSelect('#f_priority', PRIORITIES);
@@ -4010,20 +4225,26 @@ let editingInitName = null; // null = Add mode, otherwise the initiative.name be
 
 function openInitModal(initToEdit){
   fillSelect('#i_department', DEPARTMENTS);
-  fillSelect('#i_stage', ENGAGEMENT_STAGES);
+  fillSelect('#i_workType', WORK_TYPES);
+  fillSelect('#i_stage', FRAMEWORK_STAGES);
   fillSelect('#i_lead', TEAM_LEADS);
   fillSelect('#i_risk', RISK_LEVELS);
-  fillSelect('#i_workstreamGroup', WORKSTREAM_GROUPS);
+  fillSelect('#i_workstreamGroup', INITIATIVES);
+  const pillarSel = $('#i_pillar');
+  pillarSel.innerHTML = '<option value="">— none —</option>' +
+    PILLARS.map(p=>`<option value="${p.code}">${p.code} — ${p.name}</option>`).join('');
 
   if(initToEdit){
     editingInitName = initToEdit.name;
-    $('#initModalTitle').textContent = 'Edit Initiative';
+    $('#initModalTitle').textContent = 'Edit Workstream';
     $('#initModalSub').textContent = 'Demo mode: changes update the in-memory list only — nothing is saved to a server yet.';
     $('#saveInitBtn').textContent = 'Save Changes';
     $('#deleteInitBtn').style.display = window._fbIsAdmin ? 'inline-block' : 'none';
     $('#i_name').value = initToEdit.name;
-    $('#i_workstreamGroup').value = initToEdit.workstreamGroup || WORKSTREAM_GROUPS[0];
-    $('#i_department').value = initToEdit.department;
+    $('#i_workstreamGroup').value = initToEdit.initiative || INITIATIVES[0];
+    $('#i_pillar').value = initToEdit.pillar || '';
+    $('#i_department').value = initToEdit.department || '';
+    $('#i_workType').value = initToEdit.workType || WORK_TYPES[0];
     $('#i_stage').value = initToEdit.stage;
     $('#i_lead').value = initToEdit.lead;
     $('#i_risk').value = initToEdit.risk;
@@ -4033,11 +4254,12 @@ function openInitModal(initToEdit){
     $('#i_notes').value = initToEdit.notes || '';
   } else {
     editingInitName = null;
-    $('#initModalTitle').textContent = 'New Initiative';
+    $('#initModalTitle').textContent = 'New Workstream';
     $('#initModalSub').textContent = 'Demo mode: this only adds to the in-memory list below — nothing is saved to a server yet.';
-    $('#saveInitBtn').textContent = 'Add Initiative';
+    $('#saveInitBtn').textContent = 'Add Workstream';
     $('#deleteInitBtn').style.display = 'none';
     ['i_name','i_past','i_next','i_notes'].forEach(id=>$('#'+id).value='');
+    $('#i_pillar').value = '';
     $('#i_pct').value = 0;
   }
   $('#initModalOverlay').classList.add('open');
@@ -4064,8 +4286,8 @@ $('#saveInitBtn').onclick = ()=>{
         : existing.history;
       MOC_DATA[idx] = {
         ...existing, name,
-        workstreamGroup: $('#i_workstreamGroup').value,
-        department: $('#i_department').value, stage: $('#i_stage').value,
+        initiative: $('#i_workstreamGroup').value, pillar: $('#i_pillar').value || null,
+        department: $('#i_department').value, workType: $('#i_workType').value, stage: $('#i_stage').value,
         lead: $('#i_lead').value, risk: $('#i_risk').value, pct,
         past: $('#i_past').value.trim(), next: $('#i_next').value.trim(),
         notes: $('#i_notes').value.trim(), history
@@ -4074,8 +4296,8 @@ $('#saveInitBtn').onclick = ()=>{
     closeDetailModal();
   } else {
     MOC_DATA.push({
-      name, workstreamGroup: $('#i_workstreamGroup').value,
-      department: $('#i_department').value, stage: $('#i_stage').value,
+      name, initiative: $('#i_workstreamGroup').value, pillar: $('#i_pillar').value || null,
+      department: $('#i_department').value, workType: $('#i_workType').value, stage: $('#i_stage').value,
       lead: $('#i_lead').value, risk: $('#i_risk').value, pct,
       history: [{date: daysFromToday(-7), pct}, {date: daysFromToday(0), pct}],
       past: $('#i_past').value.trim(), next: $('#i_next').value.trim(),
@@ -4405,43 +4627,54 @@ $('#printBtn').addEventListener('click', ()=>{
 function exportAllDataToExcel(){
   const wb = XLSX.utils.book_new();
 
-  // Workstreams
+  // Workstreams — ID / Initiative / Pillar / Workstream Name, matching the
+  // real Initiative -> Workstream -> Task hierarchy (see project notes).
   const wsRows = MOC_DATA.map((i,idx)=>({
-    ID: 'WS-'+String(idx+1).padStart(2,'0'),
-    Workstream: i.workstreamGroup||'',
-    'Initiative Name': i.name,
-    Department: i.department,
-    'Engagement Stage': i.stage,
-    Lead: i.lead,
-    'Risk Status': i.risk,
-    'Progress %': i.pct,
+    ID: i.id || ('WS-'+String(idx+1).padStart(2,'0')),
+    Initiative: i.initiative||'',
+    Pillar: i.pillar||'',
+    'Workstream Name': i.name,
+    Department: i.department||'',
+    'Work Type': i.workType||'',
+    'Framework Stage': i.stage,
+    Assignee: i.lead,
+    Risk: i.risk,
+    'WS Progress %': i.pct,
     'Last Accomplishment': i.past,
     'Next Step': i.next,
     Notes: i.notes
   }));
   const wsSheet = XLSX.utils.json_to_sheet(wsRows);
-  wsSheet['!cols'] = [{wch:8},{wch:34},{wch:26},{wch:22},{wch:20},{wch:12},{wch:34},{wch:34},{wch:30}];
+  wsSheet['!cols'] = [{wch:8},{wch:24},{wch:8},{wch:40},{wch:26},{wch:16},{wch:16},{wch:20},{wch:12},{wch:12},{wch:34},{wch:34},{wch:30}];
   XLSX.utils.book_append_sheet(wb, wsSheet, 'Workstreams');
 
-  // Progress History
+  // Progress History — split into Framework Stage / Pillar / Workstream Name
+  // (3 columns instead of 1) so it pivots cleanly. Weekly snapshots are taken
+  // at the workstream grain — see MOC_Dashboard_Notes.md section on Weekly
+  // Delta for why. NOTE: history currently holds only today's snapshot for
+  // every row, since the Final PM Sheet's own Progress History tab was empty
+  // — this needs a manual weekly backfill before deltas mean anything.
   const histRows = [];
   MOC_DATA.forEach(i=>{
     (i.history||[]).forEach(h=>{
-      histRows.push({ 'Initiative Name': i.name, Date: fmtDate(h.date), 'Progress %': h.pct });
+      histRows.push({
+        'Framework Stage': i.stage, Pillar: i.pillar||'', 'Workstream Name': i.name,
+        Date: fmtDate(h.date), 'History Progress %': h.pct
+      });
     });
   });
   const histSheet = XLSX.utils.json_to_sheet(histRows);
-  histSheet['!cols'] = [{wch:34},{wch:14},{wch:12}];
+  histSheet['!cols'] = [{wch:16},{wch:8},{wch:40},{wch:14},{wch:16}];
   XLSX.utils.book_append_sheet(wb, histSheet, 'Progress History');
 
   // Tasks
   const taskRows = TASKS_DATA.map(t=>({
     'Task ID': t.id, Title: t.title, Description: t.description||'', 'Related Workstream': t.workstream, Department: t.department,
-    Assignee: t.assignee, Status: t.status, Risk: t.risk, Priority: t.priority, 'Engagement Stage': t.stage,
-    Tags: t.tags.join(', '), 'Progress %': t.pct, 'Due Date': fmtDate(t.due), Notes: t.notes
+    'Work Type': t.workType||'', Assignee: t.assignee, 'Task Status': t.status, Risk: t.risk, Priority: t.priority, 'Framework Stage': t.stage,
+    Tags: t.tags.join(', '), 'Task Progress %': t.pct, 'Due Date': fmtDate(t.due), Notes: t.notes
   }));
   const taskSheet = XLSX.utils.json_to_sheet(taskRows);
-  taskSheet['!cols'] = [{wch:8},{wch:34},{wch:26},{wch:20},{wch:18},{wch:13},{wch:11},{wch:9},{wch:20},{wch:18},{wch:11},{wch:12},{wch:28}];
+  taskSheet['!cols'] = [{wch:8},{wch:34},{wch:26},{wch:20},{wch:18},{wch:16},{wch:18},{wch:13},{wch:11},{wch:9},{wch:20},{wch:18},{wch:15},{wch:12},{wch:28}];
   XLSX.utils.book_append_sheet(wb, taskSheet, 'Tasks');
 
   // Risk Register
@@ -4479,18 +4712,21 @@ function exportAllDataToExcel(){
   XLSX.utils.book_append_sheet(wb, mapeSheet, 'MAPE Tasks');
 
   // Lists (central config reference)
-  const maxLen = Math.max(DEPARTMENTS.length, ENGAGEMENT_STAGES.length, RISK_LEVELS.length,
-    PRIORITIES.length, TASK_STATUSES.length, RISK_CATEGORIES.length, IMPACT_LEVELS.length, REGISTER_STATUSES.length);
+  const pillarLabels = PILLARS.map(p=>`${p.code} — ${p.name}`);
+  const maxLen = Math.max(DEPARTMENTS.length, INITIATIVES.length, pillarLabels.length, FRAMEWORK_STAGES.length,
+    WORK_TYPES.length, RISK_LEVELS.length, PRIORITIES.length, TASK_STATUSES.length, RISK_CATEGORIES.length,
+    IMPACT_LEVELS.length, REGISTER_STATUSES.length);
   const listsRows = [];
   for(let i=0;i<maxLen;i++){
     listsRows.push({
-      Departments: DEPARTMENTS[i]||'', 'Engagement Stages': ENGAGEMENT_STAGES[i]||'', 'Risk Levels': RISK_LEVELS[i]||'',
+      Departments: DEPARTMENTS[i]||'', Initiatives: INITIATIVES[i]||'', Pillars: pillarLabels[i]||'',
+      'Framework Stages': FRAMEWORK_STAGES[i]||'', 'Work Types': WORK_TYPES[i]||'', 'Risk Levels': RISK_LEVELS[i]||'',
       Priorities: PRIORITIES[i]||'', 'Task Statuses': TASK_STATUSES[i]||'', 'Risk Categories': RISK_CATEGORIES[i]||'',
       'Impact Levels': IMPACT_LEVELS[i]||'', 'Register Statuses': REGISTER_STATUSES[i]||''
     });
   }
   const listsSheet = XLSX.utils.json_to_sheet(listsRows);
-  listsSheet['!cols'] = [{wch:22},{wch:22},{wch:14},{wch:11},{wch:15},{wch:30},{wch:13},{wch:17}];
+  listsSheet['!cols'] = [{wch:22},{wch:24},{wch:34},{wch:16},{wch:16},{wch:14},{wch:11},{wch:15},{wch:30},{wch:13},{wch:17}];
   XLSX.utils.book_append_sheet(wb, listsSheet, 'Lists');
 
   const dateStr = fmtDate(new Date()).replace(/ /g,'_');
@@ -4551,28 +4787,36 @@ $('#importFileInput').addEventListener('change', (e)=>{
         + `(MAPE Tasks are not affected by import.)\n\nContinue?`;
       if(!confirm(summary)){ e.target.value=''; return; }
 
-      // --- Progress History, grouped by initiative name ---
+      // --- Progress History, grouped by workstream name. Accepts both the
+      // current 'Workstream Name' header and the old 'Initiative Name'
+      // header (pre-restructure workbooks) for back-compat. ---
       const historyByName = {};
       histRows.forEach(r=>{
-        const name = r['Initiative Name'];
+        const name = r['Workstream Name'] || r['Initiative Name'];
         if(!name) return;
         if(!historyByName[name]) historyByName[name] = [];
-        historyByName[name].push({ date: parseAnyDate(r['Date']), pct: Number(r['Progress %'])||0 });
+        const pct = Number(r['History Progress %'] ?? r['Progress %']) || 0;
+        historyByName[name].push({ date: parseAnyDate(r['Date']), pct });
       });
       Object.values(historyByName).forEach(h=> h.sort((a,b)=>a.date-b.date));
 
-      // --- Workstreams -> MOC_DATA ---
+      // --- Workstreams -> MOC_DATA. Accepts current headers (Workstream
+      // Name / Initiative / Framework Stage / Assignee / Risk / WS Progress
+      // %) with fallback to the old headers for back-compat. ---
       if(wsRows.length){
         MOC_DATA = wsRows.map(r=>{
-          const name = r['Initiative Name'] || 'Untitled Initiative';
-          const pct = Number(r['Progress %'])||0;
+          const name = r['Workstream Name'] || r['Initiative Name'] || 'Untitled Workstream';
+          const pct = Number(r['WS Progress %'] ?? r['Progress %']) || 0;
           const history = historyByName[name] && historyByName[name].length
             ? historyByName[name]
-            : [{date:daysFromToday(-7), pct}, {date:daysFromToday(0), pct}];
+            : [{date:daysFromToday(0), pct}];
           return {
-            name, workstreamGroup: r['Workstream']||WORKSTREAM_GROUPS[0],
-            department: r['Department']||DEPARTMENTS[0], stage: r['Engagement Stage']||ENGAGEMENT_STAGES[0],
-            lead: r['Lead']||TEAM_LEADS[0], risk: r['Risk Status']||'On Track', pct,
+            id: r['ID']||undefined,
+            name, initiative: r['Initiative'] || r['Workstream'] || INITIATIVES[0],
+            pillar: r['Pillar'] || null,
+            department: r['Department']||'', workType: r['Work Type']||WORK_TYPES[0],
+            stage: r['Framework Stage'] || r['Engagement Stage'] || FRAMEWORK_STAGES[0],
+            lead: r['Assignee'] || r['Lead'] || TEAM_LEADS[0], risk: r['Risk'] || r['Risk Status'] || 'On Track', pct,
             history, past: r['Last Accomplishment']||'', next: r['Next Step']||'', notes: r['Notes']||''
           };
         });
@@ -4585,14 +4829,15 @@ $('#importFileInput').addEventListener('change', (e)=>{
           title: r['Title']||'Untitled Task',
           description: r['Description']||'',
           workstream: r['Related Workstream']||'—',
-          department: r['Department']||DEPARTMENTS[0],
+          department: r['Department']||'',
+          workType: r['Work Type']||WORK_TYPES[0],
           assignee: r['Assignee']||TEAM_LEADS[0],
-          status: r['Status']||TASK_STATUSES[0],
+          status: r['Task Status'] || r['Status'] || TASK_STATUSES[0],
           risk: r['Risk']||'On Track',
           priority: r['Priority']||PRIORITIES[0],
-          stage: r['Engagement Stage']||ENGAGEMENT_STAGES[0],
+          stage: r['Framework Stage'] || r['Engagement Stage'] || FRAMEWORK_STAGES[0],
           tags: String(r['Tags']||'').split(',').map(t=>t.trim()).filter(Boolean),
-          pct: Number(r['Progress %'])||0,
+          pct: Number(r['Task Progress %'] ?? r['Progress %']) || 0,
           due: parseAnyDate(r['Due Date']),
           notes: r['Notes']||''
         }));
@@ -4821,21 +5066,22 @@ window.aiDraftField = async function(btn, type, lang){
   btn.textContent = '⏳ Drafting…';
 
   // Build data snapshot
-  const overallPct = Math.round(MOC_DATA.reduce((s,i)=>s+i.pct,0)/MOC_DATA.length);
+  const activeScopePct = activeScopeProgress();
+  const engagementPct = engagementCompletionProgress();
   const onTrack   = MOC_DATA.filter(i=>i.risk==='On Track');
   const atRisk    = MOC_DATA.filter(i=>i.risk==='At Risk');
   const delayed   = MOC_DATA.filter(i=>i.risk==='Delayed');
   const blocked   = MOC_DATA.filter(i=>i.risk==='Blocked');
-  const movers    = MOC_DATA.filter(i=>i.pct !== i.pctLastWeek).map(i=>({name:i.name,from:i.pctLastWeek,to:i.pct,delta:i.pct-i.pctLastWeek})).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
+  const movers    = MOC_DATA.filter(i=>weeklyDelta(i)!==0).map(i=>({name:i.name,from:getPctDaysAgo(i,7),to:i.pct,delta:weeklyDelta(i)})).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
   const openTasks = TASKS_DATA.filter(t=>t.status!=='Completed');
   const overdue   = TASKS_DATA.filter(t=>t.due && new Date(t.due)<new Date() && t.status!=='Completed');
 
   const snapshot = `
 Ministry of Culture (MOC) — Weekly Portfolio Snapshot
-Overall Progress: ${overallPct}%
-Initiatives: ${MOC_DATA.length} total | On Track: ${onTrack.length} | At Risk: ${atRisk.length} | Delayed: ${delayed.length} | Blocked: ${blocked.length}
-Blocked initiatives: ${blocked.map(i=>`${i.name} (${i.pct}%, Lead: ${i.lead}${i.notes?', Note: '+i.notes:''})`).join('; ') || 'None'}
-At Risk: ${atRisk.map(i=>`${i.name} (${i.pct}%, Lead: ${i.lead}${i.notes?', Note: '+i.notes:''})`).join('; ') || 'None'}
+Active Scope Progress: ${activeScopePct}% | Engagement Completion: ${engagementPct}%
+Workstreams: ${MOC_DATA.length} total | On Track: ${onTrack.length} | At Risk: ${atRisk.length} | Delayed: ${delayed.length} | Blocked: ${blocked.length}
+Blocked workstreams: ${blocked.map(i=>`${i.name} (${i.pct}%, Assignee: ${i.lead}${i.notes?', Note: '+i.notes:''})`).join('; ') || 'None'}
+At Risk: ${atRisk.map(i=>`${i.name} (${i.pct}%, Assignee: ${i.lead}${i.notes?', Note: '+i.notes:''})`).join('; ') || 'None'}
 This week's movers: ${movers.slice(0,5).map(m=>`${m.name} ${m.delta>0?'+':''}${m.delta}% (${m.from}%→${m.to}%)`).join('; ') || 'No movement'}
 Open tasks: ${openTasks.length} | Overdue: ${overdue.length}
 Next steps (sample): ${MOC_DATA.filter(i=>i.next).slice(0,4).map(i=>`${i.name}: ${i.next}`).join('; ')}
