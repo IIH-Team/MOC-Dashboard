@@ -1491,7 +1491,7 @@ let MOC_DATA = [
   { id:"WS-07", name:"Identify & capture Cyber Security requirements and gaps", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
   { id:"WS-08", name:"Identify compliance gaps & regulatory exposure", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:50, history:[h(0,50)], past:"", next:"", notes:"" },
   { id:"WS-09", name:"Define metrics of value for the organization", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Mohammad Kaddoura", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-10", name:"Measure & capture data on value of each use case", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Mohammad Kaddoura", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-10", name:"Measure & capture data on value of each use case", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Mohammad Kaddoura", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
   { id:"WS-11", name:"Map & prioritize use case portfolio", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:80, history:[h(0,80)], past:"", next:"", notes:"" },
   { id:"WS-12", name:"Define AI vision & ambition statement", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-13", name:"ready data foundation strategy", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
@@ -1522,9 +1522,9 @@ let MOC_DATA = [
   { id:"WS-38", name:"Establish AI Ethics Board & meeting cadence", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-39", name:"time execution monitoring to validate impact", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-40", name:"Deploy live impact dashboards & report to stakeholders", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-41", name:"Application Migration", initiative:"Cultural Universe", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-41", name:"Application Migration", initiative:"Cultural Universe", pillar:null, department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-42", name:"Capture Use Cases", initiative:"Use Case", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Omar Alsmadi", risk:"Delayed", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-43", name:"Microsoft Copilot Rollout in MoC", initiative:"Copilot Productivity", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:97, history:[h(0,97)], past:"", next:"", notes:"" },
+  { id:"WS-43", name:"Microsoft Copilot Rollout in MoC", initiative:"Copilot Productivity", pillar:null, department:"", workType:"Internal Delivery", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:97, history:[h(0,97)], past:"", next:"", notes:"" },
   { id:"WS-44", name:"Ad Hoc Requests", initiative:"Ad Hoc", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-45", name:"BRD", initiative:"BRD", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-46", name:"Risk Register", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:99, history:[h(0,99)], past:"", next:"", notes:"" },
@@ -1719,75 +1719,75 @@ const MAPE_OWNER_MAP = {
 // gateWeek / escalateWeek mark a single-week ▲ or ↑K event, when present.
 let MAPE_TASKS = [
   // ---- MONITOR ----
-  { title:"AI maturity baseline assessment", owner:"Omar", pillar:"P1", phase:"Monitor", activeWeeks:[2,6] },
-  { title:"Stakeholder interviews & discovery — HR Vacations", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[2,6] },
-  { title:"Stakeholder interviews & discovery — HR Recruitment", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[2,6] },
-  { title:"Stakeholder interviews & discovery — HR Training", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[2,6] },
-  { title:"Stakeholder interviews & discovery — Finance focus area", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[3,5] },
-  { title:"Stakeholder interviews & discovery — Heritage focus area", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[3,4] },
-  { title:"Stakeholder interviews & discovery — SAP Team", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[3,4] },
-  { title:"Weekly client status meeting — facilitate, minutes & action log", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[1,12] },
-  { title:"Establish KPI framework & success metrics (5-pillar aligned)", owner:"Kaddoura", pillar:"P1", phase:"Monitor", activeWeeks:[1,1] },
-  { title:"AI agent providers assessment", owner:"Salah", pillar:"P1", phase:"Monitor", activeWeeks:[1,3] },
-  { title:"Identify data sources across systems in MOC", owner:"Salah", pillar:"P2", phase:"Monitor", activeWeeks:[1,4] },
-  { title:"Architecture & infrastructure landscape scoping", owner:"Salah", pillar:"P2", phase:"Monitor", activeWeeks:[1,4] },
-  { title:"Identify & capture MOC infrastructure's team readiness and gaps", owner:"Salah", pillar:"P3", phase:"Monitor", activeWeeks:[3,4] },
-  { title:"Assess workforce AI skills gaps across MoC departments", owner:"Omar", pillar:"P3", phase:"Monitor", activeWeeks:[2,6] },
-  { title:"Talent landscape review & benchmarking", owner:"Omar", pillar:"P3", phase:"Monitor", activeWeeks:[3,6] },
-  { title:"Identify & capture Cyber Security requirements and gaps", owner:"Salah", pillar:"P4", phase:"Monitor", activeWeeks:[5,6] },
-  { title:"Identify compliance gaps & regulatory exposure", owner:"Omar", pillar:"P4", phase:"Monitor", activeWeeks:[3,6] },
-  { title:"Build Risk Register (political, data, legal, procurement, delivery)", owner:"Mahmoud", pillar:"P4", phase:"Monitor", activeWeeks:[4,6] },
-  { title:"Define metrics of value for the organization (per focus area)", owner:"Omar", pillar:"P5", phase:"Monitor", activeWeeks:[2,6] },
-  { title:"Measure & capture baseline data on value of each use case", owner:"Omar", pillar:"P5", phase:"Monitor", activeWeeks:[4,6] },
-  { title:"Workshop agenda, materials & pre-reads — HR session", owner:"Omar", pillar:"P1", phase:"Monitor", activeWeeks:[2,6] },
-  { title:"Workshop agenda, materials & pre-reads — Finance session", owner:"Yaseen", pillar:"P1", phase:"Monitor", activeWeeks:[4,6] },
-  { title:"Workshop agenda, materials & pre-reads — Heritage session", owner:"Omar", pillar:"P1", phase:"Monitor", activeWeeks:[5,7] },
-  { title:"AI Discovery Report — compile & draft", owner:"Omar", pillar:"P1/P2", phase:"Monitor", activeWeeks:[4,8] },
-  { title:"AI Discovery Report — ↑K review with Kaddoura before client submission", owner:"Kaddoura", pillar:"P1/P2", phase:"Monitor", activeWeeks:[0,0], escalateWeek:5 },
-  { title:"DISCOVERY SIGN-OFF · Client Gate", owner:"—", pillar:"Gate", phase:"Monitor", activeWeeks:[0,0], gateWeek:6, isGate:true },
+  { title:"AI maturity baseline assessment", owner:"Omar", pillar:"P1", phase:"Monitor", activeWeeks:[2,6], ledBy:"IIH" },
+  { title:"Stakeholder interviews & discovery — HR Vacations", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[2,6], ledBy:"IIH" },
+  { title:"Stakeholder interviews & discovery — HR Recruitment", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[2,6], ledBy:"IIH" },
+  { title:"Stakeholder interviews & discovery — HR Training", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[2,6], ledBy:"IIH" },
+  { title:"Stakeholder interviews & discovery — Finance focus area", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[3,5], ledBy:"IIH" },
+  { title:"Stakeholder interviews & discovery — Heritage focus area", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[3,4], ledBy:"IIH" },
+  { title:"Stakeholder interviews & discovery — SAP Team", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[3,4], ledBy:"IIH" },
+  { title:"Weekly client status meeting — facilitate, minutes & action log", owner:"Mahmoud", pillar:"P1", phase:"Monitor", activeWeeks:[1,12], ledBy:"IIH" },
+  { title:"Establish KPI framework & success metrics (5-pillar aligned)", owner:"Kaddoura", pillar:"P1", phase:"Monitor", activeWeeks:[1,1], ledBy:"IIH" },
+  { title:"AI agent providers assessment", owner:"Salah", pillar:"P1", phase:"Monitor", activeWeeks:[1,3], ledBy:"IIH" },
+  { title:"Identify data sources across systems in MOC", owner:"Salah", pillar:"P2", phase:"Monitor", activeWeeks:[1,4], ledBy:"IIH" },
+  { title:"Architecture & infrastructure landscape scoping", owner:"Salah", pillar:"P2", phase:"Monitor", activeWeeks:[1,4], ledBy:"IIH" },
+  { title:"Identify & capture MOC infrastructure's team readiness and gaps", owner:"Salah", pillar:"P3", phase:"Monitor", activeWeeks:[3,4], ledBy:"IIH" },
+  { title:"Assess workforce AI skills gaps across MoC departments", owner:"Omar", pillar:"P3", phase:"Monitor", activeWeeks:[2,6], ledBy:"IIH" },
+  { title:"Talent landscape review & benchmarking", owner:"Omar", pillar:"P3", phase:"Monitor", activeWeeks:[3,6], ledBy:"IIH" },
+  { title:"Identify & capture Cyber Security requirements and gaps", owner:"Salah", pillar:"P4", phase:"Monitor", activeWeeks:[5,6], ledBy:"IIH" },
+  { title:"Identify compliance gaps & regulatory exposure", owner:"Omar", pillar:"P4", phase:"Monitor", activeWeeks:[3,6], ledBy:"IIH" },
+  { title:"Build Risk Register (political, data, legal, procurement, delivery)", owner:"Mahmoud", pillar:"P4", phase:"Monitor", activeWeeks:[4,6], ledBy:"IIH" },
+  { title:"Define metrics of value for the organization (per focus area)", owner:"Omar", pillar:"P5", phase:"Monitor", activeWeeks:[2,6], ledBy:"IIH" },
+  { title:"Measure & capture baseline data on value of each use case", owner:"Omar", pillar:"P5", phase:"Monitor", activeWeeks:[4,6], ledBy:"IIH" },
+  { title:"Workshop agenda, materials & pre-reads — HR session", owner:"Omar", pillar:"P1", phase:"Monitor", activeWeeks:[2,6], ledBy:"IIH" },
+  { title:"Workshop agenda, materials & pre-reads — Finance session", owner:"Yaseen", pillar:"P1", phase:"Monitor", activeWeeks:[4,6], ledBy:"IIH" },
+  { title:"Workshop agenda, materials & pre-reads — Heritage session", owner:"Omar", pillar:"P1", phase:"Monitor", activeWeeks:[5,7], ledBy:"IIH" },
+  { title:"AI Discovery Report — compile & draft", owner:"Omar", pillar:"P1/P2", phase:"Monitor", activeWeeks:[4,8], ledBy:"IIH" },
+  { title:"AI Discovery Report — ↑K review with Kaddoura before client submission", owner:"Kaddoura", pillar:"P1/P2", phase:"Monitor", activeWeeks:[0,0], escalateWeek:5, ledBy:"IIH" },
+  { title:"DISCOVERY SIGN-OFF · Client Gate", owner:"—", pillar:"Gate", phase:"Monitor", activeWeeks:[0,0], gateWeek:6, isGate:true, ledBy:"IIH" },
 
   // ---- ANALYZE ----
-  { title:"Map & prioritize use case portfolio (impact × feasibility)", owner:"Omar", pillar:"P1", phase:"Analyze", activeWeeks:[5,10] },
-  { title:"Define AI vision & ambition statement for MoC", owner:"Kaddoura", pillar:"P1", phase:"Analyze", activeWeeks:[5,6] },
-  { title:"Shortlist Quick Wins (effort < 6 weeks, high impact)", owner:"Omar", pillar:"P1", phase:"Analyze", activeWeeks:[6,10] },
-  { title:"Define AI-ready data foundation strategy", owner:"Salah", pillar:"P2", phase:"Analyze", activeWeeks:[7,8] },
-  { title:"Define AI infrastructure platform strategy (cloud, MLOps, tooling)", owner:"Salah", pillar:"P2", phase:"Analyze", activeWeeks:[7,8] },
-  { title:"Data availability, quality & integration readiness assessment", owner:"Salah", pillar:"P2", phase:"Analyze", activeWeeks:[7,10] },
-  { title:"Define AI workforce & talent strategy", owner:"Omar", pillar:"P3", phase:"Analyze", activeWeeks:[5,7] },
-  { title:"Identify & recruit AI Champions per business unit", owner:"Mahmoud", pillar:"P3", phase:"Analyze", activeWeeks:[4,5] },
-  { title:"Establish AI governance framework & principles", owner:"Kaddoura", pillar:"P4", phase:"Analyze", activeWeeks:[5,6] },
-  { title:"Define Human-in-the-Loop decision rights (high-risk AI decisions)", owner:"Omar", pillar:"P4", phase:"Analyze", activeWeeks:[7,9] },
-  { title:"Calculate value of each use case via impact framework", owner:"Omar", pillar:"P5", phase:"Analyze", activeWeeks:[6,8] },
-  { title:"Prioritize solutions by feasibility & impact (scoring model)", owner:"Omar", pillar:"P5", phase:"Analyze", activeWeeks:[8,10] },
-  { title:"Readiness validation workshop — HR (agenda & materials)", owner:"Omar", pillar:"P1", phase:"Analyze", activeWeeks:[6,9] },
-  { title:"Readiness validation workshop — Finance (agenda & materials)", owner:"Omar", pillar:"P1", phase:"Analyze", activeWeeks:[5,8] },
-  { title:"Readiness validation workshop — Heritage (agenda & materials)", owner:"Omar", pillar:"P1", phase:"Analyze", activeWeeks:[6,9] },
-  { title:"AI Readiness Baseline Report — compile & draft", owner:"Omar", pillar:"P1/P2", phase:"Analyze", activeWeeks:[7,10] },
-  { title:"AI Readiness Baseline Report — ↑K review with Kaddoura before client submission", owner:"Kaddoura", pillar:"P1/P2", phase:"Analyze", activeWeeks:[0,0], escalateWeek:8 },
-  { title:"AI READINESS SIGN-OFF · Client Gate", owner:"—", pillar:"Gate", phase:"Analyze", activeWeeks:[0,0], gateWeek:8, isGate:true },
+  { title:"Map & prioritize use case portfolio (impact × feasibility)", owner:"Omar", pillar:"P1", phase:"Analyze", activeWeeks:[5,10], ledBy:"IIH" },
+  { title:"Define AI vision & ambition statement for MoC", owner:"Kaddoura", pillar:"P1", phase:"Analyze", activeWeeks:[5,6], ledBy:"IIH" },
+  { title:"Shortlist Quick Wins (effort < 6 weeks, high impact)", owner:"Omar", pillar:"P1", phase:"Analyze", activeWeeks:[6,10], ledBy:"IIH" },
+  { title:"Define AI-ready data foundation strategy", owner:"Salah", pillar:"P2", phase:"Analyze", activeWeeks:[7,8], ledBy:"IIH" },
+  { title:"Define AI infrastructure platform strategy (cloud, MLOps, tooling)", owner:"Salah", pillar:"P2", phase:"Analyze", activeWeeks:[7,8], ledBy:"IIH" },
+  { title:"Data availability, quality & integration readiness assessment", owner:"Salah", pillar:"P2", phase:"Analyze", activeWeeks:[7,10], ledBy:"IIH" },
+  { title:"Define AI workforce & talent strategy", owner:"Omar", pillar:"P3", phase:"Analyze", activeWeeks:[5,7], ledBy:"IIH" },
+  { title:"Identify & recruit AI Champions per business unit", owner:"Mahmoud", pillar:"P3", phase:"Analyze", activeWeeks:[4,5], ledBy:"IIH" },
+  { title:"Establish AI governance framework & principles", owner:"Kaddoura", pillar:"P4", phase:"Analyze", activeWeeks:[5,6], ledBy:"IIH" },
+  { title:"Define Human-in-the-Loop decision rights (high-risk AI decisions)", owner:"Omar", pillar:"P4", phase:"Analyze", activeWeeks:[7,9], ledBy:"IIH" },
+  { title:"Calculate value of each use case via impact framework", owner:"Omar", pillar:"P5", phase:"Analyze", activeWeeks:[6,8], ledBy:"IIH" },
+  { title:"Prioritize solutions by feasibility & impact (scoring model)", owner:"Omar", pillar:"P5", phase:"Analyze", activeWeeks:[8,10], ledBy:"IIH" },
+  { title:"Readiness validation workshop — HR (agenda & materials)", owner:"Omar", pillar:"P1", phase:"Analyze", activeWeeks:[6,9], ledBy:"IIH" },
+  { title:"Readiness validation workshop — Finance (agenda & materials)", owner:"Omar", pillar:"P1", phase:"Analyze", activeWeeks:[5,8], ledBy:"IIH" },
+  { title:"Readiness validation workshop — Heritage (agenda & materials)", owner:"Omar", pillar:"P1", phase:"Analyze", activeWeeks:[6,9], ledBy:"IIH" },
+  { title:"AI Readiness Baseline Report — compile & draft", owner:"Omar", pillar:"P1/P2", phase:"Analyze", activeWeeks:[7,10], ledBy:"IIH" },
+  { title:"AI Readiness Baseline Report — ↑K review with Kaddoura before client submission", owner:"Kaddoura", pillar:"P1/P2", phase:"Analyze", activeWeeks:[0,0], escalateWeek:8, ledBy:"IIH" },
+  { title:"AI READINESS SIGN-OFF · Client Gate", owner:"—", pillar:"Gate", phase:"Analyze", activeWeeks:[0,0], gateWeek:8, isGate:true, ledBy:"IIH" },
 
   // ---- PLAN ----
-  { title:"Impact vs. Effort prioritization matrix — all opportunities", owner:"Omar", pillar:"P1", phase:"Plan", activeWeeks:[9,11] },
-  { title:"Categorize: Quick Wins / Strategic Projects / Long-Term Initiatives", owner:"Kaddoura", pillar:"P1", phase:"Plan", activeWeeks:[9,11] },
-  { title:"Apply evaluation filters: Alignment · Capability · Value · Speed", owner:"Omar", pillar:"P1", phase:"Plan", activeWeeks:[9,11] },
-  { title:"[MoC] Appoint AI Leader & establish Center of Excellence (CoE)", owner:"MoC", pillar:"P1", phase:"Plan", activeWeeks:[0,0], advisory:true },
-  { title:"[MoC] Define AI target operating model", owner:"MoC", pillar:"P1", phase:"Plan", activeWeeks:[0,0], advisory:true },
-  { title:"Build production-ready data pipeline designs & specs", owner:"Salah", pillar:"P2", phase:"Plan", activeWeeks:[9,10] },
-  { title:"Establish data governance & quality framework", owner:"Salah", pillar:"P2", phase:"Plan", activeWeeks:[9,10] },
-  { title:"Data flow diagrams & integration architecture specs per BRD", owner:"Salah", pillar:"P2", phase:"Plan", activeWeeks:[10,11] },
-  { title:"Design AI literacy training programs (curriculum, audience, format)", owner:"Omar", pillar:"P3", phase:"Plan", activeWeeks:[11,12] },
-  { title:"Define change management & culture plan", owner:"Omar", pillar:"P3", phase:"Plan", activeWeeks:[10,11] },
-  { title:"Conduct risk assessments per prioritized use case", owner:"Omar", pillar:"P4", phase:"Plan", activeWeeks:[9,11] },
-  { title:"Draft 3 core AI ethics policies (Risk, Ethics, Data Privacy)", owner:"Kaddoura", pillar:"P4", phase:"Plan", activeWeeks:[9,10] },
-  { title:"Define adoption plan & assess solution combinations", owner:"Omar", pillar:"P5", phase:"Plan", activeWeeks:[10,11] },
-  { title:"Calculate ROI models & impact frameworks per use case", owner:"Omar", pillar:"P5", phase:"Plan", activeWeeks:[10,11] },
-  { title:"Develop BRDs for top 3–5 prioritized AI solutions", owner:"Omar", pillar:"P1", phase:"Plan", activeWeeks:[10,12] },
-  { title:"BRD internal review & alignment with MoC EA / CS teams", owner:"Mahmoud", pillar:"P1", phase:"Plan", activeWeeks:[11,12] },
-  { title:"Portfolio prioritization workshop — agenda, scoring templates, exec pre-read", owner:"Omar", pillar:"P1", phase:"Plan", activeWeeks:[9,10] },
-  { title:"BRD review & validation workshop — agenda & materials", owner:"Mahmoud", pillar:"P1", phase:"Plan", activeWeeks:[11,11] },
-  { title:"Prioritized AI Portfolio with BRDs — compile & draft", owner:"Omar", pillar:"P1/P5", phase:"Plan", activeWeeks:[11,12] },
-  { title:"Prioritized AI Portfolio with BRDs — ↑K review with Kaddoura before client submission", owner:"Kaddoura", pillar:"P1/P5", phase:"Plan", activeWeeks:[0,0], escalateWeek:12 },
-  { title:"BRDs & DESIGN APPROVED · Client Gate", owner:"—", pillar:"Gate", phase:"Plan", activeWeeks:[0,0], gateWeek:12, isGate:true },
+  { title:"Impact vs. Effort prioritization matrix — all opportunities", owner:"Omar", pillar:"P1", phase:"Plan", activeWeeks:[9,11], ledBy:"IIH" },
+  { title:"Categorize: Quick Wins / Strategic Projects / Long-Term Initiatives", owner:"Kaddoura", pillar:"P1", phase:"Plan", activeWeeks:[9,11], ledBy:"IIH" },
+  { title:"Apply evaluation filters: Alignment · Capability · Value · Speed", owner:"Omar", pillar:"P1", phase:"Plan", activeWeeks:[9,11], ledBy:"IIH" },
+  { title:"Appoint AI Leader & establish Center of Excellence (CoE)", owner:"MoC", pillar:"P1", phase:"Plan", activeWeeks:[0,0], advisory:true, ledBy:"MoC (Advisory)" },
+  { title:"Define AI target operating model", owner:"MoC", pillar:"P1", phase:"Plan", activeWeeks:[0,0], advisory:true, ledBy:"MoC (Advisory)" },
+  { title:"Build production-ready data pipeline designs & specs", owner:"Salah", pillar:"P2", phase:"Plan", activeWeeks:[9,10], ledBy:"IIH" },
+  { title:"Establish data governance & quality framework", owner:"Salah", pillar:"P2", phase:"Plan", activeWeeks:[9,10], ledBy:"IIH" },
+  { title:"Data flow diagrams & integration architecture specs per BRD", owner:"Salah", pillar:"P2", phase:"Plan", activeWeeks:[10,11], ledBy:"IIH" },
+  { title:"Design AI literacy training programs (curriculum, audience, format)", owner:"Omar", pillar:"P3", phase:"Plan", activeWeeks:[11,12], ledBy:"IIH" },
+  { title:"Define change management & culture plan", owner:"Omar", pillar:"P3", phase:"Plan", activeWeeks:[10,11], ledBy:"IIH" },
+  { title:"Conduct risk assessments per prioritized use case", owner:"Omar", pillar:"P4", phase:"Plan", activeWeeks:[9,11], ledBy:"IIH" },
+  { title:"Draft 3 core AI ethics policies (Risk, Ethics, Data Privacy)", owner:"Kaddoura", pillar:"P4", phase:"Plan", activeWeeks:[9,10], ledBy:"IIH" },
+  { title:"Define adoption plan & assess solution combinations", owner:"Omar", pillar:"P5", phase:"Plan", activeWeeks:[10,11], ledBy:"IIH" },
+  { title:"Calculate ROI models & impact frameworks per use case", owner:"Omar", pillar:"P5", phase:"Plan", activeWeeks:[10,11], ledBy:"IIH" },
+  { title:"Develop BRDs for top 3–5 prioritized AI solutions", owner:"Omar", pillar:"P1", phase:"Plan", activeWeeks:[10,12], ledBy:"IIH" },
+  { title:"BRD internal review & alignment with MoC EA / CS teams", owner:"Mahmoud", pillar:"P1", phase:"Plan", activeWeeks:[11,12], ledBy:"IIH" },
+  { title:"Portfolio prioritization workshop — agenda, scoring templates, exec pre-read", owner:"Omar", pillar:"P1", phase:"Plan", activeWeeks:[9,10], ledBy:"IIH" },
+  { title:"BRD review & validation workshop — agenda & materials", owner:"Mahmoud", pillar:"P1", phase:"Plan", activeWeeks:[11,11], ledBy:"IIH" },
+  { title:"Prioritized AI Portfolio with BRDs — compile & draft", owner:"Omar", pillar:"P1/P5", phase:"Plan", activeWeeks:[11,12], ledBy:"IIH" },
+  { title:"Prioritized AI Portfolio with BRDs — ↑K review with Kaddoura before client submission", owner:"Kaddoura", pillar:"P1/P5", phase:"Plan", activeWeeks:[0,0], escalateWeek:12, ledBy:"IIH" },
+  { title:"BRDs & DESIGN APPROVED · Client Gate", owner:"—", pillar:"Gate", phase:"Plan", activeWeeks:[0,0], gateWeek:12, isGate:true, ledBy:"IIH" },
 ];
 
 function mapeOwnerFull(owner){ return MAPE_OWNER_MAP[owner] || owner; }
@@ -2414,12 +2414,16 @@ function renderMapeTaskGrid(){
   const makeCard = t => {
     const status = mapeTaskStatus(t, currentWeek);
     const idx = MAPE_TASKS.indexOf(t);
+    const ledByBadge = t.ledBy === 'MoC (Advisory)'
+      ? `<span class="mape-badge" style="background:#FDE8F0;color:var(--pink);border:1px solid var(--pink);">MoC-led</span>`
+      : '';
     return `<div class="mape-card ${t.isGate?'mape-milestone':''}" data-idx="${idx}">
       <div class="mape-card-title">${t.isGate?'🚩 ':''}${t.title}</div>
       <div class="mape-card-owner">${mapeOwnerFull(t.owner)}</div>
       <div class="mape-card-foot">
         <span class="mape-pillar-tag" title="${escapeHtml(t.pillar.split('/').map(c=>MAPE_PILLAR_NAME[c]||c).join(' + '))}">${t.pillar}</span>
         ${status ? `<span class="mape-badge ${status.cls}">${status.label}</span>` : `<span class="mape-badge mape-idle">${t.phase}</span>`}
+        ${ledByBadge}
       </div>
     </div>`;
   };
@@ -2523,6 +2527,7 @@ function buildMapeTaskDetailHTML(idx){
     <div class="detail-stat-grid">
       <div><div class="detail-lbl">Owner</div><b>${mapeOwnerFull(t.owner)}</b></div>
       <div><div class="detail-lbl">Pillar</div><b>${t.pillar}</b></div>
+      <div><div class="detail-lbl">Led By</div><b style="color:${t.ledBy==='MoC (Advisory)'?'var(--pink)':'var(--green)'};">${t.ledBy||'IIH'}</b></div>
       <div><div class="detail-lbl">This Week</div>${status ? `<span class="mape-badge ${status.cls}">${status.label}</span>` : `<span class="mape-badge mape-idle">Not active</span>`}</div>
     </div>
     <div class="detail-section"><h4>Scheduled</h4><p>${whenLine}</p></div>
@@ -2751,7 +2756,7 @@ function renderDeltaMovedList(){
       <span class="mv-name">${i.name}</span>
       <span class="mv-vals">${prev}% → <b>${i.pct}%</b> <span class="${cls}">${sign}${d}%</span></span>
     </div>`;
-  }).join('') : '<p style="font-size:12.5px;color:var(--muted);margin:0;">No initiatives moved this week.</p>';
+  }).join('') : '<p style="font-size:12.5px;color:var(--muted);margin:0;">No workstreams moved this week. Once the team fills in weekly progress, deltas will appear here automatically.</p>';
 }
 
 function renderDeltaSummary(){
@@ -2797,10 +2802,10 @@ function renderDeltaDeptTable(){
     const items = MOC_DATA.filter(x=>x.department===dep);
     const todayAvg = avg(items.map(x=>x.pct));
     const prevAvg = avg(items.map(x=>getPctDaysAgo(x,7)));
-    return { dep, count: items.length, todayAvg, prevAvg, delta: todayAvg - prevAvg };
+    return { dep, count: items.length, todayAvg: Math.round(todayAvg), prevAvg: Math.round(prevAvg), delta: Math.round(todayAvg - prevAvg) };
   }).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
   $('#deltaDeptTable').innerHTML = `
-    <tr><th>Department</th><th>Initiatives</th><th>7 Days Ago</th><th>Today</th><th>Change</th></tr>
+    <tr><th>Department</th><th>Workstreams</th><th>7 Days Ago</th><th>Today</th><th>Change</th></tr>
     ${rows.map(r=>{
       const cls = r.delta>0?'delta-up':(r.delta<0?'delta-down':'delta-flat');
       const sign = r.delta>0?'+':'';
@@ -2821,14 +2826,14 @@ function renderDelta(){
   renderDeltaDeptTable();
   const rows = MOC_DATA.slice().sort((a,b)=>Math.abs(weeklyDelta(b))-Math.abs(weeklyDelta(a)));
   $('#deltaTable').innerHTML = `
-    <tr><th>Initiative</th><th>Department</th><th>7 Days Ago</th><th>Today</th><th>Change</th></tr>
+    <tr><th>Workstream</th><th>Initiative</th><th>7 Days Ago</th><th>Today</th><th>Change</th></tr>
     ${rows.map(i=>{
       const prev = getPctDaysAgo(i,7);
       const d = weeklyDelta(i);
       const cls = d>0?'delta-up':(d<0?'delta-down':'delta-flat');
       const sign = d>0?'+':'';
       return `<tr>
-        <td><b>${i.name}</b></td><td>${i.department}</td>
+        <td><b>${i.name}</b></td><td>${i.initiative||'—'}</td>
         <td>${prev}%</td><td>${i.pct}%</td>
         <td class="${cls}">${sign}${d}%</td>
       </tr>`;
@@ -3590,6 +3595,7 @@ let taskSortKey = null;
 let taskSortDir = 1; // 1 = asc, -1 = desc
 const taskFilterState = {
   department: new Set(),
+  stage: new Set(),
   status: new Set(),
   risk: new Set(),
   priority: new Set(),
@@ -3597,17 +3603,19 @@ const taskFilterState = {
   search: ''
 };
 const FILTER_DIMENSIONS = [
-  { key:'department', label:'Department', options: DEPARTMENTS },
-  { key:'status',     label:'Status',     options: TASK_STATUSES },
-  { key:'risk',       label:'Risk',       options: RISK_LEVELS },
-  { key:'priority',   label:'Priority',   options: PRIORITIES },
-  { key:'assignee',   label:'Owner',      options: TEAM_LEADS }
+  { key:'department', label:'Department',      options: DEPARTMENTS },
+  { key:'stage',      label:'Framework Stage', options: FRAMEWORK_STAGES },
+  { key:'status',     label:'Task Status',     options: TASK_STATUSES },
+  { key:'risk',       label:'Risk',            options: RISK_LEVELS },
+  { key:'priority',   label:'Priority',        options: PRIORITIES },
+  { key:'assignee',   label:'Assignee',        options: TEAM_LEADS }
 ];
 
 function getFilteredTasks(){
   const q = taskFilterState.search.trim().toLowerCase();
   return TASKS_DATA.filter(t=>{
     if(taskFilterState.department.size && !taskFilterState.department.has(t.department)) return false;
+    if(taskFilterState.stage.size && !taskFilterState.stage.has(t.stage)) return false;
     if(taskFilterState.status.size && !taskFilterState.status.has(t.status)) return false;
     if(taskFilterState.risk.size && !taskFilterState.risk.has(t.risk)) return false;
     if(taskFilterState.priority.size && !taskFilterState.priority.has(t.priority)) return false;
@@ -3762,10 +3770,16 @@ function renderTasks(){
     }
     if(taskView==='list'){
       const cols = [
-        {key:'title', label:'Task'}, {key:'department', label:'Department'},
-        {key:'assignee', label:'Assignee'}, {key:'status', label:'Status'},
-        {key:'priority', label:'Priority'}, {key:'risk', label:'Risk'},
-        {key:'pct', label:'Progress'}, {key:'due', label:'Due'}, {key:null, label:'Tags'}
+        {key:'title',    label:'Task'},
+        {key:'workstream', label:'Workstream'},
+        {key:'department', label:'Department'},
+        {key:'stage',    label:'Framework Stage'},
+        {key:'assignee', label:'Assignee'},
+        {key:'status',   label:'Task Status'},
+        {key:'priority', label:'Priority'},
+        {key:'risk',     label:'Risk'},
+        {key:'pct',      label:'Progress'},
+        {key:'due',      label:'Due'}
       ];
       if(taskSortKey){
         data = [...data].sort((a,b)=>{
@@ -3779,15 +3793,16 @@ function renderTasks(){
         <tr>${cols.map(col=>`<th class="${col.key?'sortable':''}" data-sort="${col.key||''}">${col.label}${taskSortKey===col.key?`<span class="sort-arrow">${taskSortDir===1?'▲':'▼'}</span>`:''}</th>`).join('')}</tr>
         ${data.map(t=>`
           <tr data-task-id="${t.id}">
-            <td><b>${t.title}</b><div style="font-size:11px;color:var(--muted);">${t.workstream}</div></td>
-            <td>${t.department}</td>
+            <td><b>${t.title}</b></td>
+            <td style="font-size:12px;">${t.workstream}</td>
+            <td style="font-size:12px;">${t.department||'—'}</td>
+            <td><span class="badge stage">${t.stage}</span></td>
             <td>${t.assignee}</td>
             <td>${t.status}</td>
             <td><span class="badge stage">${t.priority}</span></td>
             <td>${badge(t.risk)}</td>
             <td>${progressBar(t.pct)} ${t.pct}%</td>
             <td>${daysLeftBadge(t.due, t.status==='Completed')}</td>
-            <td>${t.tags.map(tg=>`<span class="tag">${tg}</span>`).join(' ')}</td>
           </tr>
         `).join('')}
       </table></div>`;
