@@ -1063,6 +1063,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
       <div class="tl-switcher">
         <button class="tl-view-btn active" data-view="initiative" onclick="setTimelineView('initiative',this)">Initiative View</button>
         <button class="tl-view-btn" data-view="mape" onclick="setTimelineView('mape',this)">MAPE View</button>
+        <button class="tl-view-btn" data-view="pillars" onclick="setTimelineView('pillars',this)">Five Pillars View</button>
         <button class="tl-view-btn" data-view="department" onclick="setTimelineView('department',this)">Department View</button>
       </div>
 
@@ -1078,6 +1079,13 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
         <div class="zone-hotspot"></div>
         <button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
         <div class="shot-target" id="timelineMapeBody"></div>
+      </div>
+
+      <!-- Pillars View -->
+      <div class="report-zone tl-panel" id="tl-pillars" style="display:none;">
+        <div class="zone-hotspot"></div>
+        <button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
+        <div class="shot-target" id="timelinePillarsBody"></div>
       </div>
 
       <!-- Department View -->
@@ -3040,9 +3048,77 @@ function renderTimeline(){
   });
 }
 
+function renderTimelinePillars(){
+  const PILLAR_COLORS = {
+    P1:'var(--pink)', P2:'var(--blue)', P3:'var(--amber)',
+    P4:'var(--green)', P5:'var(--navy2)'
+  };
+
+  $('#timelinePillarsBody').innerHTML = `
+    <h3 style="margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600;letter-spacing:.04em;">FIVE PILLARS PROGRESS</h3>
+    ${PILLARS.map(pillar=>{
+      const color = PILLAR_COLORS[pillar.code] || 'var(--navy2)';
+      const wsInPillar = MOC_DATA.filter(i=>i.pillar===pillar.code);
+      const activeWS   = wsInPillar.filter(i=>TASKS_DATA.some(t=>t.workstream===i.name));
+      const pct        = wsInPillar.length ? avg(wsInPillar.map(i=>i.pct)) : 0;
+      const activePct  = activeWS.length   ? avg(activeWS.map(i=>i.pct))   : 0;
+
+      return `
+      <div class="tl-swimlane">
+        <div class="tl-dept-label">
+          <span style="color:${color};font-weight:800;">${pillar.code} — ${pillar.name}</span>
+          <span style="color:var(--muted);font-size:12px;">${wsInPillar.length} workstreams · ${activeWS.length} active</span>
+        </div>
+
+        ${wsInPillar.length === 0 ? `
+          <p style="font-size:12px;color:var(--muted);margin:4px 0 12px 0;">No workstreams assigned to this pillar yet.</p>
+        ` : `
+          <!-- Pillar summary bar -->
+          <div class="tl-row" style="cursor:default;margin-bottom:6px;">
+            <div class="tl-row-label" style="width:200px;font-weight:700;color:${color};">
+              Active scope avg
+            </div>
+            <div class="tl-bar-track">
+              <div class="tl-bar-fill" style="width:${Math.max(activePct,activePct>0?2:0)}%;background:${color};">
+                ${activePct>8?`<span>${activePct}%</span>`:''}
+              </div>
+            </div>
+            <div style="width:46px;text-align:right;font-size:12px;font-weight:700;color:${color};">${activePct}%</div>
+          </div>
+
+          <!-- Individual workstream bars -->
+          ${wsInPillar.map(i=>{
+            const idx = MOC_DATA.indexOf(i);
+            const STAGE_COL={Monitor:'var(--navy2)',Analyze:'var(--green)',Plan:'var(--amber)',Execute:'var(--pink)'};
+            const sc = STAGE_COL[i.stage]||'var(--muted)';
+            return `
+            <div class="tl-row" data-idx="${idx}" style="opacity:.85;">
+              <div class="tl-row-label" style="width:200px;font-size:12px;">
+                ${i.name}
+                <span class="tl-stage" style="color:${sc};">${i.stage}</span>
+              </div>
+              <div class="tl-bar-track">
+                <div class="tl-bar-fill" style="width:${Math.max(i.pct,i.pct>0?2:0)}%;background:${color};opacity:.7;">
+                  ${i.pct>8?`<span>${i.pct}%</span>`:''}
+                </div>
+              </div>
+              <div style="width:46px;text-align:right;font-size:12px;color:${color};">${i.pct}%</div>
+            </div>`;
+          }).join('')}
+        `}
+      </div>`;
+    }).join('')}
+  `;
+
+  $$('#timelinePillarsBody .tl-row[data-idx]').forEach(row=>{
+    row.addEventListener('click',()=>openInitiativeDetail(parseInt(row.dataset.idx,10)));
+  });
+}
+
 function renderAllTimelineViews(){
   renderTimelineInitiative();
   renderTimelineMape();
+  renderTimelinePillars();
   renderTimeline();
 }
 
