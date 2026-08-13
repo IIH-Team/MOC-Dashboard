@@ -1,3 +1,4 @@
+<!-- MOC Dashboard | Last updated: 2026-08-13 10:43 -->
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
@@ -1385,6 +1386,26 @@ const INITIATIVES = [
 // team), not a MoC department — that collapsed every By-Department chart
 // into one giant bar. Department now only holds real MoC departments;
 // internal/advisory work carries a Work Type instead.
+
+// Progress History milestones — 14 initiative-level items tracked weekly.
+// These are broader than individual workstreams — they represent the
+// deliverable/phase level that leadership tracks progress against.
+const PROGRESS_MILESTONES = [
+  "AI Strategy - Monitor",
+  "AI Strategy - Analyze",
+  "AI Strategy - Plan",
+  "AI Strategy - Execute",
+  "Cultural Universe",
+  "Use Cases",
+  "Copilot Productivity",
+  "Ad Hoc",
+  "BRD",
+  "Risk Register",
+  "Project Updates & Meetings",
+  "Internal Progress Review & Reporting",
+  "AI Discovery Report - Draft Review",
+  "AI Discovery Report - Sign-Off"
+];
 const WORK_TYPES = ["Client Engagement", "Internal Delivery", "Advisory"];
 
 // Framework Stage — the MAPE delivery phase only (Monitor/Analyze/Plan/
@@ -4661,23 +4682,16 @@ function exportAllDataToExcel(){
   wsSheet['!cols'] = [{wch:8},{wch:24},{wch:8},{wch:40},{wch:26},{wch:16},{wch:16},{wch:20},{wch:12},{wch:12},{wch:34},{wch:34},{wch:30}];
   XLSX.utils.book_append_sheet(wb, wsSheet, 'Workstreams');
 
-  // Progress History — split into Framework Stage / Pillar / Workstream Name
-  // (3 columns instead of 1) so it pivots cleanly. Weekly snapshots are taken
-  // at the workstream grain — see MOC_Dashboard_Notes.md section on Weekly
-  // Delta for why. NOTE: history currently holds only today's snapshot for
-  // every row, since the Final PM Sheet's own Progress History tab was empty
-  // — this needs a manual weekly backfill before deltas mean anything.
-  const histRows = [];
-  MOC_DATA.forEach(i=>{
-    (i.history||[]).forEach(h=>{
-      histRows.push({
-        'Framework Stage': i.stage, Pillar: i.pillar||'', 'Workstream Name': i.name,
-        Date: fmtDate(h.date), 'History Progress %': h.pct
-      });
-    });
-  });
+  // Progress History — 14 initiative-level milestones tracked weekly.
+  // Broader than workstreams — leadership-facing progress view.
+  const histRows = PROGRESS_MILESTONES.map(name=>({
+    'Initiative / Milestone': name,
+    Date: fmtDate(new Date()),
+    'Progress %': 0,
+    Notes: ''
+  }));
   const histSheet = XLSX.utils.json_to_sheet(histRows);
-  histSheet['!cols'] = [{wch:16},{wch:8},{wch:40},{wch:14},{wch:16}];
+  histSheet['!cols'] = [{wch:40},{wch:14},{wch:14},{wch:40}];
   XLSX.utils.book_append_sheet(wb, histSheet, 'Progress History');
 
   // Tasks
@@ -4800,15 +4814,15 @@ $('#importFileInput').addEventListener('change', (e)=>{
         + `(MAPE Tasks are not affected by import.)\n\nContinue?`;
       if(!confirm(summary)){ e.target.value=''; return; }
 
-      // --- Progress History, grouped by workstream name. Accepts both the
-      // current 'Workstream Name' header and the old 'Initiative Name'
-      // header (pre-restructure workbooks) for back-compat. ---
+      // --- Progress History — 14 initiative-level milestones (weekly).
+      // Reads 'Initiative / Milestone' column. Back-compat with old
+      // 'Workstream Name' / 'Initiative Name' headers.
       const historyByName = {};
       histRows.forEach(r=>{
-        const name = r['Workstream Name'] || r['Initiative Name'];
+        const name = r['Initiative / Milestone'] || r['Workstream Name'] || r['Initiative Name'];
         if(!name) return;
         if(!historyByName[name]) historyByName[name] = [];
-        const pct = Number(r['History Progress %'] ?? r['Progress %']) || 0;
+        const pct = Number(r['Progress %'] ?? r['History Progress %'] ?? r['Progress %']) || 0;
         historyByName[name].push({ date: parseAnyDate(r['Date']), pct });
       });
       Object.values(historyByName).forEach(h=> h.sort((a,b)=>a.date-b.date));
