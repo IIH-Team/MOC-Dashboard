@@ -175,7 +175,7 @@ async function loadFromFirestore() {
 
     // Re-render everything with fresh data
     renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
-    renderDepartments(); renderDelta(); renderTimeline(); renderRisk();
+    renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk();
     renderTeamLens(); renderPivot(); renderAlerts(); renderTasks();
     renderRiskRegister(); renderMapeView();
     showInfoToast('Data loaded ✓');
@@ -577,6 +577,10 @@ body.dark,.app.dark,[data-theme="dark"]{
 .report-banner-inner{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;flex-wrap:wrap;gap:10px;}
 .report-banner-title h1{color:#fff;font-size:20px;font-weight:800;margin:0;}
 .report-banner-title p{color:#9FB3CC;font-size:12px;margin:2px 0 0;}
+.tl-switcher{display:flex;gap:8px;margin-bottom:16px;}
+.tl-view-btn{padding:7px 18px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:.15s;}
+.tl-view-btn.active,.tl-view-btn:hover{background:var(--navy2);color:#fff;border-color:var(--navy2);}
+.tl-panel{margin-top:0;}
 .tl-swimlane{margin-bottom:22px;}
 .tl-dept-label{font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--border);}
 .tl-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer;}
@@ -1052,11 +1056,35 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 
     <!-- TIMELINE -->
     <div class="view report-zone" id="view-timeline">
-      <div class="zone-hotspot"></div><button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
-      <div class="shot-target">
       <h2 class="view-title">Timeline</h2>
-      <p class="view-sub">Every initiative's current progress, grouped by department. Click any bar for the full history and trend.</p>
-      <div id="timelineBody"></div>
+      <p class="view-sub">Three views of the same data — Initiative, MAPE Phase, and Department. Hover any view to copy as image.</p>
+
+      <!-- View switcher -->
+      <div class="tl-switcher">
+        <button class="tl-view-btn active" data-view="initiative" onclick="setTimelineView('initiative',this)">Initiative View</button>
+        <button class="tl-view-btn" data-view="mape" onclick="setTimelineView('mape',this)">MAPE View</button>
+        <button class="tl-view-btn" data-view="department" onclick="setTimelineView('department',this)">Department View</button>
+      </div>
+
+      <!-- Initiative View -->
+      <div class="report-zone tl-panel active" id="tl-initiative">
+        <div class="zone-hotspot"></div>
+        <button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
+        <div class="shot-target" id="timelineInitBody"></div>
+      </div>
+
+      <!-- MAPE View -->
+      <div class="report-zone tl-panel" id="tl-mape" style="display:none;">
+        <div class="zone-hotspot"></div>
+        <button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
+        <div class="shot-target" id="timelineMapeBody"></div>
+      </div>
+
+      <!-- Department View -->
+      <div class="report-zone tl-panel" id="tl-department" style="display:none;">
+        <div class="zone-hotspot"></div>
+        <button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
+        <div class="shot-target" id="timelineBody"></div>
       </div>
     </div>
 
@@ -2875,6 +2903,114 @@ function renderDelta(){
    initiative showing current progress %. Grounded in real MOC_DATA only
    (no fabricated target dates — MOC hasn't reached a scheduling phase yet).
    ===================================================================== */
+function setTimelineView(view, btn){
+  $$('.tl-view-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  $$('.tl-panel').forEach(p=>p.style.display='none');
+  $('#tl-'+view).style.display='block';
+}
+
+// ── Initiative View — 14 milestones with progress bars ──────────────────
+function renderTimelineInitiative(){
+  const INIT_STAGE = {
+    'AI Strategy - Monitor':'Monitor','AI Strategy - Analyze':'Analyze',
+    'AI Strategy - Plan':'Plan','AI Strategy - Execute':'Execute',
+    'Cultural Universe':'Monitor','Use Cases':'Monitor',
+    'Copilot Productivity':'Execute','Ad Hoc':'Monitor','BRD':'Plan',
+    'Risk Register':'Monitor','Project Updates & Meetings':'Monitor',
+    'Internal Progress Review & Reporting':'Monitor',
+    'AI Discovery Report - Draft Review':'Monitor',
+    'AI Discovery Report - Sign-Off':'Monitor'
+  };
+  const STAGE_COLORS = {Monitor:'var(--navy2)',Analyze:'var(--green)',Plan:'var(--amber)',Execute:'var(--pink)'};
+
+  // Compute progress per milestone from workstream/task data
+  function milestonePct(name){
+    // AI Strategy phases — use workstreams in that stage
+    const stageMap = {'AI Strategy - Monitor':'Monitor','AI Strategy - Analyze':'Analyze','AI Strategy - Plan':'Plan','AI Strategy - Execute':'Execute'};
+    if(stageMap[name]){
+      const items = MOC_DATA.filter(i=>i.initiative==='AI Strategy Assessment' && i.stage===stageMap[name]);
+      return items.length ? avg(items.map(i=>i.pct)) : 0;
+    }
+    // Other milestones — find matching workstream
+    const ws = MOC_DATA.find(i=>i.name===name || i.initiative===name);
+    return ws ? ws.pct : 0;
+  }
+
+  $('#timelineInitBody').innerHTML = `
+    <h3 style="margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600;letter-spacing:.04em;">INITIATIVE / MILESTONE PROGRESS</h3>
+    ${PROGRESS_MILESTONES.map(name=>{
+      const stage = INIT_STAGE[name]||'Monitor';
+      const color = STAGE_COLORS[stage]||'var(--navy2)';
+      const pct = milestonePct(name);
+      return `
+      <div class="tl-row" style="cursor:default;">
+        <div class="tl-row-label" style="width:260px;">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;flex-shrink:0;"></span>
+          ${name}
+          <span class="tl-stage">${stage}</span>
+        </div>
+        <div class="tl-bar-track">
+          <div class="tl-bar-fill" style="width:${Math.max(pct,pct>0?0:0)}%;background:${color};">
+            ${pct>8?`<span>${pct}%</span>`:''}
+          </div>
+        </div>
+        <div style="width:46px;text-align:right;font-size:12px;font-weight:700;color:${color};">${pct}%</div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+// ── MAPE View — 4 phases with progress bars ──────────────────────────────
+function renderTimelineMape(){
+  const PHASES = ['Monitor','Analyze','Plan','Execute'];
+  const PHASE_COLORS = {Monitor:'var(--navy2)',Analyze:'var(--green)',Plan:'var(--amber)',Execute:'var(--pink)'};
+  const PHASE_DESC = {
+    Monitor:'Discovery & Assessment — stakeholder interviews, data readiness, skills gaps, compliance',
+    Analyze:'Readiness & Opportunities — AI readiness framework, use case identification, data assessment',
+    Plan:'Portfolio & BRDs — use case prioritization, business requirements, operating model design',
+    Execute:'Pilots & Scale-up — AI pilot delivery, measurable outcomes, scale-up roadmap'
+  };
+
+  $('#timelineMapeBody').innerHTML = `
+    <h3 style="margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600;letter-spacing:.04em;">MAPE DELIVERY PHASES</h3>
+    ${PHASES.map(phase=>{
+      const items = MOC_DATA.filter(i=>i.stage===phase);
+      const active = items.filter(i=>TASKS_DATA.some(t=>t.workstream===i.name));
+      const pct = items.length ? avg(items.map(i=>i.pct)) : 0;
+      const activePct = active.length ? avg(active.map(i=>i.pct)) : 0;
+      const color = PHASE_COLORS[phase];
+      return `
+      <div class="tl-swimlane">
+        <div class="tl-dept-label">
+          <span style="color:${color};font-weight:800;">${phase}</span>
+          <span style="color:var(--muted);font-size:12px;">${items.length} workstreams · ${active.length} active · avg ${pct}%</span>
+        </div>
+        <div class="tl-row" style="cursor:default;">
+          <div class="tl-row-label" style="width:180px;font-size:12px;">Active scope</div>
+          <div class="tl-bar-track">
+            <div class="tl-bar-fill" style="width:${Math.max(activePct,activePct>0?0:0)}%;background:${color};">
+              ${activePct>8?`<span>${activePct}%</span>`:''}
+            </div>
+          </div>
+          <div style="width:46px;text-align:right;font-size:12px;font-weight:700;color:${color};">${activePct}%</div>
+        </div>
+        <div class="tl-row" style="cursor:default;opacity:.65;">
+          <div class="tl-row-label" style="width:180px;font-size:12px;">Full scope (incl. not started)</div>
+          <div class="tl-bar-track">
+            <div class="tl-bar-fill" style="width:${Math.max(pct,pct>0?0:0)}%;background:${color};opacity:.5;">
+              ${pct>8?`<span>${pct}%</span>`:''}
+            </div>
+          </div>
+          <div style="width:46px;text-align:right;font-size:12px;font-weight:700;color:${color};opacity:.65;">${pct}%</div>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin:4px 0 0 0;">${PHASE_DESC[phase]}</p>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+// ── Department View — original view ─────────────────────────────────────
 function renderTimeline(){
   const deptsInUse = DEPARTMENTS.filter(d => MOC_DATA.some(i=>i.department===d));
   $('#timelineBody').innerHTML = deptsInUse.map((dep,di)=>{
@@ -2902,6 +3038,12 @@ function renderTimeline(){
   $$('#timelineBody .tl-row').forEach(row=>{
     row.addEventListener('click', ()=> openInitiativeDetail(parseInt(row.dataset.idx,10)));
   });
+}
+
+function renderAllTimelineViews(){
+  renderTimelineInitiative();
+  renderTimelineMape();
+  renderTimeline();
 }
 
 /* =====================================================================
@@ -4341,7 +4483,7 @@ $('#saveInitBtn').onclick = ()=>{
   closeInitModal();
   if(typeof setLastUpdate==='function') setLastUpdate();
   renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
-  renderDepartments(); renderDelta(); renderTimeline(); renderRisk(); renderTeamLens(); renderPivot(); renderAlerts();
+  renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk(); renderTeamLens(); renderPivot(); renderAlerts();
 };
 $('#deleteInitBtn').onclick = ()=>{
   if(!editingInitName) return;
@@ -4351,11 +4493,11 @@ $('#deleteInitBtn').onclick = ()=>{
   closeInitModal();
   closeDetailModal();
   renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
-  renderDepartments(); renderDelta(); renderTimeline(); renderRisk(); renderTeamLens(); renderPivot(); renderAlerts();
+  renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk(); renderTeamLens(); renderPivot(); renderAlerts();
   showUndoToast(`Initiative "${removed.name}" deleted.`, ()=>{
     MOC_DATA.splice(idx,0,removed);
     renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
-    renderDepartments(); renderDelta(); renderTimeline(); renderRisk(); renderTeamLens(); renderPivot(); renderAlerts();
+    renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk(); renderTeamLens(); renderPivot(); renderAlerts();
   });
 };
 window.editInitFromDetail = function(name){
@@ -4370,7 +4512,7 @@ window.duplicateInit = function(name){
   MOC_DATA.push(clone);
   closeDetailModal();
   renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
-  renderDepartments(); renderDelta(); renderTimeline(); renderRisk(); renderTeamLens(); renderPivot(); renderAlerts();
+  renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk(); renderTeamLens(); renderPivot(); renderAlerts();
   openInitModal(clone);
 };
 
@@ -4609,7 +4751,7 @@ renderWorkstreamsFilters();
 renderWorkstreamsTable();
 renderDepartments();
 renderDelta();
-renderTimeline();
+renderAllTimelineViews();
 renderRisk();
 renderEmailLocked();
 renderTeamLens();
@@ -4896,7 +5038,7 @@ $('#importFileInput').addEventListener('change', (e)=>{
 
       // Re-render everything that depends on this data
       renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
-      renderDepartments(); renderDelta(); renderTimeline(); renderRisk(); renderEmailLocked();
+      renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk(); renderEmailLocked();
       renderTeamLens(); renderPivot(); renderAlerts(); renderTasks(); renderRiskRegister();
       renderMapeView();
 
