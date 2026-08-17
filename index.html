@@ -1151,7 +1151,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
         <input type="text" id="f_workstream" placeholder="Workstream name, or leave blank">
       </div>
       <div class="form-field">
-        <label>Framework Stage *</label>
+        <label>Stage Name *</label>
         <select id="f_stage"></select>
       </div>
       <div class="form-field">
@@ -1233,7 +1233,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
         <select id="i_workType"></select>
       </div>
       <div class="form-field">
-        <label>Framework Stage *</label>
+        <label>Stage Name *</label>
         <select id="i_stage"></select>
       </div>
       <div class="form-field">
@@ -1377,7 +1377,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 <script>
 /* =====================================================================
    CENTRAL CONFIG — single source of truth for all expandable value lists.
-   Edit only here when team names arrive or Framework Stage values change.
+   Edit only here when team names arrive or Stage Name values change.
    ===================================================================== */
 const TEAM_LEADS = [
   "Mohammad Kaddoura",
@@ -1386,7 +1386,8 @@ const TEAM_LEADS = [
   "Yaseen Alquraan",
   "Salah Assi",
   "Mahmoud Abukhamseh",
-  "Saed Alsammak"
+  "Saed Alsammak",
+  "BA Team"
 ];
 
 const DEPARTMENTS = [
@@ -1397,70 +1398,88 @@ const DEPARTMENTS = [
   "Finance - Reporting",
   "Heritage",
   "Digital Transformation",
-  "PMO",
-  "Cultural Scholarship"
+  "PMO - PMO",
+  "PMO - BA",
+  "Cultural Scholarship",
+  "AI Strategy Team",
+  "MoC CS Team",
+  "MoC DMO Team",
+  "MoC Infra Team"
 ];
 
-// Real initiatives (the top level of the hierarchy: Initiative -> Workstream ->
-// Task), reconstructed from the Final PM Sheet. "PMO / Delivery Management"
-// is a NEW bucket added here to hold delivery-management workstreams (Risk
-// Register upkeep, status meetings, presentations, the AI Discovery Report,
-// the Discovery Sign-Off gate) that had no initiative assigned in the sheet —
-// flagged for confirmation, see MOC_Dashboard_Notes.md decision D6.
+// Initiatives — updated to match Mahmoud Edition structure
+// Includes MAPE phase-level initiatives + standalone deliverables
 const INITIATIVES = [
+  "AI Strategy - Monitor",
+  "AI Strategy - Analyze",
+  "AI Strategy - Plan",
+  "AI Strategy - Execute",
   "AI Strategy Assessment",
-  "Copilot Productivity",
   "Cultural Universe",
-  "Use Case",
+  "Copliot Productivity",
   "Ad Hoc",
-  "BRD",
-  "PMO / Delivery Management"
+  "Create the Risk Register",
+  "Update the Risk Register",
+  "Required Presentation for D&T",
+  "Meetings",
+  "AI Discovery Report",
+  "AI Readiness Baseline Report",
+  "Prioritized AI Portfolio with BRDs",
+  "Execution Deliverables"
 ];
 
-// Work Type — split out from Department (see decision D5). A large share of
-// tasks were logged against "AI Strategy Team", which is US (the delivery
-// team), not a MoC department — that collapsed every By-Department chart
-// into one giant bar. Department now only holds real MoC departments;
-// internal/advisory work carries a Work Type instead.
-
-// Progress History milestones — 14 initiative-level items tracked weekly.
-// These are broader than individual workstreams — they represent the
-// deliverable/phase level that leadership tracks progress against.
+// Progress History milestones — updated to Mahmoud Edition
 const PROGRESS_MILESTONES = [
   "AI Strategy - Monitor",
   "AI Strategy - Analyze",
   "AI Strategy - Plan",
   "AI Strategy - Execute",
   "Cultural Universe",
-  "Use Cases",
-  "Copilot Productivity",
+  "Copliot Productivity",
   "Ad Hoc",
-  "BRD",
-  "Risk Register",
-  "Project Updates & Meetings",
-  "Internal Progress Review & Reporting",
-  "AI Discovery Report - Draft Review",
-  "AI Discovery Report - Sign-Off"
+  "Create the Risk Register",
+  "Risk Register Update",
+  "Required Presentation for D&T",
+  "Meetings",
+  "AI Discovery Report",
+  "AI Readiness Baseline Report",
+  "Prioritized AI Portfolio with BRDs",
+  "Execution Deliverables"
 ];
 const WORK_TYPES = ["Client Engagement", "Internal Delivery", "Advisory"];
 
-// Framework Stage — the MAPE delivery phase only (Monitor/Analyze/Plan/
-// Execute). Previously merged with the 5 pillars into one 9-value list,
-// which meant every row could only carry one or the other. See PILLARS below
-// for the other half of that split (decision, see project notes section 3).
-const FRAMEWORK_STAGES = ["Monitor", "Analyze", "Plan", "Execute"];
+// Stage Name — extended to include Mahmoud Edition's additional stages
+// MAPE core: Monitor / Analyze / Plan / Execute
+// Deliverable stages: Stage Outcomes / SIGN-OFF
+// Project-level: Application Migration / Microsoft Copilot / Others
+const FRAMEWORK_STAGES = ["Monitor", "Analyze", "Plan", "Execute", "Stage Outcomes", "SIGN-OFF", "Application Migration", "Microsoft Copilot", "Others"];
 
-// Pillars (P1–P5) — orthogonal to Framework Stage. A task is both a stage AND
-// a pillar at the same time (e.g. "Monitor" + "P2 AI Ready Data &
-// Infrastructure"), so this can never be merged back into FRAMEWORK_STAGES.
+// Pillars — updated to full names from Mahmoud Edition + project-level pillars
 const PILLARS = [
   { code: "P1", name: "AI Strategy" },
   { code: "P2", name: "AI Ready Data & Infrastructure" },
   { code: "P3", name: "Workforce & Culture" },
   { code: "P4", name: "Governance & Responsible AI" },
-  { code: "P5", name: "AI Impact" }
+  { code: "P5", name: "AI Impact" },
+  { code: "PR", name: "Project Related" },
+  { code: "AD", name: "Agreed Deliverables" },
+  { code: "CG", name: "Client Gate" },
+  { code: "CU", name: "Cultural Universe Migration" }
 ];
 const PILLAR_NAME_BY_CODE = Object.fromEntries(PILLARS.map(p=>[p.code, p.name]));
+// Also support full-name pillar codes from Mahmoud Edition
+const PILLAR_FULL_TO_CODE = {
+  "P1 — AI Strategy": "P1",
+  "P2 — AI Ready Data & Infrastructure": "P2",
+  "P3 — Workforce & Culture": "P3",
+  "P4 — Governance & Responsible AI": "P4",
+  "P5 — AI Impact": "P5",
+  "Project Related": "PR",
+  "Agreed Deliverables": "AD",
+  "Client Gate": "CG",
+  "Cultural Universe Migration": "CU"
+};
+function normalisePillar(raw){ return PILLAR_FULL_TO_CODE[raw] || raw || null; }
 // Builds the composite "M - P2 - AI Ready Data & Infrastructure - <activity>"
 // label on demand — this is DERIVED, never typed, so it can never drift or
 // misspell the pillar name the way the hand-typed version did.
@@ -1539,59 +1558,70 @@ function daysFromToday(n){
 function h(daysAgo, pct){ return { date: daysFromToday(-daysAgo), pct }; }
 
 let MOC_DATA = [
-  { id:"WS-01", name:"AI maturity baseline assessment", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-02", name:"Stakeholder interviews & discovery", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Yaseen Alquraan", risk:"Delayed", pct:82, history:[h(0,82)], past:"", next:"", notes:"" },
-  { id:"WS-03", name:"Inventory & classify critical data assets", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-04", name:"Assess data readiness for AI solutions", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"Blocked", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-05", name:"Assess workforce AI skills gaps", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-06", name:"Talent landscape review & benchmarking", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-07", name:"Identify & capture Cyber Security requirements and gaps", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-08", name:"Identify compliance gaps & regulatory exposure", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:50, history:[h(0,50)], past:"", next:"", notes:"" },
-  { id:"WS-09", name:"Define metrics of value for the organization", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Mohammad Kaddoura", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-10", name:"Measure & capture data on value of each use case", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Mohammad Kaddoura", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-11", name:"Map & prioritize use case portfolio", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:80, history:[h(0,80)], past:"", next:"", notes:"" },
-  { id:"WS-12", name:"Define AI vision & ambition statement", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-13", name:"ready data foundation strategy", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-14", name:"Define AI infrastructure platform strategy", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-15", name:"Define AI workforce & talent strategy", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-16", name:"Identify & recruit AI Champions per unit", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-17", name:"Establish AI governance framework & principles", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-18", name:"in-the-Loop decision rights", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-19", name:"Calculate value of each use case via impact framework", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-20", name:"Prioritize solutions by feasibility & impact", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-21", name:"Appoint AI Leader & establish CoE", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-22", name:"Define AI target operating model", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-23", name:"ready data pipelines", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-24", name:"Establish data governance & quality framework", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-25", name:"Design AI literacy training programs", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-26", name:"Define change management & culture plan", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-27", name:"Conduct risk assessments per use case", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-28", name:"Draft & publish core AI ethics policies", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-29", name:"Define adoption plan & assess solution combinations", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-30", name:"Calculate ROI models & impact frameworks per use case", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-31", name:"Portfolio governance & investment discipline", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-32", name:"Executive AI strategy review cadence", initiative:"AI Strategy Assessment", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-33", name:"Deploy MLOps for continuous model monitoring", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-34", name:"AI workload capacity planning & GPU forecasting", initiative:"AI Strategy Assessment", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-35", name:"Launch AI literacy training across the org", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-36", name:"Review 100% of roles for AI impact & redesign", initiative:"AI Strategy Assessment", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-37", name:"Implement bias evaluation for all production models", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-38", name:"Establish AI Ethics Board & meeting cadence", initiative:"AI Strategy Assessment", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-39", name:"time execution monitoring to validate impact", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-40", name:"Deploy live impact dashboards & report to stakeholders", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-41", name:"Application Migration", initiative:"Cultural Universe", pillar:null, department:"", workType:"Internal Delivery", stage:"Execute", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-42", name:"Capture Use Cases", initiative:"Use Case", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Omar Alsmadi", risk:"Delayed", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-43", name:"Microsoft Copilot Rollout in MoC", initiative:"Copilot Productivity", pillar:null, department:"", workType:"Internal Delivery", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:97, history:[h(0,97)], past:"", next:"", notes:"" },
-  { id:"WS-44", name:"Ad Hoc Requests", initiative:"Ad Hoc", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-45", name:"BRD", initiative:"BRD", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-46", name:"Risk Register", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:99, history:[h(0,99)], past:"", next:"", notes:"" },
-  { id:"WS-47", name:"D&T Progress & Updates Meetings", initiative:"PMO / Delivery Management", pillar:null, department:"Digital Transformation", workType:"Client Engagement", stage:"Monitor", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-48", name:"Presentations", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-49", name:"AI Strategy Team Follow ups", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-50", name:"AI Discovery Report - Draft Review", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-51", name:"AI Discovery Report - Final Submission", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-52", name:"DISCOVERY SIGN-OFF · Client Gate", initiative:"PMO / Delivery Management", pillar:null, department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Unassigned", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-53", name:"General AI Strategy Assessment activities", initiative:"AI Strategy Assessment", pillar:"P1", department:"Digital Transformation", workType:"Client Engagement", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:33, history:[h(0,33)], past:"", next:"", notes:"" }
+  // ── Monitor (WS-01 → WS-10) ─────────────────────────────────────────────
+  { id:"WS-01", name:"AI maturity baseline assessment", initiative:"AI Strategy - Monitor", pillar:"P1", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"Baseline assessment completed", next:"", notes:"" },
+  { id:"WS-02", name:"Stakeholder interviews & discovery", initiative:"AI Strategy - Monitor", pillar:"P1", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:100, history:[h(7,90),h(0,100)], past:"All stakeholder interviews completed", next:"", notes:"" },
+  { id:"WS-03", name:"Inventory & classify critical data assets", initiative:"AI Strategy - Monitor", pillar:"P2", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"Data inventory completed", next:"", notes:"" },
+  { id:"WS-04", name:"Assess data readiness for AI solutions", initiative:"AI Strategy - Monitor", pillar:"P2", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"Data readiness assessment completed", next:"", notes:"" },
+  { id:"WS-05", name:"Assess workforce AI skills gaps", initiative:"AI Strategy - Monitor", pillar:"P3", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"Skills gap assessment completed", next:"", notes:"" },
+  { id:"WS-06", name:"Talent landscape review & benchmarking", initiative:"AI Strategy - Monitor", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"Talent landscape review completed", next:"", notes:"" },
+  { id:"WS-07", name:"Identify & capture Cyber Security requirements and gaps", initiative:"AI Strategy - Monitor", pillar:"P4", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"Cybersecurity requirements captured", next:"", notes:"" },
+  { id:"WS-08", name:"Identify compliance gaps & regulatory exposure", initiative:"AI Strategy - Monitor", pillar:"P4", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"Compliance gaps identified", next:"", notes:"" },
+  { id:"WS-09", name:"Define metrics of value for the organization", initiative:"AI Strategy - Monitor", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"Value metrics defined", next:"", notes:"" },
+  { id:"WS-10", name:"Measure & capture data on value of each use case", initiative:"AI Strategy Assessment", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Monitor", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"Use case value data captured", next:"", notes:"" },
+  // ── Analyze (WS-11 → WS-20) ─────────────────────────────────────────────
+  { id:"WS-11", name:"Map & prioritize use case portfolio", initiative:"AI Strategy - Analyze", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-12", name:"Define AI vision & ambition statement", initiative:"AI Strategy - Analyze", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Salah Assi", risk:"Blocked", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-13", name:"Define AI-ready data foundation strategy", initiative:"AI Strategy - Analyze", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-14", name:"Define AI infrastructure platform strategy", initiative:"AI Strategy - Analyze", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-15", name:"Define AI workforce & talent strategy", initiative:"AI Strategy - Analyze", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-16", name:"Identify & recruit AI Champions per unit", initiative:"AI Strategy - Analyze", pillar:"P3", department:"", workType:"Client Engagement", stage:"Analyze", lead:"Mohammad Kaddoura", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-17", name:"Establish AI governance framework & principles", initiative:"AI Strategy - Analyze", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-18", name:"Define Human-in-the-Loop decision rights", initiative:"AI Strategy - Analyze", pillar:"P4", department:"", workType:"Client Engagement", stage:"Analyze", lead:"Mohammad Kaddoura", risk:"Delayed", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-19", name:"Calculate value of each use case via impact framework", initiative:"AI Strategy - Analyze", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Yaseen Alquraan", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-20", name:"Prioritize solutions by feasibility & impact", initiative:"AI Strategy - Analyze", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Analyze", lead:"Yaseen Alquraan", risk:"At Risk", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  // ── Plan (WS-21 → WS-30) ────────────────────────────────────────────────
+  { id:"WS-21", name:"Appoint AI Leader & establish CoE", initiative:"AI Strategy - Plan", pillar:"P1", department:"", workType:"Client Engagement", stage:"Plan", lead:"Omar Alsmadi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-22", name:"Define AI target operating model", initiative:"AI Strategy - Plan", pillar:"P1", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-23", name:"Build production-ready data pipelines", initiative:"AI Strategy - Plan", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Yaseen Alquraan", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-24", name:"Establish data governance & quality framework", initiative:"AI Strategy - Plan", pillar:"P2", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Yaseen Alquraan", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-25", name:"Design AI literacy training programs", initiative:"AI Strategy - Plan", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Omar Alsmadi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-26", name:"Define change management & culture plan", initiative:"AI Strategy - Plan", pillar:"P3", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Yaseen Alquraan", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-27", name:"Conduct risk assessments per use case", initiative:"AI Strategy - Plan", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Omar Alsmadi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-28", name:"Draft & publish core AI ethics policies", initiative:"AI Strategy - Plan", pillar:"P4", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Yaseen Alquraan", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-29", name:"Define adoption plan & assess solution combinations", initiative:"AI Strategy - Plan", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-30", name:"Calculate ROI models & impact frameworks per use case", initiative:"AI Strategy - Plan", pillar:"P5", department:"", workType:"Internal Delivery", stage:"Plan", lead:"Yaseen Alquraan", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  // ── Execute (WS-31 → WS-40) ─────────────────────────────────────────────
+  { id:"WS-31", name:"Portfolio governance & investment discipline", initiative:"AI Strategy - Execute", pillar:"P1", department:"", workType:"Client Engagement", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-32", name:"Executive AI strategy review cadence", initiative:"AI Strategy - Execute", pillar:"P1", department:"", workType:"Client Engagement", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-33", name:"Deploy MLOps for continuous model monitoring", initiative:"AI Strategy - Execute", pillar:"P2", department:"", workType:"Client Engagement", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-34", name:"AI workload capacity planning & GPU forecasting", initiative:"AI Strategy - Execute", pillar:"P2", department:"", workType:"Client Engagement", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-35", name:"Launch AI literacy training across the org", initiative:"AI Strategy - Execute", pillar:"P3", department:"", workType:"Client Engagement", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-36", name:"Review 100% of roles for AI impact & redesign", initiative:"AI Strategy - Execute", pillar:"P3", department:"", workType:"Client Engagement", stage:"Execute", lead:"Omar Alsmadi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-37", name:"Implement bias evaluation for all production models", initiative:"AI Strategy - Execute", pillar:"P4", department:"", workType:"Client Engagement", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-38", name:"Establish AI Ethics Board & meeting cadence", initiative:"AI Strategy - Execute", pillar:"P4", department:"", workType:"Client Engagement", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-39", name:"Real-time execution monitoring to validate impact", initiative:"AI Strategy - Execute", pillar:"P5", department:"", workType:"Client Engagement", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-40", name:"Deploy live impact dashboards & report to stakeholders", initiative:"AI Strategy - Execute", pillar:"P5", department:"", workType:"Client Engagement", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  // ── Project-level / Deliverables (WS-41 → WS-59) ────────────────────────
+  { id:"WS-41", name:"Application Migration", initiative:"Cultural Universe", pillar:null, department:"", workType:"Internal Delivery", stage:"Application Migration", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-42", name:"Microsoft Copilot Rollout in MoC", initiative:"Copliot Productivity", pillar:null, department:"", workType:"Internal Delivery", stage:"Microsoft Copilot", lead:"Salah Assi", risk:"On Track", pct:60, history:[h(7,40),h(0,60)], past:"Copilot rollout in progress", next:"Complete remaining user onboarding", notes:"" },
+  { id:"WS-43", name:"Ad Hoc Requests", initiative:"Ad Hoc", pillar:null, department:"", workType:"Internal Delivery", stage:"Others", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-44", name:"Risk Register — Create", initiative:"Create the Risk Register", pillar:null, department:"", workType:"Client Engagement", stage:"Stage Outcomes", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"Initial risk register created and submitted", next:"", notes:"" },
+  { id:"WS-45", name:"D&T Progress & Updates Meetings", initiative:"Meetings", pillar:null, department:"Digital Transformation", workType:"Client Engagement", stage:"Others", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:20, history:[h(7,15),h(0,20)], past:"Weekly status meetings ongoing", next:"Next meeting scheduled", notes:"" },
+  { id:"WS-46", name:"Presentations", initiative:"Required Presentation for D&T", pillar:null, department:"", workType:"Client Engagement", stage:"Others", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:35, history:[h(7,25),h(0,35)], past:"Key presentations delivered", next:"Prepare next presentation", notes:"" },
+  { id:"WS-47", name:"AI Strategy Team Follow ups", initiative:"Meetings", pillar:null, department:"", workType:"Internal Delivery", stage:"Others", lead:"Mohammad Kaddoura", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-48", name:"Risk Register — Update", initiative:"Update the Risk Register", pillar:null, department:"", workType:"Client Engagement", stage:"Stage Outcomes", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:60, history:[h(7,50),h(0,60)], past:"Risk register updated with new risks", next:"Continue weekly updates", notes:"" },
+  { id:"WS-49", name:"AI Discovery Report — compile & draft", initiative:"AI Discovery Report", pillar:null, department:"", workType:"Internal Delivery", stage:"Stage Outcomes", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"AI Discovery Report compiled and drafted", next:"", notes:"" },
+  { id:"WS-50", name:"AI Discovery Report — Final Submission", initiative:"AI Discovery Report", pillar:null, department:"", workType:"Client Engagement", stage:"Stage Outcomes", lead:"Mohammad Kaddoura", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"Final AI Discovery Report submitted to D&T", next:"", notes:"" },
+  { id:"WS-51", name:"AI Discovery Report — Official Sign-off", initiative:"AI Discovery Report", pillar:null, department:"", workType:"Client Engagement", stage:"SIGN-OFF", lead:"Mohammad Kaddoura", risk:"On Track", pct:90, history:[h(7,80),h(0,90)], past:"Sign-off in progress with D&T Leadership", next:"Await final signature", notes:"" },
+  { id:"WS-52", name:"AI Readiness Baseline Report — compile & draft", initiative:"AI Readiness Baseline Report", pillar:null, department:"", workType:"Internal Delivery", stage:"Stage Outcomes", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"AI Readiness Baseline Report compiled", next:"", notes:"" },
+  { id:"WS-53", name:"AI Readiness Baseline Report — Final Submission", initiative:"AI Readiness Baseline Report", pillar:null, department:"", workType:"Client Engagement", stage:"Stage Outcomes", lead:"Mohammad Kaddoura", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-54", name:"AI Readiness Baseline Report — Official Sign-off", initiative:"AI Readiness Baseline Report", pillar:null, department:"", workType:"Client Engagement", stage:"SIGN-OFF", lead:"Mohammad Kaddoura", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-55", name:"Prioritized AI Portfolio with BRDs — compile & draft", initiative:"Prioritized AI Portfolio with BRDs", pillar:null, department:"", workType:"Internal Delivery", stage:"Stage Outcomes", lead:"Yaseen Alquraan", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-56", name:"Prioritized AI Portfolio with BRDs — Final Submission", initiative:"Prioritized AI Portfolio with BRDs", pillar:null, department:"", workType:"Client Engagement", stage:"Stage Outcomes", lead:"Mohammad Kaddoura", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-57", name:"Prioritized AI Portfolio with BRDs — Approved", initiative:"Prioritized AI Portfolio with BRDs", pillar:null, department:"", workType:"Client Engagement", stage:"SIGN-OFF", lead:"Mohammad Kaddoura", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-58", name:"Execution Deliverables — AI Scale-Up Roadmap & Blueprint", initiative:"Execution Deliverables", pillar:null, department:"", workType:"Internal Delivery", stage:"Stage Outcomes", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-59", name:"Execution Deliverables — Scale-Up Decision", initiative:"Execution Deliverables", pillar:null, department:"", workType:"Client Engagement", stage:"SIGN-OFF", lead:"Mohammad Kaddoura", risk:"On Track", pct:0, history:[h(0,0)], past:"", next:"", notes:"" }
 ];
 
 /* Rolling N-day lookback: finds the latest history snapshot at or before
@@ -2107,7 +2137,7 @@ function buildInitiativeDetailHTML(idx){
     <div class="modal-head">
       <div>
         <h3>${escapeHtml(item.name)}</h3>
-        <p class="modal-sub">${escapeHtml(item.initiative||'—')}${item.pillar?` &nbsp;·&nbsp; ${item.pillar} — ${escapeHtml(PILLAR_NAME_BY_CODE[item.pillar]||'')}`:''} &nbsp;·&nbsp; <span class="badge stage">${escapeHtml(item.stage)}</span>${item.department?` &nbsp;·&nbsp; ${escapeHtml(item.department)}`:''}</p>
+        <p class="modal-sub">${escapeHtml(item.initiative||'—')}${item.pillar?(()=>{const code=normalisePillar(item.pillar);const name=PILLAR_NAME_BY_CODE[code]||item.pillar;return ` &nbsp;·&nbsp; ${code||item.pillar}${name&&name!==item.pillar?' — '+escapeHtml(name):''}`;})():''} &nbsp;·&nbsp; <span class="badge stage">${escapeHtml(item.stage)}</span>${item.department?` &nbsp;·&nbsp; ${escapeHtml(item.department)}`:''}</p>
       </div>
       <button class="modal-close-x" onclick="closeDetailModal()">✕</button>
     </div>
@@ -2682,7 +2712,7 @@ function renderOvOwnerWorkload(){
 function renderExecSummary(){
   const h = computeHealthScore();
   const lbl = healthLabel(h.score);
-  const deptsCovered = new Set(MOC_DATA.map(i=>i.department).filter(Boolean)).size;
+  const deptsCovered = new Set(TASKS_DATA.map(t=>t.department).filter(Boolean)).size;
   const today = new Date(); today.setHours(0,0,0,0);
   const overdueCount = TASKS_DATA.filter(t=>t.due&&t.due<today && t.status!=='Completed').length;
   const active = activeScopeProgress();
@@ -2713,7 +2743,7 @@ function renderOverview(){
 function renderWorkstreamsFilters(){
   const dSel = $('#wsDeptFilter');
   const rSel = $('#wsRiskFilter');
-  dSel.innerHTML = `<option value="">All Departments</option>` + DEPARTMENTS.map(d=>`<option value="${d}">${d}</option>`).join('');
+  dSel.innerHTML = '';
   rSel.innerHTML = `<option value="">All Risk Levels</option>` + RISK_LEVELS.map(r=>`<option value="${r}">${r}</option>`).join('');
   dSel.onchange = renderWorkstreamsTable;
   rSel.onchange = renderWorkstreamsTable;
@@ -2723,7 +2753,7 @@ let wsSortDir = 1;
 function renderWorkstreamsTable(){
   const dept = $('#wsDeptFilter').value;
   const risk = $('#wsRiskFilter').value;
-  let rows = MOC_DATA.filter(i=>(!dept||i.department===dept)&&(!risk||i.risk===risk));
+  let rows = MOC_DATA.filter(i=>(!risk||i.risk===risk));
   if(wsSortKey){
     rows = [...rows].sort((a,b)=>{
       let av = a[wsSortKey], bv = b[wsSortKey];
@@ -2733,8 +2763,8 @@ function renderWorkstreamsTable(){
   }
   const cols = [
     {key:'initiative', label:'Initiative'},
-    {key:'name', label:'Workstream'}, {key:'pillar', label:'Pillar'}, {key:'department', label:'Department'},
-    {key:'stage', label:'Framework Stage'}, {key:'lead', label:'Assignee'}, {key:'risk', label:'Risk'},
+    {key:'name', label:'Workstream'}, {key:'pillar', label:'Pillar'},
+    {key:'stage', label:'Stage Name'}, {key:'lead', label:'Assignee'}, {key:'risk', label:'Risk'},
     {key:'pct', label:'WS Progress'}, {key:null, label:'Trend'}, {key:null, label:'Last Update'}, {key:null, label:'Next Step'}
   ];
   $('#wsTable').innerHTML = `
@@ -2747,7 +2777,7 @@ function renderWorkstreamsTable(){
         <td style="font-weight:600;color:var(--navy2);">${i.initiative||'—'}</td>
         <td><b>${i.name}</b>${i.notes?`<div style="font-size:11px;color:var(--muted);">${i.notes}</div>`:''}</td>
         <td style="font-size:12px;" title="${pillarLabel}">${i.pillar||'—'}</td>
-        <td>${i.department||'<span style="color:var(--muted);">—</span>'}</td>
+        
         <td><span class="badge stage">${i.stage}</span></td>
         <td>${i.lead}</td>
         <td>${badge(i.risk)}</td>
@@ -2776,7 +2806,7 @@ function renderWorkstreamsTable(){
 function renderDepartments(){
   const riskClass = r => r==='On Track'?'risk-on-track':r==='At Risk'?'risk-at-risk':r==='Delayed'?'risk-delayed':r==='Blocked'?'risk-blocked':'';
   $('#deptGrid').innerHTML = DEPARTMENTS.map(dep=>{
-    const items = MOC_DATA.filter(i=>i.department===dep);
+    const items = TASKS_DATA.filter(t=>t.department===dep);
     return `<div class="dept-col">
       <h4><span class="dept-name">${dep}</span><span class="dept-count">${items.length} workstream${items.length===1?'':'s'}</span></h4>
       ${items.map(i=>{
@@ -3193,10 +3223,10 @@ function buildReportText(){
     <h2 class="report-h2">REPORTING WORKSTREAM — ALL ${totalInit} WORKSTREAMS</h2>
     <table class="report-table">
       <thead>
-        <tr><th>Initiative</th><th>Department</th><th>Workstream</th><th>% Complete</th><th>Framework Stage</th><th>Risk</th></tr>
+        <tr><th>Initiative</th><th>Workstream</th><th>% Complete</th><th>Stage Name</th><th>Risk</th></tr>
       </thead>
       <tbody>
-        ${MOC_DATA.map(i=>`<tr><td>${i.initiative||'—'}</td><td>${i.department||'—'}</td><td><b>${i.name}</b></td><td><b>${i.pct}%</b></td><td>${i.stage}</td><td>${i.risk}</td></tr>`).join('')}
+        ${MOC_DATA.map(i=>`<tr><td>${i.initiative||'—'}</td><td><b>${i.name}</b></td><td><b>${i.pct}%</b></td><td>${i.stage}</td><td>${i.risk}</td></tr>`).join('')}
       </tbody>
     </table>
   `;
@@ -3447,15 +3477,15 @@ function buildReportWordHTML(){
     <table cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;font-size:10pt;margin:8px 0 16px;">
       <tr style="background:${c.bg};">
         <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Initiative</th>
-        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Department</th>
+        
         <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Workstream</th>
         <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">% Complete</th>
-        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Framework Stage</th>
+        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Stage Name</th>
         <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Risk</th>
       </tr>
       ${MOC_DATA.map(i=>`<tr>
         <td style="border:1px solid ${c.border};">${i.initiative||'—'}</td>
-        <td style="border:1px solid ${c.border};">${i.department||'—'}</td>
+        
         <td style="border:1px solid ${c.border};"><b>${i.name}</b></td>
         <td style="border:1px solid ${c.border};"><b>${i.pct}%</b></td>
         <td style="border:1px solid ${c.border};">${i.stage}</td>
@@ -3747,7 +3777,7 @@ function renderPivot(){
       <select id="pivotDim">
         <option value="lead">Assignee</option>
         <option value="department">Department</option>
-        <option value="stage">Framework Stage</option>
+        <option value="stage">Stage Name</option>
         <option value="risk">Risk</option>
       </select>
     </div>
@@ -3763,7 +3793,7 @@ function renderPivot(){
       if(!groups[key]) groups[key] = [];
       groups[key].push(i);
     });
-    const dimLabel = {lead:'Assignee', department:'Department', stage:'Framework Stage', risk:'Risk'}[dim];
+    const dimLabel = {lead:'Assignee', department:'Department', stage:'Stage Name', risk:'Risk'}[dim];
     el.querySelector('#pivotTable').innerHTML = `
       <tr><th>${dimLabel}</th><th>Workstream Count</th><th>Avg Progress</th><th>At Risk</th></tr>
       ${Object.entries(groups).map(([key,items])=>`
@@ -3843,7 +3873,7 @@ const taskFilterState = {
 };
 const FILTER_DIMENSIONS = [
   { key:'department', label:'Department',      options: DEPARTMENTS },
-  { key:'stage',      label:'Framework Stage', options: FRAMEWORK_STAGES },
+  { key:'stage',      label:'Stage Name', options: FRAMEWORK_STAGES },
   { key:'status',     label:'Task Status',     options: TASK_STATUSES },
   { key:'risk',       label:'Risk',            options: RISK_LEVELS },
   { key:'priority',   label:'Priority',        options: PRIORITIES },
@@ -4012,7 +4042,7 @@ function renderTasks(){
         {key:'title',    label:'Task'},
         {key:'workstream', label:'Workstream'},
         {key:'department', label:'Department'},
-        {key:'stage',    label:'Framework Stage'},
+        {key:'stage',    label:'Stage Name'},
         {key:'assignee', label:'Assignee'},
         {key:'status',   label:'Task Status'},
         {key:'priority', label:'Priority'},
@@ -4888,7 +4918,7 @@ function exportAllDataToExcel(){
     'Workstream Name': i.name,
     Department: i.department||'',
     'Work Type': i.workType||'',
-    'Framework Stage': i.stage,
+    'Stage Name': i.stage,
     Assignee: i.lead,
     Risk: i.risk,
     'WS Progress %': i.pct,
@@ -4915,7 +4945,7 @@ function exportAllDataToExcel(){
   // Tasks
   const taskRows = TASKS_DATA.map(t=>({
     'Task ID': t.id, Title: t.title, Description: t.description||'', 'Related Workstream': t.workstream, Department: t.department,
-    'Work Type': t.workType||'', Assignee: t.assignee, 'Task Status': t.status, Risk: t.risk, Priority: t.priority, 'Framework Stage': t.stage,
+    'Work Type': t.workType||'', Assignee: t.assignee, 'Task Status': t.status, Risk: t.risk, Priority: t.priority, 'Stage Name': t.stage,
     Tags: t.tags.join(', '), 'Task Progress %': t.pct, 'Due Date': fmtDate(t.due), Notes: t.notes
   }));
   const taskSheet = XLSX.utils.json_to_sheet(taskRows);
@@ -4965,7 +4995,7 @@ function exportAllDataToExcel(){
   for(let i=0;i<maxLen;i++){
     listsRows.push({
       Departments: DEPARTMENTS[i]||'', Initiatives: INITIATIVES[i]||'', Pillars: pillarLabels[i]||'',
-      'Framework Stages': FRAMEWORK_STAGES[i]||'', 'Work Types': WORK_TYPES[i]||'', 'Risk Levels': RISK_LEVELS[i]||'',
+      'Stage Names': FRAMEWORK_STAGES[i]||'', 'Work Types': WORK_TYPES[i]||'', 'Risk Levels': RISK_LEVELS[i]||'',
       Priorities: PRIORITIES[i]||'', 'Task Statuses': TASK_STATUSES[i]||'', 'Risk Categories': RISK_CATEGORIES[i]||'',
       'Impact Levels': IMPACT_LEVELS[i]||'', 'Register Statuses': REGISTER_STATUSES[i]||''
     });
@@ -5046,7 +5076,7 @@ $('#importFileInput').addEventListener('change', (e)=>{
       Object.values(historyByName).forEach(h=> h.sort((a,b)=>a.date-b.date));
 
       // --- Workstreams -> MOC_DATA. Accepts current headers (Workstream
-      // Name / Initiative / Framework Stage / Assignee / Risk / WS Progress
+      // Name / Initiative / Stage Name / Assignee / Risk / WS Progress
       // %) with fallback to the old headers for back-compat. ---
       if(wsRows.length){
         MOC_DATA = wsRows.map(r=>{
@@ -5060,7 +5090,7 @@ $('#importFileInput').addEventListener('change', (e)=>{
             name, initiative: r['Initiative'] || r['Workstream'] || INITIATIVES[0],
             pillar: r['Pillar'] || null,
             department: r['Department']||'', workType: r['Work Type']||WORK_TYPES[0],
-            stage: r['Framework Stage'] || r['Engagement Stage'] || FRAMEWORK_STAGES[0],
+            stage: r['Stage Name'] || r['Framework Stage'] || r['Engagement Stage'] || FRAMEWORK_STAGES[0],
             lead: r['Assignee'] || r['Lead'] || TEAM_LEADS[0], risk: r['Risk'] || r['Risk Status'] || 'On Track', pct,
             history, past: r['Last Accomplishment']||'', next: r['Next Step']||'', notes: r['Notes']||''
           };
@@ -5080,7 +5110,7 @@ $('#importFileInput').addEventListener('change', (e)=>{
           status: r['Task Status'] || r['Status'] || TASK_STATUSES[0],
           risk: r['Risk']||'On Track',
           priority: r['Priority']||PRIORITIES[0],
-          stage: r['Framework Stage'] || r['Engagement Stage'] || FRAMEWORK_STAGES[0],
+          stage: r['Stage Name'] || r['Framework Stage'] || r['Engagement Stage'] || FRAMEWORK_STAGES[0],
           tags: String(r['Tags']||'').split(',').map(t=>t.trim()).filter(Boolean),
           pct: Number(r['Task Progress %'] ?? r['Progress %']) || 0,
           due: parseAnyDate(r['Due Date']),
