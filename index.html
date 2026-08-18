@@ -2268,16 +2268,24 @@ function buildTaskDetailHTML(taskId){
 window.openTaskDetail = function(taskId){ openDetailModal(buildTaskDetailHTML(taskId)); };
 
 function computeHealthScore(){
-  const avgProgress = avg(MOC_DATA.map(i=>i.pct));
+  // Task completion ratio — how many tasks are truly done
+  const completedTasks = TASKS_DATA.filter(t=>t.status==='Completed').length;
+  const completionRatio = TASKS_DATA.length ? completedTasks/TASKS_DATA.length : 0;
+  // On-track workstreams ratio
   const onTrackCount = MOC_DATA.filter(i=>i.risk==='On Track').length;
   const onTrackRatio = MOC_DATA.length ? onTrackCount/MOC_DATA.length : 0;
+  // Overdue penalty
   const today = new Date(); today.setHours(0,0,0,0);
   const overdueTasks = TASKS_DATA.filter(t=>t.due&&t.due<today && t.status!=='Completed').length;
   const overdueRatio = TASKS_DATA.length ? overdueTasks/TASKS_DATA.length : 0;
-  const raw = avgProgress*0.6 + onTrackRatio*100*0.3 + (1-overdueRatio)*100*0.1;
+  // Weighted score: 50% task completion + 40% on-track + 10% overdue penalty
+  const raw = completionRatio*100*0.5 + onTrackRatio*100*0.4 + (1-overdueRatio)*100*0.1;
+  const avgProgress = avg(MOC_DATA.map(i=>i.pct));
   return {
     score: Math.max(0, Math.min(100, Math.round(raw))),
-    avgProgress, onTrackRatio, overdueTasks, overdueCount:overdueTasks
+    completedTasks, totalTasks: TASKS_DATA.length,
+    avgProgress, onTrackRatio, onTrackCount,
+    overdueTasks, overdueCount: overdueTasks
   };
 }
 function healthLabel(score){
@@ -2291,18 +2299,21 @@ function renderHealthBanner(){
   const lbl = healthLabel(h.score);
   const today = new Date(); today.setHours(0,0,0,0);
   const overdueCount = TASKS_DATA.filter(t=>t.due&&t.due<today && t.status!=='Completed').length;
+    const deptsCovered = new Set(TASKS_DATA.map(t=>t.department).filter(Boolean)).size;
   $('#healthScoreBanner').innerHTML = `
     <div class="health-banner">
       <div class="hb-score-wrap">
-        <div class="hb-score">${h.score}</div>
+        <div class="hb-score">${h.score}%</div>
         <div class="hb-label">Portfolio Health</div>
         <div class="hb-status" style="background:${lbl.color};color:#fff;">${lbl.text}</div>
       </div>
       <div class="hb-bar-area">
         <div class="hb-bar-track"><div class="hb-bar-fill" style="width:${h.score}%;background:${lbl.color};"></div></div>
         <div class="hb-breakdown">
-          <div><b>${Math.round(h.avgProgress)}%</b>Avg. progress</div>
-          <div><b>${Math.round(h.onTrackRatio*100)}%</b>Initiatives on track</div>
+          <div><b>${MOC_DATA.length}</b>Workstreams</div>
+          <div><b>${deptsCovered}</b>MoC Departments</div>
+          <div><b>${h.completedTasks}/${h.totalTasks}</b>Tasks Completed</div>
+          <div><b>${Math.round(h.onTrackRatio*100)}%</b>On Track</div>
           <div><b>${overdueCount}</b>Overdue tasks</div>
         </div>
       </div>
@@ -2378,8 +2389,13 @@ const DEPT_CHART_LABEL = {
   "Finance - Reporting":                  "Fin.|Reporting",
   "Heritage":                             "Heritage",
   "Digital Transformation":               "Digital|Transf.",
-  "PMO":                                  "PMO",
-  "Cultural Scholarship":                 "Cultural|Sch."
+  "PMO - PMO":                            "PMO",
+  "PMO - BA":                             "PMO-BA",
+  "Cultural Scholarship":                 "Cultural|Sch.",
+  "AI Strategy Team":                     "AI|Strategy",
+  "MoC CS Team":                          "MoC CS",
+  "MoC DMO Team":                         "MoC DMO",
+  "MoC Infra Team":                       "MoC Infra"
 };
 
 function renderDeptBarChart(){
@@ -2707,14 +2723,7 @@ function renderExecSummary(){
   const today = new Date(); today.setHours(0,0,0,0);
   const overdueCount = TASKS_DATA.filter(t=>t.due&&t.due<today && t.status!=='Completed').length;
   const active = activeScopeProgress();
-  $('#execSummary').innerHTML = `
-    <div class="exec-summary">
-      <span class="es-icon">📌</span>
-      <span><b>${MOC_DATA.length} workstreams</b> across <b>${deptsCovered} MoC department${deptsCovered===1?'':'s'}</b>,
-      active-scope progress <b>${active}%</b>, <b>${overdueCount} overdue task${overdueCount===1?'':'s'}</b> —
-      portfolio health: <b style="color:${lbl.color==='var(--green)'?'#00845A':lbl.color==='var(--amber)'?'#E88B00':'#C0392B'};">${lbl.text}</b>.</span>
-    </div>
-  `;
+  $('#execSummary').innerHTML = '';
 }
 
 function renderOverview(){
