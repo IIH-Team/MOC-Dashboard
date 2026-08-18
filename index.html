@@ -2311,7 +2311,7 @@ function renderHealthBanner(){
         <div class="hb-bar-track" style="width:100%;margin-bottom:18px;">
           <div class="hb-bar-fill" style="width:${h.score}%;background:${lbl.color};"></div>
         </div>
-        <div class="hb-breakdown" style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px 24px;">
+        <div class="hb-breakdown" style="display:flex;flex-wrap:nowrap;gap:32px;align-items:flex-start;">
           <div><b>${MOC_DATA.length}</b>Workstreams</div>
           <div><b>${deptsCovered}</b>MoC Departments</div>
           <div><b>${h.completedTasks}/${h.totalTasks}</b>Tasks Completed</div>
