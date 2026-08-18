@@ -964,7 +964,6 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
       <p class="view-sub">Computed live from the current Tasks and Workstreams data — no hardcoded numbers.</p>
       <div id="execSummary"></div>
       <div id="healthScoreBanner"></div>
-      <div id="scopeProgressBanner"></div>
       <div class="card">
         <h3>By Department</h3>
         <div class="dept-row" id="ovDeptRow"></div>
@@ -2299,7 +2298,8 @@ function renderHealthBanner(){
   const lbl = healthLabel(h.score);
   const today = new Date(); today.setHours(0,0,0,0);
   const overdueCount = TASKS_DATA.filter(t=>t.due&&t.due<today && t.status!=='Completed').length;
-    const deptsCovered = new Set(TASKS_DATA.map(t=>t.department).filter(Boolean)).size;
+  const deptsCovered = new Set(TASKS_DATA.map(t=>t.department).filter(Boolean)).size;
+  const active = activeScopeProgress();
   $('#healthScoreBanner').innerHTML = `
     <div class="health-banner">
       <div class="hb-score-wrap">
@@ -2307,14 +2307,17 @@ function renderHealthBanner(){
         <div class="hb-label">Portfolio Health</div>
         <div class="hb-status" style="background:${lbl.color};color:#fff;">${lbl.text}</div>
       </div>
-      <div class="hb-bar-area">
-        <div class="hb-bar-track"><div class="hb-bar-fill" style="width:${h.score}%;background:${lbl.color};"></div></div>
-        <div class="hb-breakdown">
+      <div class="hb-bar-area" style="flex:1;">
+        <div class="hb-bar-track" style="width:100%;margin-bottom:18px;">
+          <div class="hb-bar-fill" style="width:${h.score}%;background:${lbl.color};"></div>
+        </div>
+        <div class="hb-breakdown" style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px 24px;">
           <div><b>${MOC_DATA.length}</b>Workstreams</div>
           <div><b>${deptsCovered}</b>MoC Departments</div>
           <div><b>${h.completedTasks}/${h.totalTasks}</b>Tasks Completed</div>
           <div><b>${Math.round(h.onTrackRatio*100)}%</b>On Track</div>
-          <div><b>${overdueCount}</b>Overdue tasks</div>
+          <div><b>${active}%</b>Active Scope Progress</div>
+          <div><b>${overdueCount}</b>Overdue Tasks</div>
         </div>
       </div>
     </div>
@@ -2343,19 +2346,7 @@ function engagementCompletionProgress(){
   return scoped.length ? avg(scoped.map(i=>i.pct)) : 0;
 }
 function renderScopeProgressBanner(){
-  const el = $('#scopeProgressBanner');
-  if(!el) return;
-  const active = activeScopeProgress();
-  const engagement = engagementCompletionProgress();
-  el.innerHTML = `
-    <div class="row" style="gap:12px;margin:12px 0;">
-      <div class="card" style="flex:1;min-width:220px;">
-        <div class="stat-lbl">Active scope progress</div>
-        <div class="stat-val" style="font-size:28px;">${active}%</div>
-        <p style="font-size:12px;color:var(--muted);margin:4px 0 0;">Workstreams with at least one task underway. How the team is doing on active work.</p>
-      </div>
-      
-  `;
+  // Merged into renderHealthBanner — no-op
 }
 
 function donutChartSVG(segments, {size=210, thickness=36}={}){
@@ -4069,6 +4060,7 @@ function renderTasks(){
       const cols = [
         {key:'title',    label:'Task'},
         {key:'workstream', label:'Workstream'},
+        {key:'session',    label:'Session'},
         {key:'department', label:'Department'},
         {key:'stage',    label:'Stage Name'},
         {key:'assignee', label:'Assignee'},
@@ -4092,6 +4084,7 @@ function renderTasks(){
           <tr data-task-id="${t.id}">
             <td><b>${t.title}</b></td>
             <td style="font-size:12px;">${t.workstream}</td>
+            <td style="font-size:12px;color:var(--muted);">${t.session||'—'}</td>
             <td style="font-size:12px;">${t.department||'—'}</td>
             <td><span class="badge stage">${t.stage}</span></td>
             <td>${t.assignee}</td>
