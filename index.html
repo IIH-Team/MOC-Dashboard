@@ -30,11 +30,6 @@ const auth = getAuth(app);
 // ── Auth state ──────────────────────────────────────────────────────────────
 window._fbIsAdmin = false;
 
-onAuthStateChanged(auth, (user) => {
-  window._fbIsAdmin = !!user;
-  updateAdminUI();
-});
-
 function updateAdminUI() {
   const isAdmin = window._fbIsAdmin;
   // Show/hide edit buttons based on auth state
@@ -129,6 +124,14 @@ window._fbDeleteMapeTask = async function(title) {
 
 // ── Load data from Firestore on startup ─────────────────────────────────────
 async function loadFromFirestore() {
+  // If no authenticated user, skip Firestore and render local data immediately
+  if (!window._fbIsAdmin) {
+    renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
+    renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk();
+    renderEmailLocked(); renderTeamLens(); renderPivot(); renderAlerts();
+    renderTasks(); renderRiskRegister();
+    return;
+  }
   showInfoToast('Loading data…');
   try {
     // Load initiatives
@@ -182,12 +185,21 @@ async function loadFromFirestore() {
   } catch(e) {
     console.error('Firestore load error:', e);
     showInfoToast('Using local data (offline mode)');
+    // Firebase failed — re-render with the built-in local data so the page isn't blank
+    renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
+    renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk();
+    renderTeamLens(); renderPivot(); renderAlerts(); renderTasks();
+    renderRiskRegister();
   }
 }
 
-// Run after DOM is ready
+// Run after DOM is ready — wait for Auth before hitting Firestore
 window.addEventListener('load', () => {
-  loadFromFirestore();
+  onAuthStateChanged(auth, (user) => {
+    window._fbIsAdmin = !!user;
+    updateAdminUI();
+    loadFromFirestore();
+  });
 });
 
 // Expose db + auth globally so inline handlers can use them
@@ -1786,7 +1798,17 @@ function mapePhaseActiveCount(phaseKey, week){
 /* =====================================================================
    Helpers
    ===================================================================== */
-const $ = sel => document.querySelector(sel);
+const _safeProxy = new Proxy({}, {
+  get: (t, k) => {
+    if(k === 'innerHTML' || k === 'value' || k === 'textContent') return '';
+    if(k === 'style') return new Proxy({}, { set: ()=>true, get: ()=>'' });
+    if(k === 'classList') return { add:()=>{}, remove:()=>{}, contains:()=>false, toggle:()=>{} };
+    if(k === 'focus' || k === 'click' || k === 'scrollIntoView' || k === 'addEventListener' || k === 'removeEventListener') return ()=>{};
+    return undefined;
+  },
+  set: ()=>true
+});
+const $ = sel => document.querySelector(sel) || _safeProxy;
 const $$ = sel => Array.from(document.querySelectorAll(sel));
 function avg(arr){ return arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : 0; }
 function badge(risk){ return `<span class="badge ${RISK_CLASS[risk]}">${risk}</span>`; }
@@ -1909,8 +1931,70 @@ function showTab(tab){
 }
 $$('.tabbtn').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab)));
 
-/* Build the four PM-view containers into main column dynamically */
+/* Build view containers into main column dynamically */
 const mainCol = document.querySelector('.main');
+
+// Create overview and workstreams first (prepend so they appear before departments)
+const _ovDiv = document.createElement('div');
+_ovDiv.className = 'view report-zone'; _ovDiv.id = 'view-overview';
+_ovDiv.innerHTML = `
+  <div class="zone-hotspot"></div><button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
+  <div class="shot-target">
+    <h2 class="view-title">Overview</h2>
+    <p class="view-sub">Computed live from the current Tasks and Workstreams data — no hardcoded numbers.</p>
+    <div id="execSummary"></div>
+    <div id="healthScoreBanner"></div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;">By Department</h3>
+      <div id="ovDeptRow" class="dept-row"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;">By Status</h3>
+      <div id="ovStatusRow" class="status-row"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="card">
+        <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;">Completion by Department</h3>
+        <div id="deptBarChart"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;">Department Distribution</h3>
+        <div id="ovDeptDonut"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;">Owner Workload</h3>
+      <div id="ovOwnerWorkload"></div>
+    </div>
+  </div>`;
+mainCol.insertBefore(_ovDiv, mainCol.firstElementChild);
+
+const _wsDiv = document.createElement('div');
+_wsDiv.className = 'view report-zone'; _wsDiv.id = 'view-workstreams';
+_wsDiv.innerHTML = `
+  <div class="zone-hotspot"></div><button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
+  <div class="shot-target">
+    <h2 class="view-title">Workstreams</h2>
+    <p class="view-sub">Full list of all workstreams — filter, sort, and click any row for details.</p>
+    <div class="filters" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+      <select id="wsInitFilter"></select>
+      <select id="wsStageFilter"></select>
+      <select id="wsAssigneeFilter"></select>
+      <select id="wsRiskFilter"></select>
+      <select id="wsPctFilter"></select>
+      <button class="btn secondary" onclick="$('#wsInitFilter').value='';$('#wsStageFilter').value='';$('#wsAssigneeFilter').value='';$('#wsRiskFilter').value='';$('#wsPctFilter').value='';renderWorkstreamsTable();" style="font-size:12px;">✕ Clear</button>
+    </div>
+    <div style="overflow-x:auto;"><table class="ws-table" id="wsTable"></table></div>
+    <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+      <button class="btn primary admin-only" onclick="openInitModal()" id="addInitBtn">＋ Add Workstream</button>
+    </div>
+  </div>`;
+mainCol.insertBefore(_wsDiv, _ovDiv.nextElementSibling);
+
 ["teamlens","pivot","alerts","tasks","riskregister"].forEach(id=>{
   const div = document.createElement('div');
   div.className = 'view';
@@ -3665,37 +3749,87 @@ ${bodyHtml}
 function renderTeamLens(){
   const el = document.getElementById('view-teamlens');
   el.classList.add('report-zone');
-  el.innerHTML = `<div class="zone-hotspot"></div><button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button><div class="shot-target"><h2 class="view-title">Team Lens</h2><p class="view-sub">Performance cards per team member — click a card for the full breakdown.</p><div class="team-grid" id="teamGrid"></div></div>`;
-  el.querySelector('#teamGrid').innerHTML = TEAM_LEADS.map(lead=>{
-    const owned = MOC_DATA.filter(i=>i.lead===lead);
-    const tasks = TASKS_DATA.filter(t=>t.assignee===lead);
-    const avgPct = owned.length ? Math.round(avg(owned.map(i=>i.pct))) : 0;
-    const atRiskCount = owned.filter(i=>i.risk!=='On Track').length;
-    const doneTasks = tasks.filter(t=>t.status==='Completed').length;
-    // Stage focus rows from TEAM_PROGRESS_DATA
+
+  const AVATAR_COLORS = ['var(--navy2)','var(--green)','var(--pink)','var(--amber)','#6B4FBB','#1A7FA8','#C0392B','#2E86AB'];
+
+  el.innerHTML = `<div class="zone-hotspot"></div><button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
+  <div class="shot-target">
+    <h2 class="view-title">Team Lens</h2>
+    <p class="view-sub">One card per team member — click a card for the full breakdown.</p>
+    <div id="teamGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;"></div>
+  </div>`;
+
+  el.querySelector('#teamGrid').innerHTML = TEAM_LEADS.filter(lead=>lead!=='BA').map((lead,i)=>{
+    const owned   = MOC_DATA.filter(ws=>ws.lead===lead);
+    const tasks   = TASKS_DATA.filter(t=>t.assignee===lead);
+    const avgPct  = owned.length ? Math.round(avg(owned.map(ws=>ws.pct))) : 0;
+    const atRisk  = owned.filter(ws=>ws.risk!=='On Track').length;
+    const done    = tasks.filter(t=>t.status==='Completed').length;
+    const inProg  = tasks.filter(t=>t.status==='In Progress').length;
+    const blocked = tasks.filter(t=>t.status==='Blocked').length;
+    const notStarted = tasks.filter(t=>t.status==='Not Started'||t.status==='On Hold').length;
+    const maxBar  = tasks.length || 1;
+    const initials = lead.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length];
+
+    // Stage focus from TEAM_PROGRESS_DATA
     const tpRows = TEAM_PROGRESS_DATA.filter(r=>r.assignee===lead);
-    const stageFocusHTML = tpRows.length ? `
-      <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
-        <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:5px;">STAGE FOCUS</div>
-        ${tpRows.map(r=>{
-          const stageColors = {Monitor:'var(--navy2)',Analyze:'var(--green)',Plan:'var(--amber)',Execute:'var(--pink)'};
-          const sc = stageColors[r.stage]||'var(--navy)';
-          const statusColor = r.status==='Done'?'var(--green)':r.status==='In Progress'?'var(--amber)':'var(--muted)';
-          return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:3px;">
-            <span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${sc};margin-right:4px;"></span><b style="color:${sc}">${r.stage}</b> — ${r.area}</span>
-            <span style="font-weight:700;color:${statusColor}">${r.status}</span>
-          </div>`;
-        }).join('')}
-      </div>` : '';
-    return `<div class="team-card" data-lead="${escapeHtml(lead)}">
-      <div class="name">${lead}</div>
-      <div class="stat"><span>Workstreams owned</span><b>${owned.length}</b></div>
-      <div class="stat"><span>Average progress</span><b>${avgPct}%</b></div>
-      <div class="stat"><span>Workstreams at risk</span><b>${atRiskCount}</b></div>
-      <div class="stat"><span>Tasks (done/total)</span><b>${doneTasks}/${tasks.length}</b></div>
-      ${stageFocusHTML}
+    const STAGE_C = {Monitor:'var(--navy2)',Analyze:'var(--green)',Plan:'var(--amber)',Execute:'var(--pink)'};
+    const stageHTML = tpRows.length ? tpRows.map(r=>{
+      const sc = STAGE_C[r.stage]||'var(--muted)';
+      const stc = r.status==='Done'?'var(--green)':r.status==='In Progress'?'var(--amber)':'var(--muted)';
+      return `<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--border);">
+        <span><span style="width:7px;height:7px;border-radius:50%;background:${sc};display:inline-block;margin-right:5px;vertical-align:middle;"></span><b>${r.stage}</b> · ${r.area}</span>
+        <span style="font-weight:700;color:${stc};white-space:nowrap;">${r.status}</span>
+      </div>`;
+    }).join('') : '';
+
+    return `<div class="team-card" data-lead="${escapeHtml(lead)}" style="cursor:pointer;border-radius:16px;border:1.5px solid var(--border);background:var(--surface);padding:20px;display:flex;flex-direction:column;gap:0;transition:.15s;box-shadow:0 2px 8px rgba(27,42,74,.06);">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:${avatarColor};color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;">${initials}</div>
+        <div>
+          <div style="font-weight:700;font-size:15px;color:var(--navy2);">${lead}</div>
+          <div style="font-size:11px;color:var(--muted);">${owned.length} workstream${owned.length!==1?'s':''} · ${tasks.length} task${tasks.length!==1?'s':''}</div>
+        </div>
+      </div>
+      <!-- KPI row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div style="text-align:center;background:var(--surface2);border-radius:10px;padding:8px 4px;">
+          <div style="font-size:18px;font-weight:800;color:var(--navy2);">${Math.round(avgPct)}%</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:600;">Avg Progress</div>
+        </div>
+        <div style="text-align:center;background:var(--surface2);border-radius:10px;padding:8px 4px;">
+          <div style="font-size:18px;font-weight:800;color:var(--green);">${done}</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:600;">Completed</div>
+        </div>
+        <div style="text-align:center;background:var(--surface2);border-radius:10px;padding:8px 4px;">
+          <div style="font-size:18px;font-weight:800;color:${atRisk>0?'var(--amber)':'var(--green)'};">${atRisk}</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:600;">At Risk</div>
+        </div>
+        <div style="text-align:center;background:var(--surface2);border-radius:10px;padding:8px 4px;">
+          <div style="font-size:18px;font-weight:800;color:${blocked>0?'var(--red)':'var(--navy2)'};">${blocked}</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:600;">Blocked</div>
+        </div>
+      </div>
+      <!-- Task bar -->
+      ${tasks.length ? `
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;">
+          <span>TASK BREAKDOWN</span><span>${done}/${tasks.length} done</span>
+        </div>
+        <div style="height:8px;border-radius:6px;overflow:hidden;display:flex;background:var(--border);">
+          ${done    ?`<div style="width:${(done/maxBar*100).toFixed(1)}%;background:var(--green);"></div>`:''}
+          ${inProg  ?`<div style="width:${(inProg/maxBar*100).toFixed(1)}%;background:var(--blue);"></div>`:''}
+          ${blocked ?`<div style="width:${(blocked/maxBar*100).toFixed(1)}%;background:var(--red);"></div>`:''}
+          ${notStarted?`<div style="width:${(notStarted/maxBar*100).toFixed(1)}%;background:var(--muted);opacity:.4;"></div>`:''}
+        </div>
+      </div>` : ''}
+      <!-- Stage focus -->
+      ${stageHTML ? `<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:4px;">STAGE FOCUS</div>${stageHTML}` : ''}
     </div>`;
   }).join('');
+
   el.querySelectorAll('.team-card').forEach(card=>{
     card.addEventListener('click', ()=> openTeamMemberDetail(card.dataset.lead));
   });
@@ -4678,7 +4812,7 @@ function updateMapeTaskTypeFields(){
   $('#mt_weekRangeWrap').style.display = type==='regular' ? '' : 'none';
   $('#mt_singleWeekWrap').style.display = (type==='gate'||type==='escalate') ? '' : 'none';
 }
-$('#mt_type').addEventListener('change', updateMapeTaskTypeFields);
+const _mtType = $('#mt_type'); if(_mtType) _mtType.addEventListener('change', updateMapeTaskTypeFields);
 
 function openMapeTaskModal(taskToEdit){
   fillSelect('#mt_phase', MAPE_PHASES.filter(p=>!p.notActive).map(p=>p.key));
@@ -4719,11 +4853,11 @@ function closeMapeTaskModal(){
   $('#mapeTaskModalOverlay').classList.remove('open');
   editingMapeTaskIdx = null;
 }
-$('#cancelMapeTaskBtn').onclick = closeMapeTaskModal;
-$('#mapeTaskModalOverlay').addEventListener('click', (e)=>{
+const _cancelMapeBtn = $('#cancelMapeTaskBtn'); if(_cancelMapeBtn) _cancelMapeBtn.onclick = closeMapeTaskModal;
+const _mapeOverlay = $('#mapeTaskModalOverlay'); if(_mapeOverlay) _mapeOverlay.addEventListener('click', (e)=>{
   if(e.target.id==='mapeTaskModalOverlay') closeMapeTaskModal();
 });
-$('#saveMapeTaskBtn').onclick = ()=>{
+const _saveMapeBtn = $('#saveMapeTaskBtn'); if(_saveMapeBtn) _saveMapeBtn.onclick = ()=>{
   const title = $('#mt_title').value.trim();
   const pillar = $('#mt_pillar').value.trim();
   if(!title){ $('#mt_title').focus(); return; }
@@ -4752,7 +4886,7 @@ $('#saveMapeTaskBtn').onclick = ()=>{
   closeMapeTaskModal();
  
 };
-$('#deleteMapeTaskBtn').onclick = ()=>{
+const _deleteMapeBtn = $('#deleteMapeTaskBtn'); if(_deleteMapeBtn) _deleteMapeBtn.onclick = ()=>{
   if(editingMapeTaskIdx === null) return;
   const idx = editingMapeTaskIdx;
   const [removed] = MAPE_TASKS.splice(idx, 1);
@@ -4778,7 +4912,7 @@ window.duplicateMapeTask = function(idx){
  
   openMapeTaskModal(clone);
 };
-$('#addMapeTaskBtn').addEventListener('click', ()=> openMapeTaskModal());
+const _addMapeBtn = $('#addMapeTaskBtn'); if(_addMapeBtn) _addMapeBtn.addEventListener('click', ()=> openMapeTaskModal());
 
 /* =====================================================================
    INIT
@@ -4808,7 +4942,7 @@ renderPivot();
 renderAlerts();
 renderTasks();
 renderRiskRegister();
-$('#addInitBtn').addEventListener('click', ()=> openInitModal());
+const _addInitBtn = $('#addInitBtn'); if(_addInitBtn) _addInitBtn.addEventListener('click', ()=> openInitModal());
 showTab('overview');
 
 /* Print / Export as PDF — prints whichever tab is currently active,
@@ -5243,25 +5377,30 @@ document.addEventListener('keydown', (e)=>{
 // ── Patch CRUD functions to also write to Firestore ─────────────────────────
 // (Only runs if _fbSaveInit etc. are defined — they come from the ES module above)
 
-const _origSaveInitBtn = $('#saveInitBtn').onclick;
-$('#saveInitBtn').onclick = async ()=>{
-  _origSaveInitBtn && _origSaveInitBtn();
-  // After local array update, sync the affected item to Firestore
-  const name = $('#i_name').value.trim();
-  if(name && window._fbSaveInit){
-    const item = MOC_DATA.find(i=>i.name===name);
-    if(item) window._fbSaveInit(item).catch(console.error);
-  }
-};
+const _saveInitBtnEl = $('#saveInitBtn');
+if(_saveInitBtnEl){
+  const _origSaveInitBtn = _saveInitBtnEl.onclick;
+  _saveInitBtnEl.onclick = async ()=>{
+    _origSaveInitBtn && _origSaveInitBtn();
+    const name = $('#i_name') ? $('#i_name').value.trim() : '';
+    if(name && window._fbSaveInit){
+      const item = MOC_DATA.find(i=>i.name===name);
+      if(item) window._fbSaveInit(item).catch(console.error);
+    }
+  };
+}
 
-const _origDeleteInitBtn = $('#deleteInitBtn').onclick;
-$('#deleteInitBtn').onclick = async ()=>{
-  const nameToDelete = editingInitName;
-  _origDeleteInitBtn && _origDeleteInitBtn();
-  if(nameToDelete && window._fbDeleteInit){
-    window._fbDeleteInit(nameToDelete).catch(console.error);
-  }
-};
+const _deleteInitBtnEl = $('#deleteInitBtn');
+if(_deleteInitBtnEl){
+  const _origDeleteInitBtn = _deleteInitBtnEl.onclick;
+  _deleteInitBtnEl.onclick = async ()=>{
+    const nameToDelete = editingInitName;
+    _origDeleteInitBtn && _origDeleteInitBtn();
+    if(nameToDelete && window._fbDeleteInit){
+      window._fbDeleteInit(nameToDelete).catch(console.error);
+    }
+  };
+}
 
 const _origSaveTaskBtn = $('#saveTaskBtn').onclick;
 $('#saveTaskBtn').onclick = async ()=>{
@@ -5298,8 +5437,8 @@ $('#deleteRiskBtn').onclick = async ()=>{
   if(rid && window._fbDeleteRisk) window._fbDeleteRisk(rid).catch(console.error);
 };
 
-const _origSaveMapeBtn = $('#saveMapeTaskBtn').onclick;
-$('#saveMapeTaskBtn').onclick = async ()=>{
+const _origSaveMapeBtn = ($('#saveMapeTaskBtn') && $('#saveMapeTaskBtn').onclick) || null;
+const _saveMapeTaskBtnEl2 = $('#saveMapeTaskBtn'); if(_saveMapeTaskBtnEl2) _saveMapeTaskBtnEl2.onclick = async ()=>{
   const prevTitle = editingMapeTitle;
   _origSaveMapeBtn && _origSaveMapeBtn();
   if(window._fbSaveMapeTask){
@@ -5309,8 +5448,8 @@ $('#saveMapeTaskBtn').onclick = async ()=>{
   }
 };
 
-const _origDeleteMapeBtn = $('#deleteMapeTaskBtn').onclick;
-$('#deleteMapeTaskBtn').onclick = async ()=>{
+const _origDeleteMapeBtn = ($('#deleteMapeTaskBtn') && $('#deleteMapeTaskBtn').onclick) || null;
+const _deleteMapeTaskBtnEl2 = $('#deleteMapeTaskBtn'); if(_deleteMapeTaskBtnEl2) _deleteMapeTaskBtnEl2.onclick = async ()=>{
   const title = editingMapeTitle;
   _origDeleteMapeBtn && _origDeleteMapeBtn();
   if(title && window._fbDeleteMapeTask) window._fbDeleteMapeTask(title).catch(console.error);
