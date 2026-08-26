@@ -126,7 +126,7 @@ window._fbDeleteMapeTask = async function(title) {
 async function loadFromFirestore() {
   // If no authenticated user, skip Firestore and render local data immediately
   if (!window._fbIsAdmin) {
-    renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
+    renderMapeView(); renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
     renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk();
     renderEmailLocked(); renderTeamLens(); renderPivot(); renderAlerts();
     renderTasks(); renderRiskRegister();
@@ -177,7 +177,7 @@ async function loadFromFirestore() {
     }
 
     // Re-render everything with fresh data
-    renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
+    renderMapeView(); renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
     renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk();
     renderTeamLens(); renderPivot(); renderAlerts(); renderTasks();
     renderRiskRegister();
@@ -186,7 +186,7 @@ async function loadFromFirestore() {
     console.error('Firestore load error:', e);
     showInfoToast('Using local data (offline mode)');
     // Firebase failed — re-render with the built-in local data so the page isn't blank
-    renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
+    renderMapeView(); renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
     renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk();
     renderTeamLens(); renderPivot(); renderAlerts(); renderTasks();
     renderRiskRegister();
@@ -913,6 +913,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
   <!-- SINGLE SIDEBAR: Weekly Report (top) + PM View (bottom) -->
   <div class="sidebar">
     <div class="label">Weekly Report</div>
+    <button class="tabbtn" data-tab="mape">🔄 MAPE View</button>
     <button class="tabbtn" data-tab="overview">📊 Overview</button>
     <button class="tabbtn" data-tab="workstreams">🗂️ Workstreams</button>
     <button class="tabbtn" data-tab="departments">🏛️ By Department</button>
@@ -1686,25 +1687,46 @@ const MAPE_OWNER_MAP = {
   "Kaddoura":"Mohammad Kaddoura", "Yaseen":"Yaseen Alquraan", "MoC":"MoC (Advisory)"
 };
 
-// TEAM_PROGRESS_DATA — sourced from "Team Progress" tab of Tracking Workbook v3.
-// Used in Team Lens to show each member's area focus and stage status.
+// TEAM_PROGRESS_DATA — computed from Tasks sheet (Stage Name × Assignee).
+// Salah Assi gets +1 on Tasks Count (PM overall role).
+// All team members × all 4 stages included (0 counts shown as 0).
 const TEAM_PROGRESS_DATA = [
-  { stage:"Monitor", assignee:"Mahmoud Abukhamseh", area:"Stakeholder Interviews", wsCount:1,  avgPct:100, status:"Done"        },
-  { stage:"Monitor", assignee:"Omar Alsmadi",       area:"Data & Workforce",        wsCount:0,  avgPct:0,   status:"In Progress" },
-  { stage:"Monitor", assignee:"Yaseen Alquraan",    area:"Compliance & Risk",        wsCount:0,  avgPct:0,   status:"In Progress" },
-  { stage:"Monitor", assignee:"Salah Assi",          area:"Copilot + Overall PM",    wsCount:7,  avgPct:100, status:"Done"        },
-  { stage:"Analyze", assignee:"Omar Alsmadi",       area:"HR",                       wsCount:0,  avgPct:0,   status:"Not Started" },
-  { stage:"Analyze", assignee:"Yaseen Alquraan",    area:"Finance + PMO",            wsCount:0,  avgPct:0,   status:"Not Started" },
-  { stage:"Analyze", assignee:"Saed Alsammak",      area:"Review & QA",              wsCount:0,  avgPct:0,   status:"Not Started" },
-  { stage:"Analyze", assignee:"Salah Assi",          area:"Overall",                 wsCount:6,  avgPct:0,   status:"Not Started" },
-  { stage:"Plan",    assignee:"Omar Alsmadi",       area:"HR",                       wsCount:3,  avgPct:0,   status:"Not Started" },
-  { stage:"Plan",    assignee:"Yaseen Alquraan",    area:"Finance + PMO",            wsCount:5,  avgPct:0,   status:"Not Started" },
-  { stage:"Plan",    assignee:"Saed Alsammak",      area:"Review & QA",              wsCount:0,  avgPct:0,   status:"Not Started" },
-  { stage:"Plan",    assignee:"Salah Assi",          area:"Overall",                 wsCount:2,  avgPct:0,   status:"Not Started" },
-  { stage:"Execute", assignee:"Omar Alsmadi",       area:"HR",                       wsCount:0,  avgPct:0,   status:"Not Started" },
-  { stage:"Execute", assignee:"Yaseen Alquraan",    area:"Finance + PMO",            wsCount:0,  avgPct:0,   status:"Not Started" },
-  { stage:"Execute", assignee:"Saed Alsammak",      area:"Review & QA",              wsCount:0,  avgPct:0,   status:"Not Started" },
-  { stage:"Execute", assignee:"Salah Assi",          area:"Overall",                 wsCount:8,  avgPct:0,   status:"Not Started" },
+  // Monitor
+  { stage:"Monitor", assignee:"Mahmoud Abukhamseh", wsCount:4,  avgPct:87  },
+  { stage:"Monitor", assignee:"Mohammad Kaddoura",  wsCount:4,  avgPct:57  },
+  { stage:"Monitor", assignee:"Omar Alsmadi",       wsCount:15, avgPct:83  },
+  { stage:"Monitor", assignee:"Salah Assi",         wsCount:19, avgPct:88  }, // 18+1 PM
+  { stage:"Monitor", assignee:"Yaseen Alquraan",    wsCount:14, avgPct:74  },
+  { stage:"Monitor", assignee:"Darwish Mohammed",   wsCount:0,  avgPct:0   },
+  { stage:"Monitor", assignee:"Saed Alsammak",      wsCount:0,  avgPct:0   },
+  { stage:"Monitor", assignee:"BA Team",            wsCount:0,  avgPct:0   },
+  // Analyze
+  { stage:"Analyze", assignee:"Mohammad Kaddoura",  wsCount:1,  avgPct:100 },
+  { stage:"Analyze", assignee:"Salah Assi",         wsCount:2,  avgPct:0   }, // 1+1 PM
+  { stage:"Analyze", assignee:"Omar Alsmadi",       wsCount:0,  avgPct:0   },
+  { stage:"Analyze", assignee:"Yaseen Alquraan",    wsCount:0,  avgPct:0   },
+  { stage:"Analyze", assignee:"Mahmoud Abukhamseh", wsCount:0,  avgPct:0   },
+  { stage:"Analyze", assignee:"Darwish Mohammed",   wsCount:0,  avgPct:0   },
+  { stage:"Analyze", assignee:"Saed Alsammak",      wsCount:0,  avgPct:0   },
+  { stage:"Analyze", assignee:"BA Team",            wsCount:0,  avgPct:0   },
+  // Plan
+  { stage:"Plan",    assignee:"Omar Alsmadi",       wsCount:0,  avgPct:0   },
+  { stage:"Plan",    assignee:"Yaseen Alquraan",    wsCount:0,  avgPct:0   },
+  { stage:"Plan",    assignee:"Salah Assi",         wsCount:1,  avgPct:0   }, // 0+1 PM
+  { stage:"Plan",    assignee:"Mohammad Kaddoura",  wsCount:0,  avgPct:0   },
+  { stage:"Plan",    assignee:"Mahmoud Abukhamseh", wsCount:0,  avgPct:0   },
+  { stage:"Plan",    assignee:"Darwish Mohammed",   wsCount:0,  avgPct:0   },
+  { stage:"Plan",    assignee:"Saed Alsammak",      wsCount:0,  avgPct:0   },
+  { stage:"Plan",    assignee:"BA Team",            wsCount:0,  avgPct:0   },
+  // Execute
+  { stage:"Execute", assignee:"Omar Alsmadi",       wsCount:0,  avgPct:0   },
+  { stage:"Execute", assignee:"Yaseen Alquraan",    wsCount:0,  avgPct:0   },
+  { stage:"Execute", assignee:"Salah Assi",         wsCount:1,  avgPct:0   }, // 0+1 PM
+  { stage:"Execute", assignee:"Mohammad Kaddoura",  wsCount:0,  avgPct:0   },
+  { stage:"Execute", assignee:"Mahmoud Abukhamseh", wsCount:0,  avgPct:0   },
+  { stage:"Execute", assignee:"Darwish Mohammed",   wsCount:0,  avgPct:0   },
+  { stage:"Execute", assignee:"Saed Alsammak",      wsCount:0,  avgPct:0   },
+  { stage:"Execute", assignee:"BA Team",            wsCount:0,  avgPct:0   },
 ];
 
 // Compact week-range representation instead of 12 raw cells per task:
@@ -1921,7 +1943,7 @@ function setLastUpdate(){
 /* =====================================================================
    TAB SWITCHING
    ===================================================================== */
-const ALL_TABS = ["overview","workstreams","departments","delta","timeline","risk","email","teamlens","pivot","alerts","tasks","riskregister"];
+const ALL_TABS = ["mape","overview","workstreams","departments","delta","timeline","risk","email","teamlens","pivot","alerts","tasks","riskregister"];
 function showTab(tab){
   $$('.tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
   ALL_TABS.forEach(t=>{
@@ -1935,6 +1957,36 @@ $$('.tabbtn').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab))
 const mainCol = document.querySelector('.main');
 
 // Create overview and workstreams first (prepend so they appear before departments)
+// ── MAPE View container ────────────────────────────────────────────────────
+const _mapeDiv = document.createElement('div');
+_mapeDiv.className = 'view report-zone'; _mapeDiv.id = 'view-mape';
+_mapeDiv.innerHTML = `
+  <div class="zone-hotspot"></div>
+  <button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
+  <div class="shot-target">
+    <h2 class="view-title">MAPE View</h2>
+    <p class="view-sub">Monitor · Analyze · Plan · Execute — delivery framework for the AI Strategy Assessment engagement. Click any card for the full breakdown.</p>
+
+    <!-- Phase strip -->
+    <div id="mapePhaseStrip" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;"></div>
+
+    <!-- Toolbar -->
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+      <button class="btn primary admin-only" onclick="openMapeTaskModal()" style="font-size:12px;">＋ Add Task</button>
+      <div id="mapeScopeToggle" style="display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+        <button data-scope="week" class="active" style="padding:6px 14px;font-size:12px;font-weight:600;border:none;background:var(--navy2);color:#fff;cursor:pointer;">📌 This Week</button>
+        <button data-scope="all" style="padding:6px 14px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--navy);cursor:pointer;">🗂️ All Tasks</button>
+      </div>
+      <!-- Phase filter pills -->
+      <div id="mapePhasePills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- Task grid -->
+    <div id="mapeGrid"></div>
+  </div>`;
+mainCol.insertBefore(_mapeDiv, mainCol.firstElementChild);
+
+// ── Overview container ──────────────────────────────────────────────────────
 const _ovDiv = document.createElement('div');
 _ovDiv.className = 'view report-zone'; _ovDiv.id = 'view-overview';
 _ovDiv.innerHTML = `
@@ -3773,14 +3825,18 @@ function renderTeamLens(){
     const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length];
 
     // Stage focus from TEAM_PROGRESS_DATA
-    const tpRows = TEAM_PROGRESS_DATA.filter(r=>r.assignee===lead);
+    const tpRows = TEAM_PROGRESS_DATA.filter(r=>r.assignee===lead && r.wsCount > 0);
     const STAGE_C = {Monitor:'var(--navy2)',Analyze:'var(--green)',Plan:'var(--amber)',Execute:'var(--pink)'};
     const stageHTML = tpRows.length ? tpRows.map(r=>{
       const sc = STAGE_C[r.stage]||'var(--muted)';
-      const stc = r.status==='Done'?'var(--green)':r.status==='In Progress'?'var(--amber)':'var(--muted)';
-      return `<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--border);">
-        <span><span style="width:7px;height:7px;border-radius:50%;background:${sc};display:inline-block;margin-right:5px;vertical-align:middle;"></span><b>${r.stage}</b> · ${r.area}</span>
-        <span style="font-weight:700;color:${stc};white-space:nowrap;">${r.status}</span>
+      const pctColor = r.avgPct>=80?'var(--green)':r.avgPct>=40?'var(--amber)':'var(--muted)';
+      const isSalahPM = r.assignee==='Salah Assi';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:4px 0;border-bottom:1px solid var(--border);">
+        <span><span style="width:7px;height:7px;border-radius:50%;background:${sc};display:inline-block;margin-right:5px;vertical-align:middle;"></span><b style="color:${sc}">${r.stage}</b></span>
+        <span style="display:flex;gap:8px;align-items:center;">
+          <span style="color:var(--muted);">${r.wsCount} task${r.wsCount!==1?'s':''}${isSalahPM?' <span style="color:var(--pink);font-size:10px;">(+1 PM)</span>':''}</span>
+          <span style="font-weight:700;color:${pctColor};">${r.avgPct}%</span>
+        </span>
       </div>`;
     }).join('') : '';
 
@@ -4665,7 +4721,7 @@ $('#saveInitBtn').onclick = ()=>{
   }
   closeInitModal();
   if(typeof setLastUpdate==='function') setLastUpdate();
-  renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
+  renderMapeView(); renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
   renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk(); renderTeamLens(); renderPivot(); renderAlerts();
 };
 $('#deleteInitBtn').onclick = ()=>{
@@ -4675,11 +4731,11 @@ $('#deleteInitBtn').onclick = ()=>{
   const [removed] = MOC_DATA.splice(idx,1);
   closeInitModal();
   closeDetailModal();
-  renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
+  renderMapeView(); renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
   renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk(); renderTeamLens(); renderPivot(); renderAlerts();
   showUndoToast(`Initiative "${removed.name}" deleted.`, ()=>{
     MOC_DATA.splice(idx,0,removed);
-    renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
+    renderMapeView(); renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
     renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk(); renderTeamLens(); renderPivot(); renderAlerts();
   });
 };
@@ -4694,7 +4750,7 @@ window.duplicateInit = function(name){
   const clone = { ...item, name: item.name + ' (Copy)', history:[...item.history] };
   MOC_DATA.push(clone);
   closeDetailModal();
-  renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
+  renderMapeView(); renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
   renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk(); renderTeamLens(); renderPivot(); renderAlerts();
   openInitModal(clone);
 };
@@ -4929,6 +4985,7 @@ function closeMobileMenu(){
 const _mbBtn = document.getElementById('mobileMenuBtn');
 if(_mbBtn) _mbBtn.addEventListener('click', openMobileMenu);
 
+renderMapeView();
 renderOverview();
 renderWorkstreamsFilters();
 renderWorkstreamsTable();
@@ -4943,7 +5000,7 @@ renderAlerts();
 renderTasks();
 renderRiskRegister();
 const _addInitBtn = $('#addInitBtn'); if(_addInitBtn) _addInitBtn.addEventListener('click', ()=> openInitModal());
-showTab('overview');
+showTab('mape');
 
 /* Print / Export as PDF — prints whichever tab is currently active,
    with sidebar/toolbars/buttons hidden via @media print above. */
@@ -5262,7 +5319,7 @@ $('#importFileInput').addEventListener('change', (e)=>{
       }
 
       // Re-render everything that depends on this data
-      renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
+      renderMapeView(); renderOverview(); renderWorkstreamsFilters(); renderWorkstreamsTable();
       renderDepartments(); renderDelta(); renderAllTimelineViews(); renderRisk(); renderEmailLocked();
       renderTeamLens(); renderPivot(); renderAlerts(); renderTasks(); renderRiskRegister();
      
