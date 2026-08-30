@@ -1735,7 +1735,13 @@ let RISK_REGISTER_DATA = [
    calendar dates (same "always accurate" approach as Weekly Delta),
    not a fixed snapshot.
    ===================================================================== */
-const MAPE_WEEK1_START = new Date(2026, 4, 15); // 15 May 2026 (month is 0-indexed)
+const MAPE_WEEK1_START = new Date(2026, 4, 15); // 15 May 2026 — fixed, does not change with Excel updates
+
+// ── MAPE Phase definitions — dates are FIXED (not driven by Excel)
+// Monitor:  15 May  – 05 Aug
+// Analyze:  06 Aug  – 03 Sep
+// Plan:     06 Sep  – 01 Oct
+// Execute:  04 Oct  – 19 Nov
 const MAPE_TOTAL_WEEKS = 12;
 
 function mapeWeekDate(n){ // calendar date a given week (1-12) starts on
@@ -1751,22 +1757,22 @@ function getCurrentMapeWeek(){
 }
 
 const MAPE_PHASES = [
-  { key:"Monitor", letter:"M", name:"Monitor", timeline:"Weeks 1–6 · 15 May – 26 Jun", startWeek:1, endWeek:6,
+  { key:"Monitor", letter:"M", name:"Monitor", timeline:"Weeks 1–6 · 15 May – 05 Aug", startWeek:1, endWeek:6,
     subtitle:"Discover & Baseline", color:"var(--blue)",
     keyActivities:["AI maturity baseline assessment","Stakeholder interviews — HR, Finance, Heritage","Review & synthesize existing assessments & data","Baseline current-state process maps","Establish KPI framework & success metrics","Inventory & classify critical data assets","Assess workforce AI skills gaps","Identify cyber security & compliance gaps","Risk Register — political, data, legal, procurement"],
     deliverables:["AI maturity score (baseline)","Stakeholder interview notes & synthesis","Current-state process maps (3 focus areas)","KPI framework (5-pillar aligned)","Data asset inventory","Workforce skills gap report","Risk Register v1","Workshop materials"],
     finalDeliverable:"AI Discovery Report", gateLabel:"Discovery Sign-Off", gateWeek:6, gateOwner:"Client" },
-  { key:"Analyze", letter:"A", name:"Analyze", timeline:"Weeks 5–8 · 12 Jun – 10 Jul", startWeek:5, endWeek:8,
+  { key:"Analyze", letter:"A", name:"Analyze", timeline:"Weeks 5–8 · 06 Aug – 03 Sep", startWeek:5, endWeek:8,
     subtitle:"Sense & Define", color:"var(--purple)",
     keyActivities:["Apply AI Readiness Framework across priority areas","Map & prioritize use case portfolio","Define AI vision & ambition statement","Shortlist Quick Wins (effort < 6 weeks)","Define AI-ready data foundation & infrastructure strategy","Define AI workforce & talent strategy","Identify & recruit AI Champions per unit","Establish AI governance framework & principles","Define Human-in-the-Loop decision rights","Calculate value of each use case"],
     deliverables:["AI Readiness scores per focus area","Ranked use case portfolio","AI vision & ambition statement","Quick Wins shortlist","Data foundation & infrastructure strategy","AI workforce strategy","AI Champions list","Governance framework draft","Use case value calculations"],
     finalDeliverable:"AI Readiness Baseline Report", gateLabel:"AI Readiness Sign-Off", gateWeek:8, gateOwner:"Client" },
-  { key:"Plan", letter:"P", name:"Plan", timeline:"Weeks 9–12 · 10 Jul – 7 Aug", startWeek:9, endWeek:12,
+  { key:"Plan", letter:"P", name:"Plan", timeline:"Weeks 9–12 · 06 Sep – 01 Oct", startWeek:9, endWeek:12,
     subtitle:"Design & Architect", color:"var(--amber)",
     keyActivities:["Impact vs. Effort prioritization matrix","Categorize: Quick Wins / Strategic / Long-Term","Apply evaluation filters: Alignment · Capability · Value · Speed","Develop BRDs for top 3–5 solutions","Data flow diagrams & integration architecture specs","Build production-ready data pipeline designs","Establish data governance & quality framework","Design AI literacy training programs","Define change management & culture plan","Conduct risk assessments per use case","Draft 3 core AI ethics policies","Define adoption plan & ROI models per use case"],
     deliverables:["Prioritization matrix with scoring","Categorized AI portfolio (3 tiers)","BRDs for top 3–5 solutions","Data flow diagrams per BRD","Data governance framework","AI literacy training plan","Change management plan","Risk assessments per use case","3 core AI ethics policies (draft)","ROI models per use case"],
     finalDeliverable:"Prioritized AI Portfolio with BRDs", gateLabel:"BRDs & Design Approved", gateWeek:12, gateOwner:"Client" },
-  { key:"Execute", letter:"E", name:"Execute", timeline:"Months 4–6 · shown for reference only", startWeek:13, endWeek:24,
+  { key:"Execute", letter:"E", name:"Execute", timeline:"04 Oct – 19 Nov · shown for reference only", startWeek:13, endWeek:24,
     subtitle:"Deliver & Scale", color:"var(--green)",
     keyActivities:["Deliver Quick Wins with measurable outcomes","Launch 2–3 AI use case pilots","Conduct structured pilot evaluation","Confirm enterprise AI governance model","User acceptance testing (UAT)","Operating model: monitoring, support & incidents","Deploy MLOps for continuous model monitoring","Launch AI literacy training across the org","Review 100% of roles for AI impact & redesign","Implement bias evaluation for production models","Establish AI Ethics Board & meeting cadence","Deploy live impact dashboards"],
     deliverables:["Quick Win delivery reports with KPI evidence","Pilot launch documentation","Pilot evaluation report","Enterprise AI governance model","UAT sign-off documentation","Operating model & support handbook","MLOps deployment documentation","Training completion records","Bias evaluation reports","AI Ethics Board charter"],
