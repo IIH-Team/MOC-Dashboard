@@ -533,7 +533,7 @@ body.dark,.app.dark,[data-theme="dark"]{
 .team-stat strong{display:block;font-size:17px;}
 .team-stat span{color:var(--muted);font-size:9px;}
 .mape-phase-strip{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
-.mape-strip-item{flex:1;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;}
+.mape-strip-item{flex:1;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;}
 .mape-strip-item .mape-letter-sm{width:30px;height:30px;border-radius:8px;flex-shrink:0;color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;}
 .mape-strip-item .mape-strip-name{font-size:12.5px;font-weight:700;color:var(--navy);}
 .mape-strip-item .mape-strip-sub{font-size:10.5px;color:var(--muted);}
@@ -616,10 +616,10 @@ body.dark,.app.dark,[data-theme="dark"]{
 .dept-tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;border-inline-start:4px solid var(--navy);}
 .dept-tile .dt-name{font-size:12px;color:var(--muted);margin-bottom:8px;}
 .dept-tile .dt-num{font-size:24px;font-weight:800;color:var(--navy);}
-.status-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
-.status-tile{background:var(--surface2);border-radius:10px;padding:14px;}
-.status-tile .st-name{font-size:12px;color:var(--muted);margin-bottom:6px;}
-.status-tile .st-num{font-size:22px;font-weight:800;color:var(--navy);}
+.status-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.status-tile{background:var(--surface2);border-radius:10px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;gap:6px;}
+.status-tile .st-name{font-size:12px;color:var(--muted);margin:0;}
+.status-tile .st-num{font-size:34px;font-weight:900;color:var(--navy);line-height:1;margin:0;}
 .owner-block{margin-bottom:18px;}
 .owner-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
 .owner-head b{color:var(--navy);}
@@ -1004,9 +1004,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 
       <!-- View switcher -->
       <div class="tl-switcher">
-        <button class="tl-view-btn active" data-view="initiative" onclick="setTimelineView('initiative',this)">Initiative View</button>
-        <button class="tl-view-btn" data-view="pillars" onclick="setTimelineView('pillars',this)">Five Pillars View</button>
-        <button class="tl-view-btn" data-view="department" onclick="setTimelineView('department',this)">Department View</button>
+        <button class="tl-view-btn active" data-view="initiative" onclick="setTimelineView('initiative',this)">Milestone View</button>
       </div>
 
       <!-- Initiative View -->
@@ -1018,18 +1016,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 
 
       <!-- Pillars View -->
-      <div class="report-zone tl-panel" id="tl-pillars" style="display:none;">
-        <div class="zone-hotspot"></div>
-        <button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
-        <div class="shot-target" id="timelinePillarsBody"></div>
-      </div>
 
       <!-- Department View -->
-      <div class="report-zone tl-panel" id="tl-department" style="display:none;">
-        <div class="zone-hotspot"></div>
-        <button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
-        <div class="shot-target" id="timelineBody"></div>
-      </div>
     </div>
 
     <!-- RISK -->
@@ -1315,21 +1303,21 @@ const PROGRESS_MILESTONES = [
   "Cultural Universe",
   "Copliot Productivity",
   "Ad Hoc",
-  "MoC Leadership Meetings",
+  "MoC Leadership Meetings"
 ];
 
 // Milestones with target dates — sourced from Milestones tab of Tracking Workbook v3
 // Progress % is derived dynamically from MOC_DATA/TASKS_DATA (never hardcoded here).
 // targetDate = client-facing milestone deadline; null = no fixed date.
 const MILESTONES_DATA = [
-  { name:"AI Strategy - Monitor",   targetDate:new Date(2026,7,1),   pctOverride:100 },
-  { name:"AI Strategy - Analyze",   targetDate:new Date(2026,7,21),  pctOverride:80  },
-  { name:"AI Strategy - Plan",      targetDate:new Date(2026,8,21),  pctOverride:0   },
-  { name:"AI Strategy - Execute",   targetDate:new Date(2026,10,21), pctOverride:0   },
-  { name:"Cultural Universe",       targetDate:new Date(2026,7,25),  pctOverride:80  },
-  { name:"Copliot Productivity",    targetDate:new Date(2026,9,30),  pctOverride:60  },
-  { name:"Ad Hoc",                  targetDate:new Date(2026,7,13),  pctOverride:0   },
-  { name:"MoC Leadership Meetings", targetDate:new Date(2026,5,1),   pctOverride:100 },
+  { name:"AI Strategy - Monitor", targetDate:new Date(2026,7,1), pctOverride:100 },
+  { name:"AI Strategy - Analyze", targetDate:new Date(2026,7,21), pctOverride:80 },
+  { name:"AI Strategy - Plan", targetDate:new Date(2026,8,21), pctOverride:0 },
+  { name:"AI Strategy - Execute", targetDate:new Date(2026,10,21), pctOverride:0 },
+  { name:"Cultural Universe", targetDate:new Date(2026,7,25), pctOverride:80 },
+  { name:"Copliot Productivity", targetDate:new Date(2026,9,30), pctOverride:60 },
+  { name:"Ad Hoc", targetDate:new Date(2026,7,13), pctOverride:0 },
+  { name:"MoC Leadership Meetings", targetDate:new Date(2026,5,1), pctOverride:100 },
 ];
 // Helper: get milestone target date
 function getMilestoneTargetDate(name){
@@ -1371,7 +1359,7 @@ const PILLAR_FULL_TO_CODE = {
   "Cultural Universe Migration": "CU"
 };
 function normalisePillar(raw){
-  if(!raw) return null;
+  if(!raw) return '';
   // Direct code match (P1..P5, PR, AD, CG, CU)
   if(PILLARS.some(p=>p.code===raw)) return raw;
   // Full name match via lookup
@@ -1469,8 +1457,8 @@ let MOC_DATA = [
   { id:"WS-09", name:"AI Impact - Define metrics of value for the organization", initiative:"AI Strategy - Monitor", pillar:"P5 — AI Impact", department:"", workType:"Client Engagement", stage:"Monitor", lead:"BA Team", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"", next:"", notes:"" },
   { id:"WS-10", name:"AI Impact - Measure & capture data on value of each use case", initiative:"AI Strategy - Monitor", pillar:"P5 — AI Impact", department:"", workType:"Client Engagement", stage:"Monitor", lead:"BA Team", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"", next:"", notes:"" },
   { id:"WS-11", name:"AI Discovery Report", initiative:"AI Strategy - Monitor", pillar:"Agreed Deliverables", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Salah Assi", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-12", name:"Risk Register", initiative:"AI Strategy - Monitor", pillar:"", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Mohammad Kaddoura", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"", next:"", notes:"" },
-  { id:"WS-13", name:"Map & prioritize use case portfolio", initiative:"AI Strategy - Analyze", pillar:"P1 — AI Strategy", department:"", workType:"Client Engagement", stage:"Analyze", lead:"BA Team", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-12", name:"Risk Register", initiative:"", pillar:"", department:"", workType:"Client Engagement", stage:"Monitor", lead:"Mohammad Kaddoura", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-13", name:"Map & prioritize use case portfolio", initiative:"AI Strategy - Analyze", pillar:"P1 — AI Strategy", department:"", workType:"Client Engagement", stage:"Analyze", lead:"BA Team", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"", next:"", notes:"" },
   { id:"WS-14", name:"Define AI vision & ambition statement", initiative:"AI Strategy - Analyze", pillar:"P1 — AI Strategy", department:"", workType:"Client Engagement", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:60, history:[h(7,60),h(0,60)], past:"", next:"", notes:"" },
   { id:"WS-15", name:"Define AI-ready data foundation strategy", initiative:"AI Strategy - Analyze", pillar:"P2 — AI Ready Data & Infrastructure", department:"", workType:"Client Engagement", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-16", name:"Define AI infrastructure platform strategy", initiative:"AI Strategy - Analyze", pillar:"P2 — AI Ready Data & Infrastructure", department:"", workType:"Client Engagement", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
@@ -1478,8 +1466,8 @@ let MOC_DATA = [
   { id:"WS-18", name:"Identify & recruit AI Champions per unit", initiative:"AI Strategy - Analyze", pillar:"P3 — Workforce & Culture", department:"", workType:"Client Engagement", stage:"Analyze", lead:"Mohammad Kaddoura", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-19", name:"Establish AI governance framework & principles", initiative:"AI Strategy - Analyze", pillar:"Analyze", department:"", workType:"Client Engagement", stage:"Analyze", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-20", name:"Define Human-in-the-Loop decision rights", initiative:"AI Strategy - Analyze", pillar:"P4 — Governance & Responsible AI", department:"", workType:"Client Engagement", stage:"Analyze", lead:"Mohammad Kaddoura", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-21", name:"Calculate value of each use case via impact framework", initiative:"AI Strategy - Analyze", pillar:"P5 — AI Impact", department:"", workType:"Client Engagement", stage:"Analyze", lead:"BA Team", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-22", name:"Prioritize solutions by feasibility & impact", initiative:"AI Strategy - Analyze", pillar:"P5 — AI Impact", department:"", workType:"Client Engagement", stage:"Analyze", lead:"BA Team", risk:"On Track", pct:85, history:[h(7,85),h(0,85)], past:"", next:"", notes:"" },
+  { id:"WS-21", name:"Calculate value of each use case via impact framework", initiative:"AI Strategy - Analyze", pillar:"P5 — AI Impact", department:"", workType:"Client Engagement", stage:"Analyze", lead:"BA Team", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"", next:"", notes:"" },
+  { id:"WS-22", name:"Prioritize solutions by feasibility & impact", initiative:"AI Strategy - Analyze", pillar:"P5 — AI Impact", department:"", workType:"Client Engagement", stage:"Analyze", lead:"BA Team", risk:"On Track", pct:100, history:[h(7,100),h(0,100)], past:"", next:"", notes:"" },
   { id:"WS-23", name:"AI Readiness Baseline Report", initiative:"AI Strategy - Analyze", pillar:"Agreed Deliverables", department:"", workType:"Client Engagement", stage:"Analyze", lead:"Mohammad Kaddoura", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-24", name:"Appoint AI Leader & establish CoE", initiative:"AI Strategy - Plan", pillar:"P1 — AI Strategy", department:"", workType:"Client Engagement", stage:"Plan", lead:"Omar Alsmadi", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-25", name:"Define AI target operating model", initiative:"AI Strategy - Plan", pillar:"P1 — AI Strategy", department:"", workType:"Client Engagement", stage:"Plan", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
@@ -1502,11 +1490,11 @@ let MOC_DATA = [
   { id:"WS-42", name:"Establish AI Ethics Board & meeting cadence", initiative:"AI Strategy - Execute", pillar:"P4 — Governance & Responsible AI", department:"", workType:"Client Engagement", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-43", name:"Real-time execution monitoring to validate impact", initiative:"AI Strategy - Execute", pillar:"P5 — AI Impact", department:"", workType:"Client Engagement", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
   { id:"WS-44", name:"Deploy live impact dashboards & report to stakeholders", initiative:"AI Strategy - Execute", pillar:"P5 — AI Impact", department:"", workType:"Client Engagement", stage:"Execute", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-45", name:"Execution Deliverables ", initiative:"AI Strategy - Execute", pillar:"Agreed Deliverables", department:"", workType:"Client Engagement", stage:"Execute", lead:"Mohammad Kaddoura", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-46", name:"Application Migration", initiative:"Cultural Universe", pillar:"Cultural Universe Migration", department:"", workType:"Internal Delivery", stage:"Application Migration", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-47", name:"Microsoft Copilot Roll Out Rollout in MoC", initiative:"Copliot Productivity", pillar:"Project Related", department:"", workType:"Internal Delivery", stage:"Microsoft Copilot Roll Out", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-48", name:"Ad Hoc Requests", initiative:"Ad Hoc", pillar:"Project Related", department:"", workType:"Internal Delivery", stage:"Others", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
-  { id:"WS-49", name:"Follow-up -or- Progress & Updates Meetings", initiative:"MoC Leadership Meetings", pillar:"Project Related", department:"", workType:"Client Engagement", stage:"Others", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-45", name:"Execution Deliverables", initiative:"AI Strategy - Execute", pillar:"Agreed Deliverables", department:"", workType:"Client Engagement", stage:"Execute", lead:"Mohammad Kaddoura", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-46", name:"Application Migration", initiative:"Cultural Universe", pillar:"Cultural Universe Migration", department:"", workType:"Client Engagement", stage:"Application Migration", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-47", name:"Microsoft Copilot Roll Out Rollout in MoC", initiative:"Copliot Productivity", pillar:"Project Related", department:"", workType:"Client Engagement", stage:"Microsoft Copilot Roll Out", lead:"Salah Assi", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-48", name:"Ad Hoc Requests", initiative:"Ad Hoc", pillar:"Project Related", department:"", workType:"Client Engagement", stage:"Others", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
+  { id:"WS-49", name:"Follow-up -or- Progress & Updates Meetings", initiative:"Moc Leadership Meetings", pillar:"Project Related", department:"", workType:"Client Engagement", stage:"Others", lead:"Mahmoud Abukhamseh", risk:"On Track", pct:0, history:[h(7,0),h(0,0)], past:"", next:"", notes:"" },
 ];
 
 /* Rolling N-day lookback: finds the latest history snapshot at or before
@@ -1531,180 +1519,185 @@ function weeklyDelta(item){
    Mutable at runtime via the "+ Add Task" modal (in-memory only, demo mode).
    ===================================================================== */
 let TASKS_DATA = [
-  { id:"T-01", title:"Heritage - Engagement 1", workstream:"AI Discovery Report", department:"Heritage", stage:"Monitor", assignee:"Mohammad Kaddoura", status:"Blocked", risk:"Delayed", priority:"Medium", pct:30, due:null, tags:"", notes:"" },
-  { id:"T-02", title:"Human Resources - Learning & Training - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-03", title:"Human Resources - Recruitment - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-04", title:"Human Resources - Operations - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-05", title:"Human Resources - Operations - Demo", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-06", title:"Human Resources - Learning & Training - Demo", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-07", title:"Human Resources - Recruitment - Demo", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-08", title:"Human Resources - Operations - Engagement 2", workstream:"AI Strategy - AI maturity baseline assessment", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-01", title:"Heritage - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Heritage", stage:"Monitor", assignee:"Mohammad Kaddoura", status:"Completed", risk:"Delayed", priority:"Medium", pct:100, due:new Date("2026-03-05"), tags:"", notes:"" },
+  { id:"T-02", title:"Human Resources - Learning & Training - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:new Date("2026-05-21"), tags:"", notes:"" },
+  { id:"T-03", title:"Human Resources - Recruitment - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:new Date("2026-05-21"), tags:"", notes:"" },
+  { id:"T-04", title:"Human Resources - Operations - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:new Date("2026-05-24"), tags:"", notes:"" },
+  { id:"T-05", title:"Human Resources - Operations - Demo", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:new Date("2026-07-06"), tags:"", notes:"" },
+  { id:"T-06", title:"Human Resources - Learning & Training - Demo", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:new Date("2026-08-06"), tags:"", notes:"" },
+  { id:"T-07", title:"Human Resources - Recruitment - Demo 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:new Date("2026-08-06"), tags:"", notes:"" },
+  { id:"T-08", title:"Human Resources - Operations - Engagement 2", workstream:"AI Strategy - AI maturity baseline assessment", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:new Date("2026-10-06"), tags:"", notes:"" },
   { id:"T-09", title:"Finance - Revenue - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-10", title:"Digital Transformation - Focus Area", workstream:"AI Ready Data & Infrastructure - Assess data readiness for AI solutions", department:"Digital Transformation", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-11", title:"Prepare the First Tracker Sheet", workstream:"Follow-up -or- Progress & Updates Meetings", department:"AI Strategy Team", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-12", title:"Humain Scope of Work Review ", workstream:"Ad Hoc Requests", department:"Digital Transformation", stage:"Others", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-10", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Mohammad Kaddoura", status:"In Progress", risk:"On Track", priority:"Critical High", pct:60, due:null, tags:"", notes:"" },
+  { id:"T-11", title:"Prepare the First Tracker Sheet", workstream:"Follow-up -or- Progress & Updates Meetings", department:"AI Strategy Team", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:new Date("2026-01-08"), tags:"", notes:"" },
+  { id:"T-12", title:"Humain Scope of Work Review", workstream:"Ad Hoc Requests", department:"Digital Transformation", stage:"Others", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
   { id:"T-13", title:"Finance - Reporting - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-14", title:"Digital Transformation - Focus Area", workstream:"AI Ready Data & Infrastructure - Inventory & classify critical data assets", department:"Digital Transformation", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"Blocked", priority:"Critical High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-14", title:"Human Resources - Operations - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
   { id:"T-15", title:"Finance - Reporting - Demo", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-16", title:"Human Resources - Recruitment - Demo 2", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-16", title:"Human Resources - Recruitment - Demo 2", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:new Date("2026-06-25"), tags:"", notes:"" },
   { id:"T-17", title:"PMO - PMO - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
   { id:"T-18", title:"Digital Transformation - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Digital Transformation", stage:"Monitor", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-19", title:"Digital Transformation", workstream:"Follow-up -or- Progress & Updates Meetings", department:"Digital Transformation", stage:"Monitor", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-19", title:"Digital Transformation - Follow Up Meeting", workstream:"Follow-up -or- Progress & Updates Meetings", department:"Digital Transformation", stage:"Monitor", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
   { id:"T-20", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-21", title:"Digital Transformation - Focus Area", workstream:"AI Ready Data & Infrastructure - Inventory & classify critical data assets", department:"Digital Transformation", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-21", title:"Finance - Revenue - Demo", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
   { id:"T-22", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-23", title:"Digital Transformation - Focus Area", workstream:"AI Ready Data & Infrastructure - Assess data readiness for AI solutions", department:"Digital Transformation", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-24", title:"Finance - Revenue - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-25", title:"Human Resources - Operations - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-26", title:"Human Resources - Operations - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-27", title:"Human Resources - Recruitment - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-28", title:"Cultural Scholarship - Meeting 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Cultural Scholarship", stage:"Monitor", assignee:"Yaseen Alquraan", status:"In Progress", risk:"On Track", priority:"Medium", pct:30, due:null, tags:"", notes:"" },
-  { id:"T-29", title:"Human Resources - Learning & Training - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-30", title:"Finance - Revenue - Demo", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-31", title:"Cultural Scholarship - Demo", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Cultural Scholarship", stage:"Monitor", assignee:"Omar Alsmadi", status:"In Progress", risk:"On Track", priority:"Medium", pct:50, due:null, tags:"", notes:"" },
-  { id:"T-32", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Mohammad Kaddoura", status:"In Progress", risk:"On Track", priority:"Critical High", pct:60, due:null, tags:"", notes:"" },
-  { id:"T-33", title:"Finance - Revenue - Engagement 3", workstream:"AI Impact - Define metrics of value for the organization", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-34", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-35", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-23", title:"Finance - Revenue - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-24", title:"Human Resources - Recruitment - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-25", title:"Cultural Scholarship - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Cultural Scholarship", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"Medium", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-26", title:"Human Resources - Learning & Training - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-27", title:"Cultural Scholarship - Demo", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Cultural Scholarship", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"Medium", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-28", title:"Finance - Revenue - Engagement 3", workstream:"AI Impact - Define metrics of value for the organization", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-29", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-30", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-31", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-32", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-33", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-34", title:"Finance - Revenue - Engagement 4", workstream:"AI Impact - Measure & capture data on value of each use case", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-35", title:"Finance - Revenue - Engagement 5", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
   { id:"T-36", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-37", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-37", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
   { id:"T-38", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-39", title:"Finance - Revenue - Engagement 4", workstream:"AI Impact - Measure & capture data on value of each use case", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-40", title:"Finance - Revenue - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-41", title:"Finance - Revenue - Engagement 5", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-42", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-43", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-44", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-45", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-46", title:"AI Strategy Team - Team Meetings", workstream:"Follow-up -or- Progress & Updates Meetings", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-47", title:"AI Strategy Team - Team Meetings", workstream:"Follow-up -or- Progress & Updates Meetings", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-48", title:"AI Strategy Team - Focus Area", workstream:"AI Impact - Define metrics of value for the organization", department:"AI Strategy Team", stage:"Monitor", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-49", title:"MoC Infra Team - Focus Area", workstream:"AI Ready Data & Infrastructure - Inventory & classify critical data assets", department:"MoC Infra Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-50", title:"AI Strategy Team - Focus Area", workstream:"AI Impact - Measure & capture data on value of each use case", department:"AI Strategy Team", stage:"Analyze", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"Critical High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-51", title:"AI Strategy Team - Presentations", workstream:"Ad Hoc Requests", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-52", title:"Digital Transformation - D&T", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Digital Transformation", stage:"Monitor", assignee:"Mahmoud Abukhamseh", status:"In Progress", risk:"On Track", priority:"High", pct:50, due:null, tags:"", notes:"" },
-  { id:"T-53", title:"MoC Infra Team - Focus Area", workstream:"AI Ready Data & Infrastructure - Assess data readiness for AI solutions", department:"MoC Infra Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-54", title:"MoC CS Team - Focus Area", workstream:"Governance & Responsible AI - Identify compliance gaps & regulatory exposure", department:"MoC CS Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-55", title:"MoC DMO Team - Focus Area", workstream:"AI Ready Data & Infrastructure - Assess data readiness for AI solutions", department:"MoC DMO Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-56", title:"Digital Transformation - Focus Area", workstream:"Workforce & Culture - Assess workforce AI skills gaps", department:"Digital Transformation", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-57", title:"Digital Transformation - Focus Area", workstream:"Workforce & Culture - Talent landscape review & benchmarking", department:"Digital Transformation", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-58", title:"MoC CS Team - Focus Area", workstream:"Governance & Responsible AI - Identify & capture Cyber Security requirements and gaps", department:"MoC CS Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-59", title:"MoC CS Team - Focus Area", workstream:"Governance & Responsible AI - Identify compliance gaps & regulatory exposure", department:"MoC CS Team", stage:"Monitor", assignee:"Salah Assi", status:"Not Started", risk:"On Track", priority:"High", pct:0, due:null, tags:"", notes:"" },
-  { id:"T-60", title:"Digital Transformation - Focus Area", workstream:"Risk Register", department:"Digital Transformation", stage:"Monitor", assignee:"Mahmoud Abukhamseh", status:"In Progress", risk:"On Track", priority:"High", pct:99, due:null, tags:"", notes:"" },
-  { id:"T-61", title:"Digital Transformation - Submit the final Report", workstream:"AI Discovery Report", department:"Digital Transformation", stage:"Monitor", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-62", title:"AI Strategy Team - Focus Area", workstream:"AI Impact - Measure & capture data on value of each use case", department:"AI Strategy Team", stage:"Monitor", assignee:"Omar Alsmadi", status:"Not Started", risk:"Delayed", priority:"High", pct:0, due:null, tags:"", notes:"" },
-  { id:"T-63", title:"AI Strategy Team - Focus Area", workstream:"AI Ready Data & Infrastructure - Assess data readiness for AI solutions", department:"AI Strategy Team", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Not Started", risk:"Delayed", priority:"High", pct:0, due:null, tags:"", notes:"" },
-  { id:"T-64", title:"Heritage - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Heritage", stage:"Monitor", assignee:"Yaseen Alquraan", status:"In Progress", risk:"Delayed", priority:"Medium", pct:0, due:null, tags:"", notes:"" },
-  { id:"T-65", title:"PMO - PMO - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-66", title:"Cultural Scholarship", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Cultural Scholarship", stage:"Monitor", assignee:"Omar Alsmadi", status:"Not Started", risk:"Delayed", priority:"Medium", pct:0, due:null, tags:"", notes:"" },
-  { id:"T-67", title:"AI Strategy Team - compile & draft", workstream:"AI Discovery Report", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-68", title:"Digital Transformation - Official Sign of by D&T Leadership", workstream:"AI Readiness Baseline Report", department:"Digital Transformation", stage:"Monitor", assignee:"Mohammad Kaddoura", status:"In Progress", risk:"On Track", priority:"Critical High", pct:0, due:null, tags:"", notes:"" },
-  { id:"T-69", title:"AI Strategy Team - Focus Area", workstream:"Map & prioritize use case portfolio", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"In Progress", risk:"On Track", priority:"High", pct:80, due:null, tags:"", notes:"" },
-  { id:"T-70", title:"AI Strategy Team - Focus Area", workstream:"Define AI vision & ambition statement", department:"AI Strategy Team", stage:"Analyze", assignee:"Salah Assi", status:"Not Started", risk:"On Track", priority:"High", pct:0, due:null, tags:"", notes:"" },
-  { id:"T-71", title:"AI Strategy Team - Focus Area", workstream:"AI Strategy - AI maturity baseline assessment", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"Not Started", risk:"On Track", priority:"High", pct:0, due:null, tags:"", notes:"" },
-  { id:"T-72", title:"Digital Transformation - Submit the Final Report", workstream:"AI Discovery Report", department:"Digital Transformation", stage:"Monitor", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-73", title:"Finance - Revenue - Engagement 2", workstream:"AI Strategy - AI maturity baseline assessment", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-74", title:"Finance - Reporting - Engagement 2", workstream:"AI Strategy - AI maturity baseline assessment", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-75", title:"Finance - Reporting - Engagement 3", workstream:"AI Impact - Define metrics of value for the organization", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-76", title:"Finance - Reporting - Engagement 4", workstream:"AI Impact - Measure & capture data on value of each use case", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-77", title:"Finance - Reporting - Discovery Report", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-78", title:"Finance - Reporting - Discovery Report Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-79", title:"Finance - Reporting - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-80", title:"Finance - Revenue - Discovery Report", workstream:"AI Discovery Report", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-81", title:"Finance - Revenue - Discovery Report Review", workstream:"AI Discovery Report", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-82", title:"PMO - PMO - Engagement 2", workstream:"AI Strategy - AI maturity baseline assessment", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-83", title:"PMO - PMO - Engagement 3", workstream:"AI Impact - Define metrics of value for the organization", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-84", title:"PMO - PMO - Engagement 4", workstream:"AI Impact - Measure & capture data on value of each use case", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-85", title:"PMO - PMO - Discovery Report", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-86", title:"PMO - PMO - Discovery Report Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-87", title:"PMO - PMO - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-88", title:"PMO - PMO - Demo", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-89", title:"PMO - PMO - Discovery Report Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-90", title:"Finance - Reporting - Discovery Report Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Reporting", stage:"Monitor", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-91", title:"Finance - Revenue - Discovery Report Review", workstream:"AI Discovery Report", department:"Finance - Revenue", stage:"Monitor", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-92", title:"Human Resources - Learning & Training - Engagement 2", workstream:"AI Strategy - AI maturity baseline assessment", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-93", title:"Human Resources - Learning & Training - Engagement 3", workstream:"AI Impact - Define metrics of value for the organization", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-94", title:"Human Resources - Learning & Training - Engagement 4", workstream:"AI Impact - Measure & capture data on value of each use case", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-95", title:"Human Resources - Learning & Training - Discovery Report", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-96", title:"Human Resources - Learning & Training - Discovery Report Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-97", title:"Human Resources - Learning & Training - Discovery Report Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-98", title:"Human Resources - Operations - Engagement 3", workstream:"AI Impact - Define metrics of value for the organization", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-99", title:"Human Resources - Operations - Engagement 4", workstream:"AI Impact - Measure & capture data on value of each use case", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-100", title:"Human Resources - Operations - Discovery Report", workstream:"AI Strategy - AI maturity baseline assessment", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-101", title:"Human Resources - Operations - Discovery Report Review", workstream:"AI Strategy - AI maturity baseline assessment", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-102", title:"Human Resources - Operations - Discovery Report Review", workstream:"AI Strategy - AI maturity baseline assessment", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-103", title:"Human Resources - Recruitment - Engagement 2", workstream:"AI Strategy - AI maturity baseline assessment", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-104", title:"Human Resources - Recruitment - Engagement 3", workstream:"AI Impact - Define metrics of value for the organization", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-105", title:"Human Resources - Recruitment - Engagement 4", workstream:"AI Impact - Measure & capture data on value of each use case", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-106", title:"Human Resources - Recruitment - Discovery Report", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-107", title:"Human Resources - Recruitment - Discovery Report Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-108", title:"Human Resources - Recruitment - Discovery Report Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-109", title:"Finance - Revenue - Engagement 1", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-110", title:"Finance - Revenue - Engagement 2", workstream:"Map & prioritize use case portfolio", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-111", title:"Finance - Revenue - Engagement 3", workstream:"Define AI vision & ambition statement", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-112", title:"Finance - Revenue - Engagement 4", workstream:"Prioritize solutions by feasibility & impact", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-113", title:"Finance - Revenue - Engagement 5", workstream:"Calculate value of each use case via impact framework", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-114", title:"Finance - Revenue - AI Opportunities Assessment Report", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"In Progress", risk:"On Track", priority:"High", pct:90, due:null, tags:"", notes:"" },
-  { id:"T-115", title:"Finance - Revenue - AI Opportunities Assessment Report Review ", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-116", title:"Finance - Revenue - AI Opportunities Assessment Report Review ", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-117", title:"Finance - Revenue - AI Opportunities Assessment Ecxel ", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-118", title:"Finance - Revenue - AI Opportunities Assessment Ecxel Review ", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-119", title:"Finance - Revenue - AI Opportunities Assessment Ecxel Review ", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-120", title:"Finance - Reporting - Engagement 1", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-121", title:"Finance - Reporting - Engagement 2", workstream:"Map & prioritize use case portfolio", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-122", title:"Finance - Reporting - Engagement 3", workstream:"Define AI vision & ambition statement", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-123", title:"Finance - Reporting - Engagement 4", workstream:"Prioritize solutions by feasibility & impact", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-124", title:"Finance - Reporting - Engagement 5", workstream:"Calculate value of each use case via impact framework", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-125", title:"Finance - Reporting - AI Opportunities Assessment Report", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"In Progress", risk:"On Track", priority:"High", pct:90, due:null, tags:"", notes:"" },
-  { id:"T-126", title:"Finance - Reporting - AI Opportunities Assessment Report Review ", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-127", title:"Finance - Reporting - AI Opportunities Assessment Report Review ", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-128", title:"Finance - Reporting - AI Opportunities Assessment Ecxel ", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-129", title:"Finance - Reporting - AI Opportunities Assessment Ecxel Review ", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-130", title:"Finance - Reporting - AI Opportunities Assessment Ecxel Review ", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-131", title:"PMO - PMO - Engagement 1", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-132", title:"PMO - PMO - Engagement 2", workstream:"Map & prioritize use case portfolio", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-133", title:"PMO - PMO - Engagement 3", workstream:"Define AI vision & ambition statement", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-134", title:"PMO - PMO - Engagement 4", workstream:"Calculate value of each use case via impact framework", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-135", title:"PMO - PMO - Engagement 5", workstream:"Prioritize solutions by feasibility & impact", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-136", title:"PMO - PMO - AI Opportunities Assessment Report", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"In Progress", risk:"On Track", priority:"High", pct:90, due:null, tags:"", notes:"" },
-  { id:"T-137", title:"PMO - PMO - AI Opportunities Assessment Report Review ", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-138", title:"PMO - PMO - AI Opportunities Assessment Report Review ", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-139", title:"PMO - PMO - AI Opportunities Assessment Ecxel ", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-140", title:"PMO - PMO - AI Opportunities Assessment Ecxel Review ", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-141", title:"PMO - PMO - AI Opportunities Assessment Ecxel Review ", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-142", title:"Human Resources - Learning & Training - Engagement 1", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-143", title:"Human Resources - Learning & Training - Engagement 2", workstream:"Map & prioritize use case portfolio", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-144", title:"Human Resources - Learning & Training - Engagement 3", workstream:"Define AI vision & ambition statement", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-145", title:"Human Resources - Learning & Training - Engagement 4", workstream:"Calculate value of each use case via impact framework", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-146", title:"Human Resources - Learning & Training - Engagement 5", workstream:"Prioritize solutions by feasibility & impact", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-147", title:"Human Resources - Learning & Training - AI Opportunities Assessment Report", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"In Progress", risk:"On Track", priority:"High", pct:90, due:null, tags:"", notes:"" },
-  { id:"T-148", title:"Human Resources - Learning & Training - AI Opportunities Assessment Report Review ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-149", title:"Human Resources - Learning & Training - AI Opportunities Assessment Report Review ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-150", title:"Human Resources - Learning & Training - AI Opportunities Assessment Ecxel ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-151", title:"Human Resources - Learning & Training - AI Opportunities Assessment Ecxel Review ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-152", title:"Human Resources - Learning & Training - AI Opportunities Assessment Ecxel Review ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-153", title:"Human Resources - Operations - Engagement 1", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-154", title:"Human Resources - Operations - Engagement 2", workstream:"Map & prioritize use case portfolio", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-155", title:"Human Resources - Operations - Engagement 3", workstream:"Define AI vision & ambition statement", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-156", title:"Human Resources - Operations - Engagement 4", workstream:"Calculate value of each use case via impact framework", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-157", title:"Human Resources - Operations - Engagement 5", workstream:"Prioritize solutions by feasibility & impact", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-158", title:"Human Resources - Operations - AI Opportunities Assessment Report", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"In Progress", risk:"On Track", priority:"High", pct:90, due:null, tags:"", notes:"" },
-  { id:"T-159", title:"Human Resources - Operations - AI Opportunities Assessment Report Review ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-160", title:"Human Resources - Operations - AI Opportunities Assessment Report Review ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-161", title:"Human Resources - Operations - AI Opportunities Assessment Ecxel ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-162", title:"Human Resources - Operations - AI Opportunities Assessment Ecxel Review ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-163", title:"Human Resources - Operations - AI Opportunities Assessment Ecxel Review ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-164", title:"Human Resources - Recruitment - Engagement 1", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-165", title:"Human Resources - Recruitment - Engagement 2", workstream:"Map & prioritize use case portfolio", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-166", title:"Human Resources - Recruitment - Engagement 3", workstream:"Define AI vision & ambition statement", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-167", title:"Human Resources - Recruitment - Engagement 4", workstream:"Calculate value of each use case via impact framework", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-168", title:"Human Resources - Recruitment - Engagement 5", workstream:"Prioritize solutions by feasibility & impact", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-169", title:"Human Resources - Recruitment - AI Opportunities Assessment Report", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"In Progress", risk:"On Track", priority:"High", pct:90, due:null, tags:"", notes:"" },
-  { id:"T-170", title:"Human Resources - Recruitment - AI Opportunities Assessment Report Review ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-171", title:"Human Resources - Recruitment - AI Opportunities Assessment Report Review ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-172", title:"Human Resources - Recruitment - AI Opportunities Assessment Ecxel ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-173", title:"Human Resources - Recruitment - AI Opportunities Assessment Ecxel Review ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
-  { id:"T-174", title:"Human Resources - Recruitment - AI Opportunities Assessment Ecxel Review ", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-39", title:"Digital Transformation - Copilot", workstream:"Microsoft Copilot Roll Out Rollout in MoC", department:"Digital Transformation", stage:"Microsoft Copilot Roll Out", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-40", title:"AI Strategy Team - Team Meetings", workstream:"Follow-up -or- Progress & Updates Meetings", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-41", title:"AI Strategy Team - Team Meetings", workstream:"Follow-up -or- Progress & Updates Meetings", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-42", title:"AI Strategy Team - Focus Area", workstream:"AI Impact - Define metrics of value for the organization", department:"AI Strategy Team", stage:"Monitor", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-43", title:"MoC Infra Team - Focus Area", workstream:"AI Ready Data & Infrastructure - Inventory & classify critical data assets", department:"MoC Infra Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-44", title:"AI Strategy Team - Focus Area", workstream:"AI Impact - Measure & capture data on value of each use case", department:"AI Strategy Team", stage:"Analyze", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"Critical High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-45", title:"AI Strategy Team - Presentations", workstream:"Ad Hoc Requests", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-46", title:"Digital Transformation - D&T", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Digital Transformation", stage:"Monitor", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-47", title:"MoC Infra Team - Focus Area", workstream:"AI Ready Data & Infrastructure - Assess data readiness for AI solutions", department:"MoC Infra Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-48", title:"MoC CS Team - Focus Area", workstream:"Governance & Responsible AI - Identify compliance gaps & regulatory exposure", department:"MoC CS Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-49", title:"MoC DMO Team - Focus Area", workstream:"AI Ready Data & Infrastructure - Assess data readiness for AI solutions", department:"MoC DMO Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-50", title:"Digital Transformation - Focus Area", workstream:"Workforce & Culture - Assess workforce AI skills gaps", department:"Digital Transformation", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-51", title:"Digital Transformation - Focus Area", workstream:"Workforce & Culture - Talent landscape review & benchmarking", department:"Digital Transformation", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-52", title:"MoC CS Team - Focus Area", workstream:"Governance & Responsible AI - Identify & capture Cyber Security requirements and gaps", department:"MoC CS Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-53", title:"MoC CS Team - Focus Area", workstream:"Governance & Responsible AI - Identify compliance gaps & regulatory exposure", department:"MoC CS Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-54", title:"Digital Transformation - Focus Area", workstream:"Risk Register", department:"Digital Transformation", stage:"Monitor", assignee:"Mahmoud Abukhamseh", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-55", title:"Digital Transformation - Submit the final Report", workstream:"AI Discovery Report", department:"Digital Transformation", stage:"Monitor", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"High", pct:100, due:new Date("2026-03-08"), tags:"", notes:"" },
+  { id:"T-56", title:"AI Strategy Team - Focus Area", workstream:"AI Impact - Measure & capture data on value of each use case", department:"AI Strategy Team", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-57", title:"AI Strategy Team - Focus Area", workstream:"AI Ready Data & Infrastructure - Assess data readiness for AI solutions", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-58", title:"Heritage - Engagement 2", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Heritage", stage:"Monitor", assignee:"Monitor", status:"On Hold", risk:"Delayed", priority:"Medium", pct:0, due:null, tags:"", notes:"" },
+  { id:"T-59", title:"PMO - PMO - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-60", title:"Cultural Scholarship - Engagement 2", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Cultural Scholarship", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"Medium", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-61", title:"AI Strategy Team - compile & draft", workstream:"AI Discovery Report", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-62", title:"Digital Transformation - Official Sign of by D&T Leadership", workstream:"AI Readiness Baseline Report", department:"Digital Transformation", stage:"Monitor", assignee:"Mohammad Kaddoura", status:"Completed", risk:"On Track", priority:"Critical High", pct:100, due:new Date("2026-03-08"), tags:"", notes:"" },
+  { id:"T-63", title:"AI Strategy Team - Focus Area", workstream:"Map & prioritize use case portfolio", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"In Progress", risk:"On Track", priority:"High", pct:80, due:null, tags:"", notes:"" },
+  { id:"T-64", title:"AI Strategy Team - Focus Area", workstream:"Define AI vision & ambition statement", department:"AI Strategy Team", stage:"Analyze", assignee:"Salah Assi", status:"Not Started", risk:"On Track", priority:"High", pct:0, due:null, tags:"", notes:"" },
+  { id:"T-65", title:"AI Strategy Team - Focus Area", workstream:"AI Strategy - AI maturity baseline assessment", department:"AI Strategy Team", stage:"Monitor", assignee:"Salah Assi", status:"Not Started", risk:"On Track", priority:"High", pct:0, due:null, tags:"", notes:"" },
+  { id:"T-66", title:"Finance - Revenue - Engagement 2", workstream:"AI Strategy - AI maturity baseline assessment", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-67", title:"Finance - Reporting - Engagement 2", workstream:"AI Strategy - AI maturity baseline assessment", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-68", title:"Finance - Reporting - Engagement 3", workstream:"AI Impact - Define metrics of value for the organization", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-69", title:"Finance - Reporting - Engagement 4", workstream:"AI Impact - Measure & capture data on value of each use case", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-70", title:"Finance - Reporting - Discovery Report", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-71", title:"Finance - Reporting - Discovery Report Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-72", title:"Finance - Reporting - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-73", title:"Finance - Revenue - Discovery Report", workstream:"AI Discovery Report", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-74", title:"Finance - Revenue - Discovery Report Review", workstream:"AI Discovery Report", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-75", title:"PMO - PMO - Engagement 2", workstream:"AI Strategy - AI maturity baseline assessment", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-76", title:"PMO - PMO - Engagement 3", workstream:"AI Impact - Define metrics of value for the organization", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-77", title:"PMO - PMO - Engagement 4", workstream:"AI Impact - Measure & capture data on value of each use case", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-78", title:"PMO - PMO - Discovery Report", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-79", title:"PMO - PMO - Discovery Report Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-80", title:"PMO - PMO - Workshop Closure", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-81", title:"PMO - PMO - Demo", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-82", title:"PMO - PMO - Discovery Report - Second Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - PMO", stage:"Monitor", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-83", title:"Finance - Reporting - Discovery Report - Second Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Finance - Reporting", stage:"Monitor", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-84", title:"Finance - Revenue - Discovery Report - Second Review", workstream:"AI Discovery Report", department:"Finance - Revenue", stage:"Monitor", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-85", title:"Human Resources - Learning & Training - Engagement 2", workstream:"AI Strategy - AI maturity baseline assessment", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-86", title:"Human Resources - Learning & Training - Engagement 3", workstream:"AI Impact - Define metrics of value for the organization", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-87", title:"Human Resources - Learning & Training - Engagement 4", workstream:"AI Impact - Measure & capture data on value of each use case", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-88", title:"Human Resources - Learning & Training - Discovery Report", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-89", title:"Human Resources - Learning & Training - Discovery Report Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-90", title:"Human Resources - Learning & Training - Discovery Report - Second Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-91", title:"Human Resources - Operations - Engagement 3", workstream:"AI Impact - Define metrics of value for the organization", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-92", title:"Human Resources - Operations - Engagement 4", workstream:"AI Impact - Measure & capture data on value of each use case", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-93", title:"Human Resources - Operations - Discovery Report", workstream:"AI Strategy - AI maturity baseline assessment", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-94", title:"Human Resources - Operations - Discovery Report Review", workstream:"AI Strategy - AI maturity baseline assessment", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-95", title:"Human Resources - Operations - Discovery Report  - Second Review", workstream:"AI Strategy - AI maturity baseline assessment", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-96", title:"Human Resources - Recruitment - Engagement 2", workstream:"AI Strategy - AI maturity baseline assessment", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-97", title:"Human Resources - Recruitment - Engagement 3", workstream:"AI Impact - Define metrics of value for the organization", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-98", title:"Human Resources - Recruitment - Engagement 4", workstream:"AI Impact - Measure & capture data on value of each use case", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-99", title:"Human Resources - Recruitment - Discovery Report", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-100", title:"Human Resources - Recruitment - Discovery Report Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-101", title:"Human Resources - Recruitment - Discovery Report - Second Review", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-102", title:"Finance - Revenue - Engagement 1", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-103", title:"Finance - Revenue - Engagement 2", workstream:"Map & prioritize use case portfolio", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-104", title:"Finance - Revenue - Engagement 3", workstream:"Define AI vision & ambition statement", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-105", title:"Finance - Revenue - Engagement 4", workstream:"Prioritize solutions by feasibility & impact", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-106", title:"Finance - Revenue - Engagement 5", workstream:"Calculate value of each use case via impact framework", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-107", title:"Finance - Revenue - AI Opportunities Assessment Report", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"In Progress", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-108", title:"Finance - Revenue - AI Opportunities Assessment Report Review", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-109", title:"Finance - Revenue - AI Opportunities Assessment Report - Second Review", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-110", title:"Finance - Revenue - AI Opportunities Assessment Ecxel", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-111", title:"Finance - Revenue - AI Opportunities Assessment Ecxel Review", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-112", title:"Finance - Revenue - AI Opportunities Assessment - Second Ecxel Review", workstream:"AI Readiness Baseline Report", department:"Finance - Revenue", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-113", title:"Finance - Reporting - Engagement 1", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-114", title:"Finance - Reporting - Engagement 2", workstream:"Map & prioritize use case portfolio", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-115", title:"Finance - Reporting - Engagement 3", workstream:"Define AI vision & ambition statement", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-116", title:"Finance - Reporting - Engagement 4", workstream:"Prioritize solutions by feasibility & impact", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-117", title:"Finance - Reporting - Engagement 5", workstream:"Calculate value of each use case via impact framework", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-118", title:"Finance - Reporting - AI Opportunities Assessment Report", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"In Progress", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-119", title:"Finance - Reporting - AI Opportunities Assessment Report Review", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-120", title:"Finance - Reporting - AI Opportunities Assessment Report - Second Review", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-121", title:"Finance - Reporting - AI Opportunities Assessment Ecxel", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-122", title:"Finance - Reporting - AI Opportunities Assessment Ecxel Review", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-123", title:"Finance - Reporting - AI Opportunities Assessment Ecxel  - Second Review", workstream:"AI Readiness Baseline Report", department:"Finance - Reporting", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-124", title:"PMO - PMO - Engagement 1", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-125", title:"PMO - PMO - Engagement 2", workstream:"Map & prioritize use case portfolio", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-126", title:"PMO - PMO - Engagement 3", workstream:"Define AI vision & ambition statement", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-127", title:"PMO - PMO - Engagement 4", workstream:"Calculate value of each use case via impact framework", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-128", title:"PMO - PMO - Engagement 5", workstream:"Prioritize solutions by feasibility & impact", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-129", title:"PMO - PMO - AI Opportunities Assessment Report", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"In Progress", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-130", title:"PMO - PMO - AI Opportunities Assessment Report Review", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-131", title:"PMO - PMO - AI Opportunities Assessment Report Review", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-132", title:"PMO - PMO - AI Opportunities Assessment Ecxel", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-133", title:"PMO - PMO - AI Opportunities Assessment Ecxel Review", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-134", title:"PMO - PMO - AI Opportunities Assessment Ecxel Review", workstream:"AI Readiness Baseline Report", department:"PMO - PMO", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-135", title:"Human Resources - Learning & Training - Engagement 1", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-136", title:"Human Resources - Learning & Training - Engagement 2", workstream:"Map & prioritize use case portfolio", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-137", title:"Human Resources - Learning & Training - Engagement 3", workstream:"Define AI vision & ambition statement", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-138", title:"Human Resources - Learning & Training - Engagement 4", workstream:"Calculate value of each use case via impact framework", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-139", title:"Human Resources - Learning & Training - Engagement 5", workstream:"Prioritize solutions by feasibility & impact", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-140", title:"Human Resources - Learning & Training - AI Opportunities Assessment Report", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"In Progress", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-141", title:"Human Resources - Learning & Training - AI Opportunities Assessment Report Review", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-142", title:"Human Resources - Learning & Training - AI Opportunities Assessment Report Review", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-143", title:"Human Resources - Learning & Training - AI Opportunities Assessment Ecxel", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-144", title:"Human Resources - Learning & Training - AI Opportunities Assessment Ecxel Review", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-145", title:"Human Resources - Learning & Training - AI Opportunities Assessment Ecxel Review", workstream:"AI Readiness Baseline Report", department:"Human Resources - Learning & Training", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-150", title:"Human Resources - Operations - Engagement 5", workstream:"Prioritize solutions by feasibility & impact", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-151", title:"Human Resources - Operations - AI Opportunities Assessment Report", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"In Progress", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-152", title:"Human Resources - Operations - AI Opportunities Assessment Report Review", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-153", title:"Human Resources - Operations - AI Opportunities Assessment Report Review", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-154", title:"Human Resources - Operations - AI Opportunities Assessment Ecxel", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-155", title:"Human Resources - Operations - AI Opportunities Assessment Ecxel Review", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-156", title:"Human Resources - Operations - AI Opportunities Assessment Ecxel Review", workstream:"AI Readiness Baseline Report", department:"Human Resources - Operations", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-157", title:"Human Resources - Recruitment - Engagement 1", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-158", title:"Human Resources - Recruitment - Engagement 2", workstream:"Map & prioritize use case portfolio", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-159", title:"Human Resources - Recruitment - Engagement 3", workstream:"Define AI vision & ambition statement", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-160", title:"Human Resources - Recruitment - Engagement 4", workstream:"Calculate value of each use case via impact framework", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-161", title:"Human Resources - Recruitment - Engagement 5", workstream:"Prioritize solutions by feasibility & impact", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-162", title:"Human Resources - Recruitment - AI Opportunities Assessment Report", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"In Progress", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-163", title:"Human Resources - Recruitment - AI Opportunities Assessment Report Review", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-164", title:"Human Resources - Recruitment - AI Opportunities Assessment Report Review", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-165", title:"Human Resources - Recruitment - AI Opportunities Assessment Ecxel", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-166", title:"Human Resources - Recruitment - AI Opportunities Assessment Ecxel Review", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Omar Alsmadi", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-167", title:"Human Resources - Recruitment - AI Opportunities Assessment Ecxel Review", workstream:"AI Readiness Baseline Report", department:"Human Resources - Recruitment", stage:"Analyze", assignee:"Saed Alsammak", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-168", title:"PMO - BA - Engagement 1", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - BA", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"Medium", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-169", title:"PMO - BA - Engagement 2", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - BA", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"Medium", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-170", title:"PMO - BA - Engagement 3", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"PMO - BA", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"Medium", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-171", title:"Cultural Scholarship - Assessment first draft", workstream:"AI Strategy - Stakeholder interviews & discovery", department:"Cultural Scholarship", stage:"Monitor", assignee:"BA Team", status:"In Progress", risk:"Blocked", priority:"Medium", pct:30, due:null, tags:"", notes:"" },
+  { id:"T-172", title:"AI Strategy Team - AI Opportunities Grouping", workstream:"Ad Hoc Requests", department:"AI Strategy Team", stage:"Monitor", assignee:"Saed Alsammak", status:"In Progress", risk:"On Track", priority:"High", pct:90, due:null, tags:"", notes:"" },
+  { id:"T-173", title:"AI Strategy Team - Consultation tanfeeth", workstream:"Ad Hoc Requests", department:"AI Strategy Team", stage:"Others", assignee:"BA Team", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-174", title:"AI Strategy Team - Consultation smurg", workstream:"Ad Hoc Requests", department:"AI Strategy Team", stage:"Others", assignee:"BA Team", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-175", title:"AI Strategy Team - AI Consultation Procurement", workstream:"Ad Hoc Requests", department:"AI Strategy Team", stage:"Others", assignee:"BA Team", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-176", title:"AI Strategy Team - AI Consultation Procurement", workstream:"Ad Hoc Requests", department:"AI Strategy Team", stage:"Others", assignee:"BA Team", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-177", title:"AI Strategy Team - Consultation HUMAIN", workstream:"Ad Hoc Requests", department:"AI Strategy Team", stage:"Others", assignee:"BA Team", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-178", title:"Human Resources - Operations - Review Translation", workstream:"AI Discovery Report", department:"Human Resources - Operations", stage:"Monitor", assignee:"Omar Alsmadi", status:"In Progress", risk:"On Track", priority:"High", pct:0, due:null, tags:"", notes:"" },
+  { id:"T-179", title:"Human Resources - Learning & Training - Translation Review", workstream:"AI Discovery Report", department:"Human Resources - Learning & Training", stage:"Monitor", assignee:"Omar Alsmadi", status:"In Progress", risk:"On Track", priority:"High", pct:50, due:null, tags:"", notes:"" },
+  { id:"T-180", title:"Human Resources - Recruitment - Review Translation", workstream:"AI Discovery Report", department:"Human Resources - Recruitment", stage:"Monitor", assignee:"Omar Alsmadi", status:"In Progress", risk:"On Track", priority:"High", pct:50, due:null, tags:"", notes:"" },
+  { id:"T-181", title:"PMO - PMO - Review Translation", workstream:"AI Discovery Report", department:"PMO - PMO", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-182", title:"Finance - Reporting - Review Translation", workstream:"AI Discovery Report", department:"Finance - Reporting", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
+  { id:"T-183", title:"Finance - Revenue - Review Translation", workstream:"AI Discovery Report", department:"Finance - Revenue", stage:"Monitor", assignee:"Yaseen Alquraan", status:"Completed", risk:"On Track", priority:"High", pct:100, due:null, tags:"", notes:"" },
 ];
 
 let taskIdCounter = TASKS_DATA.length + 1;
@@ -1786,8 +1779,9 @@ const MAPE_PILLAR_NAME = {
   "P4":"Governance & Responsible AI", "P5":"AI Impact", "Gate":"Client Sign-Off Gate"
 };
 function pillarTagHTML(code){
-  const full = code.split('/').map(c=>MAPE_PILLAR_NAME[c]||c).join(' + ');
-  return `<span class="mape-pillar-tag" title="${escapeHtml(full)}">${code}</span>`;
+  if(!code) return '';
+  const full = code.split('/').map(function(c){return MAPE_PILLAR_NAME[c]||c;}).join(' + ');
+  return '<span class="mape-pillar-tag" title="'+escapeHtml(full)+'">'+code+'</span>';
 }
 const MAPE_OWNER_MAP = {
   "Omar":"Omar Alsmadi", "Mahmoud":"Mahmoud Abukhamseh", "Salah":"Salah Assi",
@@ -1798,38 +1792,38 @@ const MAPE_OWNER_MAP = {
 // Salah Assi gets +1 on Tasks Count (PM overall role).
 // All team members × all 4 stages included (0 counts shown as 0).
 const TEAM_PROGRESS_DATA = [
-  { stage:"Monitor", assignee:"Mahmoud Abukhamseh", wsCount:4,  avgPct:87  },
-  { stage:"Monitor", assignee:"Omar Alsmadi",       wsCount:31, avgPct:92  },
-  { stage:"Monitor", assignee:"Yaseen Alquraan",    wsCount:35, avgPct:92  },
-  { stage:"Monitor", assignee:"Salah Assi",         wsCount:19, avgPct:88  },
-  { stage:"Monitor", assignee:"BA Team",            wsCount:1,  avgPct:80  },
-  { stage:"Monitor", assignee:"Darwish Qannan",     wsCount:0,  avgPct:0   },
-  { stage:"Monitor", assignee:"Saed Alsammak",      wsCount:5,  avgPct:100 },
-  { stage:"Monitor", assignee:"Mohammad Kaddoura",  wsCount:5,  avgPct:66  },
-  { stage:"Analyze", assignee:"Mahmoud Abukhamseh", wsCount:0,  avgPct:0   },
-  { stage:"Analyze", assignee:"Omar Alsmadi",       wsCount:27, avgPct:99  },
-  { stage:"Analyze", assignee:"Yaseen Alquraan",    wsCount:27, avgPct:99  },
-  { stage:"Analyze", assignee:"Salah Assi",         wsCount:2,  avgPct:0   },
-  { stage:"Analyze", assignee:"BA Team",            wsCount:0,  avgPct:0   },
-  { stage:"Analyze", assignee:"Darwish Qannan",     wsCount:0,  avgPct:0   },
-  { stage:"Analyze", assignee:"Saed Alsammak",      wsCount:12, avgPct:100 },
-  { stage:"Analyze", assignee:"Mohammad Kaddoura",  wsCount:1,  avgPct:100 },
-  { stage:"Plan",    assignee:"Mahmoud Abukhamseh", wsCount:0,  avgPct:0   },
-  { stage:"Plan",    assignee:"Omar Alsmadi",       wsCount:0,  avgPct:0   },
-  { stage:"Plan",    assignee:"Yaseen Alquraan",    wsCount:0,  avgPct:0   },
-  { stage:"Plan",    assignee:"Salah Assi",         wsCount:0,  avgPct:0   },
-  { stage:"Plan",    assignee:"BA Team",            wsCount:0,  avgPct:0   },
-  { stage:"Plan",    assignee:"Darwish Qannan",     wsCount:0,  avgPct:0   },
-  { stage:"Plan",    assignee:"Saed Alsammak",      wsCount:0,  avgPct:0   },
-  { stage:"Plan",    assignee:"Mohammad Kaddoura",  wsCount:0,  avgPct:0   },
-  { stage:"Execute", assignee:"Mahmoud Abukhamseh", wsCount:0,  avgPct:0   },
-  { stage:"Execute", assignee:"Omar Alsmadi",       wsCount:0,  avgPct:0   },
-  { stage:"Execute", assignee:"Yaseen Alquraan",    wsCount:0,  avgPct:0   },
-  { stage:"Execute", assignee:"Salah Assi",         wsCount:0,  avgPct:0   },
-  { stage:"Execute", assignee:"BA Team",            wsCount:0,  avgPct:0   },
-  { stage:"Execute", assignee:"Darwish Qannan",     wsCount:0,  avgPct:0   },
-  { stage:"Execute", assignee:"Saed Alsammak",      wsCount:0,  avgPct:0   },
-  { stage:"Execute", assignee:"Mohammad Kaddoura",  wsCount:0,  avgPct:0   },
+  { stage:"Monitor", assignee:"Mahmoud Abukhamseh", wsCount:4, avgPct:100 },
+  { stage:"Monitor", assignee:"Omar Alsmadi", wsCount:34, avgPct:97 },
+  { stage:"Monitor", assignee:"Yaseen Alquraan", wsCount:32, avgPct:100 },
+  { stage:"Monitor", assignee:"Salah Assi", wsCount:16, avgPct:92 },
+  { stage:"Monitor", assignee:"BA Team", wsCount:1, avgPct:30 },
+  { stage:"Monitor", assignee:"Darwish Qannan", wsCount:0, avgPct:0 },
+  { stage:"Monitor", assignee:"Saed Alsammak", wsCount:6, avgPct:98 },
+  { stage:"Monitor", assignee:"Mohammad Kaddoura", wsCount:4, avgPct:100 },
+  { stage:"Analyze", assignee:"Mahmoud Abukhamseh", wsCount:0, avgPct:0 },
+  { stage:"Analyze", assignee:"Omar Alsmadi", wsCount:23, avgPct:100 },
+  { stage:"Analyze", assignee:"Yaseen Alquraan", wsCount:27, avgPct:100 },
+  { stage:"Analyze", assignee:"Salah Assi", wsCount:2, avgPct:0 },
+  { stage:"Analyze", assignee:"BA Team", wsCount:0, avgPct:0 },
+  { stage:"Analyze", assignee:"Darwish Qannan", wsCount:0, avgPct:0 },
+  { stage:"Analyze", assignee:"Saed Alsammak", wsCount:12, avgPct:100 },
+  { stage:"Analyze", assignee:"Mohammad Kaddoura", wsCount:1, avgPct:100 },
+  { stage:"Plan", assignee:"Mahmoud Abukhamseh", wsCount:0, avgPct:0 },
+  { stage:"Plan", assignee:"Omar Alsmadi", wsCount:0, avgPct:0 },
+  { stage:"Plan", assignee:"Yaseen Alquraan", wsCount:0, avgPct:0 },
+  { stage:"Plan", assignee:"Salah Assi", wsCount:0, avgPct:0 },
+  { stage:"Plan", assignee:"BA Team", wsCount:0, avgPct:0 },
+  { stage:"Plan", assignee:"Darwish Qannan", wsCount:0, avgPct:0 },
+  { stage:"Plan", assignee:"Saed Alsammak", wsCount:0, avgPct:0 },
+  { stage:"Plan", assignee:"Mohammad Kaddoura", wsCount:0, avgPct:0 },
+  { stage:"Execute", assignee:"Mahmoud Abukhamseh", wsCount:0, avgPct:0 },
+  { stage:"Execute", assignee:"Omar Alsmadi", wsCount:0, avgPct:0 },
+  { stage:"Execute", assignee:"Yaseen Alquraan", wsCount:0, avgPct:0 },
+  { stage:"Execute", assignee:"Salah Assi", wsCount:0, avgPct:0 },
+  { stage:"Execute", assignee:"BA Team", wsCount:0, avgPct:0 },
+  { stage:"Execute", assignee:"Darwish Qannan", wsCount:0, avgPct:0 },
+  { stage:"Execute", assignee:"Saed Alsammak", wsCount:0, avgPct:0 },
+  { stage:"Execute", assignee:"Mohammad Kaddoura", wsCount:0, avgPct:0 },
 ];
 
 // Compact week-range representation instead of 12 raw cells per task:
@@ -1917,7 +1911,13 @@ function mapeTaskStatus(task, week){
 }
 function mapePhaseTasks(phaseKey){ return MAPE_TASKS.filter(t=>t.phase===phaseKey); }
 function mapePhaseActiveCount(phaseKey, week){
-  return mapePhaseTasks(phaseKey).filter(t=>mapeTaskStatus(t, week)).length;
+  // "Active" = workstreams in this MAPE phase that have real progress (pct > 0)
+  const wsInPhase = MOC_DATA.filter(ws=>ws.stage===phaseKey);
+  return wsInPhase.filter(ws=>ws.pct>0).length;
+}
+// Total tasks in phase from MOC_DATA workstreams (used in strip label)
+function mapePhaseTaskCount(phaseKey){
+  return MOC_DATA.filter(ws=>ws.stage===phaseKey).length;
 }
 
 /* =====================================================================
@@ -2100,20 +2100,10 @@ _ovDiv.innerHTML = `
     <div id="execSummary"></div>
     <div id="healthScoreBanner"></div>
 
-    <div class="card" style="margin-bottom:16px;">
-      <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;">By Department</h3>
-      <div id="ovDeptRow" class="dept-row"></div>
-    </div>
-
-    <div class="card" style="margin-bottom:16px;">
-      <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;">By Status</h3>
-      <div id="ovStatusRow" class="status-row"></div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
-      <div class="card">
-        <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;">Completion by Department</h3>
-        <div id="deptBarChart"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="card" style="display:flex;flex-direction:column;">
+        <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;">By Status</h3>
+        <div id="ovStatusRow" class="status-row" style="flex:1;align-content:center;"></div>
       </div>
       <div class="card">
         <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;">Department Distribution</h3>
@@ -2122,8 +2112,8 @@ _ovDiv.innerHTML = `
     </div>
 
     <div class="card">
-      <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;">Owner Workload</h3>
-      <div id="ovOwnerWorkload"></div>
+      <h3 style="margin:0 0 14px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.05em;">Completion by Department</h3>
+      <div id="deptBarChart"></div>
     </div>
   </div>`;
 mainCol.insertBefore(_ovDiv, mainCol.firstElementChild);
@@ -2595,21 +2585,20 @@ function renderMapePhaseStrip(){
   const currentWeek = getCurrentMapeWeek();
   $('#mapePhaseStrip').innerHTML = MAPE_PHASES.map(phase=>{
     const tasks = mapePhaseTasks(phase.key);
+    const wsTotal = mapePhaseTaskCount(phase.key);
     const activeCount = mapePhaseActiveCount(phase.key, currentWeek);
     return `
       <div class="mape-strip-item ${phase.notActive?'mape-notactive':''}" data-phase="${phase.key}">
         <div class="mape-letter-sm" style="background:${phase.color};">${phase.letter}</div>
         <div style="flex:1;min-width:0;">
-          <div class="mape-strip-name">${phase.name} <span style="font-weight:400;color:var(--muted);">— ${phase.notActive?'not started':`${activeCount}/${tasks.length} active`}</span></div>
+          <div class="mape-strip-name">${phase.name} <span style="font-weight:400;color:var(--muted);">— ${phase.notActive?'not started':`${activeCount}/${wsTotal} workstreams active`}</span></div>
           <div class="mape-strip-sub">${phase.timeline}</div>
         </div>
         ${phase.notActive ? '' : mapeGateBadgeHTML(phase, currentWeek)}
       </div>
     `;
   }).join('');
-  $$('#mapePhaseStrip .mape-strip-item').forEach(item=>{
-    item.addEventListener('click', ()=> openMapePhaseDetail(item.dataset.phase));
-  });
+  // delegation registered once at module level (see bottom of script)
 }
 
 function renderMapePhasePills(){
@@ -2692,40 +2681,45 @@ function renderMapeView(){
 }
 
 function buildMapePhaseDetailHTML(phaseKey){
-  const phase = MAPE_PHASES.find(p=>p.key===phaseKey);
-  const currentWeek = getCurrentMapeWeek();
-  const tasks = mapePhaseTasks(phaseKey).map(t=>({t, status: mapeTaskStatus(t, currentWeek)}));
-  tasks.sort((a,b)=> (b.status?1:0) - (a.status?1:0));
-  return `
-    <div class="popup-header">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div class="mape-letter-sm" style="width:40px;height:40px;font-size:16px;background:${phase.color};flex-shrink:0;">${phase.letter}</div>
-        <div>
-          <h3>${phase.name} <span style="font-weight:400;opacity:.8;">— ${phase.subtitle}</span></h3>
-          <p class="modal-sub">${phase.timeline}</p>
-        </div>
-      </div>
-      <button class="modal-close-x" onclick="closeDetailModal()">✕</button>
-    </div>
-    <div class="popup-body">
-    <div class="detail-stat-grid">
-      <div><div class="detail-lbl">Final Deliverable</div><b>${phase.finalDeliverable}</b></div>
-      <div><div class="detail-lbl">Sign-Off Gate</div><b>${phase.gateLabel}${phase.gateWeek?` (Wk ${phase.gateWeek})`:''}</b></div>
-      <div><div class="detail-lbl">Gate Owner</div><b>${phase.gateOwner}</b></div>
-    </div>
-    <div class="detail-section"><h4>Key Activities</h4><p>${phase.keyActivities.map(a=>`• ${a}`).join('<br>')}</p></div>
-    <div class="detail-section"><h4>Tangible Deliverables</h4><p>${phase.deliverables.map(a=>`• ${a}`).join('<br>')}</p></div>
-    <div class="detail-section">
-      <h4>Tasks in This Phase (${tasks.length})${phase.notActive?'':` — Week ${currentWeek} of ${MAPE_TOTAL_WEEKS}`}</h4>
-      ${tasks.map(({t,status})=>`
-        <div class="mape-task-row">
-          <span>${t.isGate?'🚩 ':''}${pillarTagHTML(t.pillar)}${t.title} <span class="mtr-owner">(${mapeOwnerFull(t.owner)})</span></span>
-          <span class="mape-badge ${status?status.cls:'mape-idle'}">${status?status.label:'Not active this week'}</span>
-        </div>
-      `).join('')}
-    </div>
-    </div>
-  `;
+  const phase = MAPE_PHASES.find(function(p){ return p.key===phaseKey; });
+  if(!phase) return '<div class="popup-header"><h3>Phase not found</h3><button class="modal-close-x" onclick="closeDetailModal()">✕</button></div>';
+
+  // Workstreams from real data
+  const wsInPhase = MOC_DATA.filter(function(ws){ return ws.stage===phaseKey; });
+  var wsRowsHTML = '';
+  if(!wsInPhase.length){
+    wsRowsHTML = '<p style="color:var(--muted);font-size:13px;">No workstreams assigned yet.</p>';
+  } else {
+    wsRowsHTML = wsInPhase.map(function(ws){
+      var cls = ws.pct===100 ? 'mape-active' : ws.pct>0 ? 'mape-escalate' : 'mape-idle';
+      var lbl = ws.pct===100 ? 'Completed' : ws.pct>0 ? ws.pct+'% in progress' : 'Not started';
+      var pillarCode = normalisePillar(ws.pillar) || '';
+      var pillarBadge = pillarCode ? pillarTagHTML(pillarCode) : '';
+      return '<div class="mape-task-row">'
+        + '<span>' + pillarBadge + escapeHtml(ws.name) + ' <span class="mtr-owner">(' + escapeHtml(ws.lead) + ')</span></span>'
+        + '<span class="mape-badge ' + cls + '">' + lbl + '</span>'
+        + '</div>';
+    }).join('');
+  }
+
+  return '<div class="popup-header">'
+    + '<div style="display:flex;align-items:center;gap:12px;">'
+    + '<div class="mape-letter-sm" style="width:40px;height:40px;font-size:16px;background:'+phase.color+';flex-shrink:0;">'+phase.letter+'</div>'
+    + '<div><h3>'+phase.name+' <span style="font-weight:400;opacity:.8;">— '+phase.subtitle+'</span></h3>'
+    + '<p class="modal-sub">'+phase.timeline+'</p></div>'
+    + '</div>'
+    + '<button class="modal-close-x" onclick="closeDetailModal()">✕</button>'
+    + '</div>'
+    + '<div class="popup-body">'
+    + '<div class="detail-stat-grid">'
+    + '<div><div class="detail-lbl">Final Deliverable</div><b>'+phase.finalDeliverable+'</b></div>'
+    + '<div><div class="detail-lbl">Sign-Off Gate</div><b>'+phase.gateLabel+(phase.gateWeek?' (Wk '+phase.gateWeek+')':'')+'</b></div>'
+    + '<div><div class="detail-lbl">Gate Owner</div><b>'+phase.gateOwner+'</b></div>'
+    + '</div>'
+    + '<div class="detail-section"><h4>Key Activities</h4><p>'+phase.keyActivities.map(function(a){return '• '+a;}).join('<br>')+'</p></div>'
+    + '<div class="detail-section"><h4>Tangible Deliverables</h4><p>'+phase.deliverables.map(function(a){return '• '+a;}).join('<br>')+'</p></div>'
+    + '<div class="detail-section"><h4>Workstreams in This Phase ('+wsInPhase.length+')</h4>'+wsRowsHTML+'</div>'
+    + '</div>';
 }
 window.openMapePhaseDetail = function(phaseKey){ openDetailModal(buildMapePhaseDetailHTML(phaseKey)); };
 
@@ -2782,9 +2776,9 @@ function renderOvDeptCards(){
 function renderOvStatusCards(){
   const STATUS_COLOR = {"Not Started":"var(--muted)","In Progress":"var(--blue)","Completed":"var(--green)","On Hold":"var(--amber)","Blocked":"var(--red)"};
   $('#ovStatusRow').innerHTML = TASK_STATUSES.map(s=>`
-    <div class="status-tile">
-      <div class="st-name">${s}</div>
-      <div class="st-num" style="color:${STATUS_COLOR[s]||'var(--navy2)'};">${TASKS_DATA.filter(t=>t.status===s).length}</div>
+    <div style="background:var(--surface2);border-radius:10px;padding:20px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;box-sizing:border-box;">
+      <div style="font-size:13px;color:var(--muted);font-weight:600;">${s}</div>
+      <div style="font-size:42px;font-weight:900;line-height:1;color:${STATUS_COLOR[s]||'var(--navy2)'};">${TASKS_DATA.filter(t=>t.status===s).length}</div>
     </div>
   `).join('');
 }
@@ -2853,11 +2847,9 @@ function renderOverview(){
   renderExecSummary();
   renderHealthBanner();
   renderScopeProgressBanner();
-  renderOvDeptCards();
   renderOvStatusCards();
   renderDeptBarChart();
   renderOvDeptDonut();
-  renderOvOwnerWorkload();
 }
 
 /* =====================================================================
@@ -3099,67 +3091,49 @@ function setTimelineView(view, btn){
   $('#tl-'+view).style.display='block';
 }
 
-// ── Initiative View — 14 milestones with progress bars ──────────────────
+// ── Milestone View — sourced from Milestones sheet of the Tracking Workbook ──
 function renderTimelineInitiative(){
-  const INIT_STAGE = {
-    'AI Strategy - Monitor':'Monitor','AI Strategy - Analyze':'Analyze',
-    'AI Strategy - Plan':'Plan','AI Strategy - Execute':'Execute',
-    'Cultural Universe':'Monitor','Use Cases':'Monitor',
-    'Copilot Productivity':'Execute','Ad Hoc':'Monitor','BRD':'Plan',
-    'Risk Register':'Monitor','Project Updates & Meetings':'Monitor',
-    'Internal Progress Review & Reporting':'Monitor',
-    'AI Discovery Report - Draft Review':'Monitor',
-    'AI Discovery Report - Sign-Off':'Monitor'
-  };
-  const STAGE_COLORS = {Monitor:'var(--navy2)',Analyze:'var(--green)',Plan:'var(--amber)',Execute:'var(--pink)'};
-
-  // Compute progress per milestone from workstream/task data
-  // If MILESTONES_DATA has a pctOverride, that value takes precedence.
-  function milestonePct(name){
-    const mEntry = MILESTONES_DATA.find(m=>m.name===name);
-    if(mEntry && mEntry.pctOverride !== null && mEntry.pctOverride !== undefined) return mEntry.pctOverride;
-    // AI Strategy phases — use workstreams in that stage
-    const stageMap = {'AI Strategy - Monitor':'Monitor','AI Strategy - Analyze':'Analyze','AI Strategy - Plan':'Plan','AI Strategy - Execute':'Execute'};
-    if(stageMap[name]){
-      const items = MOC_DATA.filter(i=>i.initiative==='AI Strategy Assessment' && i.stage===stageMap[name]);
-      return items.length ? Math.round(avg(items.map(i=>i.pct))) : 0;
-    }
-    // Other milestones — find matching workstream
-    const ws = MOC_DATA.find(i=>i.name===name || i.initiative===name);
-    return ws ? ws.pct : 0;
+  var STAGE_COLORS = {Monitor:'var(--navy2)',Analyze:'var(--green)',Plan:'var(--amber)',Execute:'var(--pink)'};
+  function milestoneStage(name){
+    if(name.indexOf('Monitor')>-1)  return 'Monitor';
+    if(name.indexOf('Analyze')>-1)  return 'Analyze';
+    if(name.indexOf('Plan')>-1)     return 'Plan';
+    if(name.indexOf('Execute')>-1)  return 'Execute';
+    return 'Monitor';
   }
-
-  const today = new Date(); today.setHours(0,0,0,0);
-  $('#timelineInitBody').innerHTML = `
-    <h3 style="margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600;letter-spacing:.04em;">INITIATIVE / MILESTONE PROGRESS</h3>
-    ${PROGRESS_MILESTONES.map(name=>{
-      const stage = INIT_STAGE[name]||'Monitor';
-      const color = STAGE_COLORS[stage]||'var(--navy2)';
-      const pct = milestonePct(name);
-      const tDate = getMilestoneTargetDate(name);
-      const isPast = tDate && tDate < today;
-      const dateLabel = tDate ? tDate.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
-      const dateBadge = dateLabel
-        ? `<span style="margin-left:8px;font-size:10px;font-weight:600;padding:2px 6px;border-radius:10px;background:${isPast?(pct>=100?'#e8f8f2':'#fce8e8'):'#eef3fa'};color:${isPast?(pct>=100?'var(--green)':'var(--red)'):'var(--navy)'};white-space:nowrap;">🎯 ${dateLabel}${isPast&&pct<100?' ⚠️':''}</span>`
-        : '';
-      return `
-      <div class="tl-row" style="cursor:default;">
-        <div class="tl-row-label" style="width:300px;display:flex;align-items:center;flex-wrap:wrap;gap:2px;">
-          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;flex-shrink:0;"></span>
-          <span>${name}</span>
-          <span class="tl-stage">${stage}</span>
-          ${dateBadge}
-        </div>
-        <div class="tl-bar-track">
-          <div class="tl-bar-fill" style="width:${pct}%;background:${color};">
-            ${pct>8?`<span>${pct}%</span>`:''}
-          </div>
-        </div>
-        <div style="width:46px;text-align:right;font-size:12px;font-weight:700;color:${color};">${pct}%</div>
-      </div>`;
-    }).join('')}
-  `;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var rows = MILESTONES_DATA.map(function(m){
+    var stage   = milestoneStage(m.name);
+    var color   = STAGE_COLORS[stage] || 'var(--navy2)';
+    var pct     = (m.pctOverride !== null && m.pctOverride !== undefined) ? m.pctOverride : 0;
+    var tDate   = m.targetDate;
+    var isPast  = tDate && tDate < today;
+    var dateLabel = tDate ? tDate.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
+    var dateBadge = '';
+    if(dateLabel){
+      var bg  = isPast ? (pct>=100 ? '#e8f8f2' : '#fce8e8') : '#eef3fa';
+      var col = isPast ? (pct>=100 ? 'var(--green)' : 'var(--red)') : 'var(--navy)';
+      var warn = (isPast && pct<100) ? ' ⚠️' : '';
+      dateBadge = '<span style="margin-left:8px;font-size:10px;font-weight:600;padding:2px 6px;border-radius:10px;background:'+bg+';color:'+col+';white-space:nowrap;">🎯 '+dateLabel+warn+'</span>';
+    }
+    var inner = pct>8 ? '<span>'+pct+'%</span>' : '';
+    return '<div class="tl-row" style="cursor:default;">'
+      + '<div class="tl-row-label" style="width:300px;display:flex;align-items:center;flex-wrap:wrap;gap:2px;">'
+      + '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+color+';margin-right:6px;flex-shrink:0;"></span>'
+      + '<span>'+m.name+'</span>'
+      // stage badge removed — name already contains the phase info
+      + dateBadge
+      + '</div>'
+      + '<div class="tl-bar-track"><div class="tl-bar-fill" style="width:'+pct+'%;background:'+color+';">'+inner+'</div></div>'
+      + '<div style="width:46px;text-align:right;font-size:12px;font-weight:700;color:'+color+';">'+pct+'%</div>'
+      + '</div>';
+  });
+  $('#timelineInitBody').innerHTML =
+    '<h3 style="margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600;letter-spacing:.04em;">MILESTONES PROGRESS</h3>'
+    + rows.join('');
 }
+
+
 
 // ── MAPE View — 4 phases with progress bars ──────────────────────────────
 function renderTimelineMape(){
@@ -5103,6 +5077,21 @@ renderAlerts();
 renderTasks();
 renderRiskRegister();
 const _addInitBtn = $('#addInitBtn'); if(_addInitBtn) _addInitBtn.addEventListener('click', ()=> openInitModal());
+// Global delegation for MAPE strip — registered once, always works
+document.addEventListener('click', function(e){
+  // MAPE phase strip — any click inside a strip item opens the phase popup
+  const stripItem = e.target.closest('.mape-strip-item');
+  if(stripItem && stripItem.dataset.phase){
+    e.stopPropagation();
+    openMapePhaseDetail(stripItem.dataset.phase);
+    return;
+  }
+  // MAPE task cards
+  const mapeCard = e.target.closest('#mapeGrid .mape-card');
+  if(mapeCard && mapeCard.dataset.idx !== undefined){
+    openMapeTaskDetail(parseInt(mapeCard.dataset.idx, 10));
+  }
+});
 showTab('mape');
 
 /* Print / Export as PDF — prints whichever tab is currently active,
