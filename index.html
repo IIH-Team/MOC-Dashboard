@@ -1480,10 +1480,14 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 /* Report Email - executive summary */
 .re-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
 .re-chk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer;}
-.re-subject{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:13px;max-width:820px;}
+.re-subject{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:13px;}
 .re-subject span{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
 .re-subject b{flex:1;font-weight:600;}
-.re-paper{background:#fff;color:#1F2937;border:1px solid var(--border);border-radius:12px;padding:30px 34px;max-width:820px;box-shadow:var(--shadow);}
+.re-paper{background:#fff;color:#1F2937;border:1px solid var(--border);border-radius:12px;padding:30px 34px;max-width:860px;margin:0 auto;box-shadow:var(--shadow);min-width:0;}
+.re-paper table{min-width:0 !important;}   /* the dashboard's global table rule forces 980px */
+.re-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start;}
+.re-two .re-paper{max-width:none;margin:0;padding:26px 26px;}
+@media(max-width:1250px){.re-two{grid-template-columns:1fr;}.re-two .re-paper{max-width:860px;margin:0 auto;width:100%;}}
 .re-tools{display:inline-flex;align-items:center;gap:6px;vertical-align:middle;margin-inline-start:6px;letter-spacing:0;font-weight:500;}
 .re-edited{font-size:10px;font-weight:800;background:#FBF0DE;color:#9A5B00;border-radius:99px;padding:1px 8px;text-transform:none;}
 .cp-wrap{display:block !important;}
@@ -4909,6 +4913,7 @@ function reModel(){
   const fe = x => new Date(x).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
   const fa = x => new Date(x).toLocaleDateString('ar-EG-u-nu-latn', { day:'numeric', month:'long', year:'numeric' });
   const b = s => `<b>${escapeHtml(s)}</b>`;
+  const L = s => `<span dir="ltr">${s}</span>`, bA = s => `<b>${L(escapeHtml(s))}</b>`;   // left-to-right island for the Arabic text
   const avg = a => a.length ? a.reduce((x,y)=>x+y,0) / a.length : 0;
   const prevMs = m => { const x = base && base.milestones ? (base.milestones[m.id] || base.milestones[m.name]) : null; return x && typeof x.pct==='number' ? x.pct : null; };
   const prevEp = e => base && base.epics && typeof base.epics[e.id]==='number' ? base.epics[e.id] : null;
@@ -4940,9 +4945,9 @@ function reModel(){
   // ---- this week ----
   const movers = eps.map(e=>({ e, p: prevEp(e) })).filter(x=>x.p != null && x.e.pct > x.p).sort((a,b2)=>(b2.e.pct - b2.p) - (a.e.pct - a.p));
   const newlyDone = ms.filter(m=>m.pct >= 100 && prevMs(m) != null && prevMs(m) < 100);
-  newlyDone.forEach(m=> add('week', `${b(m.name)} is now complete.`, `اكتملت مرحلة ${b(m.name)}.`));
+  newlyDone.forEach(m=> add('week', `${b(m.name)} is now complete.`, `اكتملت مرحلة ${bA(m.name)}.`));
   if(tasksWeek) add('week', `<b>${tasksWeek}</b> task${tasksWeek===1?'':'s'} completed since the last weekly update.`, `تم إنجاز <b>${tasksWeek}</b> مهمة منذ التحديث الأسبوعي السابق.`);
-  movers.slice(0, 3).forEach(x=> add('week', `${b(x.e.name)} moved from ${x.p}% to <b>${x.e.pct}%</b>.`, `${b(x.e.name)}: من ${x.p}% إلى <b>${x.e.pct}%</b>.`));
+  movers.slice(0, 3).forEach(x=> add('week', `${b(x.e.name)} moved from ${x.p}% to <b>${x.e.pct}%</b>.`, `${bA(x.e.name)}: من ${L(x.p + '%')} إلى <b>${L(x.e.pct + '%')}</b>.`));
   if(movers.length > 3) add('week', `${movers.length - 3} more epic${movers.length - 3===1?'':'s'} progressed.`, `تقدّم ${movers.length - 3} Epics أخرى.`);
   if(!M.week) base ? add('week', 'No change in progress this week.', 'لا يوجد تغيير في نسب الإنجاز هذا الأسبوع.')
                    : add('week', 'This is the first weekly summary - week-on-week comparison starts from the next one.', 'هذا أول ملخص أسبوعي، وتبدأ المقارنة الأسبوعية من الملخص القادم.');
@@ -4950,7 +4955,7 @@ function reModel(){
   // ---- one line per milestone ----
   ms.forEach(m=>{
     const pv = prevMs(m), dl = pv == null ? 0 : m.pct - pv;
-    const up = dl > 0 ? [` (+${dl}% this week)`, ` (+${dl}% هذا الأسبوع)`] : ['', ''];
+    const up = dl > 0 ? [` (+${dl}% this week)`, ` (${L('+' + dl + '%')} هذا الأسبوع)`] : ['', ''];
     let en, ar;
     if(isCop(m)){
       const ph = (CPL.phases || []), cur = ph.find(p=>p.status !== 'Completed');
@@ -4958,38 +4963,38 @@ function reModel(){
       else {
         const when = cur.expected ? [`, now expected ${fe(cur.expected)} (was ${cur.by ? fe(cur.by) : '-'})`, `، والموعد المتوقع الآن ${fa(cur.expected)} (كان ${cur.by ? fa(cur.by) : '-'})`] : cur.by ? [`, due ${fe(cur.by)}`, `، الموعد ${fa(cur.by)}`] : ['', ''];
         en = `<b>${m.pct}%</b>${up[0]} - phase ${cur.n} of ${ph.length} (${escapeHtml(cur.name)}) in progress${when[0]}.`;
-        ar = `<b>${m.pct}%</b>${up[1]} - المرحلة ${cur.n} من ${ph.length} (${escapeHtml(cur.name)}) قيد التنفيذ${when[1]}.`; }
-    } else if(m.pct >= 100){ en = '<b>100%</b> - complete.'; ar = '<b>100%</b> - مكتمل.'; }
+        ar = `<b>${L(m.pct + '%')}</b>${up[1]} - المرحلة ${cur.n} من ${ph.length} (${L(escapeHtml(cur.name))}) قيد التنفيذ${when[1]}.`; }
+    } else if(m.pct >= 100){ en = '<b>100%</b> - complete.'; ar = `<b>${L('100%')}</b> - مكتمل.`; }
     else if(overdue(m)){ en = `<b>${m.pct}%</b>${up[0]} - past its target date (${fe(m.targetDate)}).`;
-      ar = `<b>${m.pct}%</b>${up[1]} - تجاوز الموعد المستهدف (${fa(m.targetDate)}).`; }
+      ar = `<b>${L(m.pct + '%')}</b>${up[1]} - تجاوز الموعد المستهدف (${fa(m.targetDate)}).`; }
     else if(!m.pct && !(m.startedCount > 0)){ const st = m.startDate && D(m.startDate) > today;
       en = `Not started${st ? ' - starts ' + fe(m.startDate) : ''}${m.targetDate ? ', target ' + fe(m.targetDate) : ''}.`;
       ar = `لم يبدأ بعد${st ? ' - يبدأ في ' + fa(m.startDate) : ''}${m.targetDate ? '، الموعد المستهدف ' + fa(m.targetDate) : ''}.`; }
     else { en = `<b>${m.pct}%</b>${up[0]} - in progress${m.targetDate ? ', target ' + fe(m.targetDate) : ''}.`;
-      ar = `<b>${m.pct}%</b>${up[1]} - قيد التنفيذ${m.targetDate ? '، الموعد المستهدف ' + fa(m.targetDate) : ''}.`; }
-    add('milestones', `${b(m.name)}: ${en}`, `${b(m.name)}: ${ar}`);
+      ar = `<b>${L(m.pct + '%')}</b>${up[1]} - قيد التنفيذ${m.targetDate ? '، الموعد المستهدف ' + fa(m.targetDate) : ''}.`; }
+    add('milestones', `${b(m.name)}: ${en}`, `${bA(m.name)}: ${ar}`);
   });
 
   // ---- needs attention (max 3) ----
   const att = [];
   ((CPL && CPL.fromWorkspace && CPL.phases) || []).filter(p=>p.expected && p.expectedOpen !== false && p.status !== 'Completed').forEach(p=> att.push([
-    `<b>Copilot - ${escapeHtml(p.name)}</b> is delayed: now expected ${fe(p.expected)}${p.by ? ' (was ' + fe(p.by) + ')' : ''}.`, `<b>Copilot - ${escapeHtml(p.name)}</b> متأخرة: الموعد المتوقع الآن ${fa(p.expected)}${p.by ? ' (كان ' + fa(p.by) + ')' : ''}.` ]));
-  eps.filter(e=>e.risk && e.risk !== 'On Track' && e.pct < 100).forEach(e=> att.push([ `${b(e.name)} is flagged <b>${escapeHtml(e.risk)}</b> (${e.pct}%).`, `${b(e.name)} مصنّف <b>${escapeHtml(e.risk)}</b> (${e.pct}%).` ]));
+    `<b>Copilot - ${escapeHtml(p.name)}</b> is delayed: now expected ${fe(p.expected)}${p.by ? ' (was ' + fe(p.by) + ')' : ''}.`, `<b>${L('Copilot - ' + escapeHtml(p.name))}</b> متأخرة: الموعد المتوقع الآن ${fa(p.expected)}${p.by ? ' (كان ' + fa(p.by) + ')' : ''}.` ]));
+  eps.filter(e=>e.risk && e.risk !== 'On Track' && e.pct < 100).forEach(e=> att.push([ `${b(e.name)} is flagged <b>${escapeHtml(e.risk)}</b> (${e.pct}%).`, `${bA(e.name)} مصنّف <b>${L(escapeHtml(e.risk))}</b> (${L(e.pct + '%')}).` ]));
   ms.filter(m=>overdue(m) && !isCop(m)).sort((a,c)=>D(a.targetDate) - D(c.targetDate)).forEach(m=> att.push([
-    `${b(m.name)} is past its target date (${fe(m.targetDate)}) at ${m.pct}%.`, `${b(m.name)} تجاوز الموعد المستهدف (${fa(m.targetDate)}) عند ${m.pct}%.` ]));
+    `${b(m.name)} is past its target date (${fe(m.targetDate)}) at ${m.pct}%.`, `${bA(m.name)} تجاوز الموعد المستهدف (${fa(m.targetDate)}) عند ${L(m.pct + '%')}.` ]));
   att.slice(0, 3).forEach(x=> add('attention', x[0], x[1]));
   if(att.length > 3) add('attention', `${att.length - 3} more item${att.length - 3===1?'':'s'} on the dashboard.`, `${att.length - 3} بنود أخرى على لوحة المتابعة.`);
   if(!att.length) add('attention', 'Nothing needs attention - everything is on track.', 'لا يوجد ما يستدعي المتابعة - كل شيء يسير وفق الخطة.');
 
   // ---- coming up (next 14 days, max 3) ----
   const soon = x => x && D(x) >= today && (D(x) - today) / 864e5 <= 14, nx = [];
-  ms.filter(m=>m.pct < 100 && !isCop(m) && soon(m.targetDate)).forEach(m=> nx.push([ D(m.targetDate), `${b(m.name)} - target date ${fe(m.targetDate)} (${m.pct}% today).`, `${b(m.name)} - الموعد المستهدف ${fa(m.targetDate)} (${m.pct}% اليوم).` ]));
-  ms.filter(m=>!m.pct && m.startDate && soon(m.startDate)).forEach(m=> nx.push([ D(m.startDate), `${b(m.name)} starts on ${fe(m.startDate)}.`, `تبدأ مرحلة ${b(m.name)} في ${fa(m.startDate)}.` ]));
+  ms.filter(m=>m.pct < 100 && !isCop(m) && soon(m.targetDate)).forEach(m=> nx.push([ D(m.targetDate), `${b(m.name)} - target date ${fe(m.targetDate)} (${m.pct}% today).`, `${bA(m.name)} - الموعد المستهدف ${fa(m.targetDate)} (${L(m.pct + '%')} اليوم).` ]));
+  ms.filter(m=>!m.pct && m.startDate && soon(m.startDate)).forEach(m=> nx.push([ D(m.startDate), `${b(m.name)} starts on ${fe(m.startDate)}.`, `تبدأ مرحلة ${bA(m.name)} في ${fa(m.startDate)}.` ]));
   ((CPL && CPL.fromWorkspace && CPL.phases) || []).filter(p=>p.status !== 'Completed' && soon(p.expected || p.by)).forEach(p=> nx.push([ D(p.expected || p.by),
-    `<b>Copilot - ${escapeHtml(p.name)}</b> due ${fe(p.expected || p.by)}.`, `<b>Copilot - ${escapeHtml(p.name)}</b> الموعد ${fa(p.expected || p.by)}.` ]));
+    `<b>Copilot - ${escapeHtml(p.name)}</b> due ${fe(p.expected || p.by)}.`, `<b>${L('Copilot - ' + escapeHtml(p.name))}</b> الموعد ${fa(p.expected || p.by)}.` ]));
   nx.sort((a,c)=>a[0] - c[0]).slice(0, 3).forEach(x=> add('next', x[1], x[2]));
   if(!nx.length){ const f = ms.filter(m=>m.pct < 100 && m.targetDate && D(m.targetDate) >= today).sort((a,c)=>D(a.targetDate) - D(c.targetDate))[0];
-    f ? add('next', `No target dates in the next two weeks. Next: ${b(f.name)} on ${fe(f.targetDate)}.`, `لا توجد مواعيد مستهدفة خلال الأسبوعين القادمين. التالي: ${b(f.name)} في ${fa(f.targetDate)}.`)
+    f ? add('next', `No target dates in the next two weeks. Next: ${b(f.name)} on ${fe(f.targetDate)}.`, `لا توجد مواعيد مستهدفة خلال الأسبوعين القادمين. التالي: ${bA(f.name)} في ${fa(f.targetDate)}.`)
       : add('next', 'No upcoming target dates.', 'لا توجد مواعيد مستهدفة قادمة.'); }
 
   M.subject = { en: `MoC AI Strategy - Weekly Progress Summary - ${fe(today)} (${overall}% overall)`, ar: `استراتيجية الذكاء الاصطناعي - وزارة الثقافة - ملخص التقدم الأسبوعي - ${fa(today)}` };
@@ -5018,18 +5023,19 @@ function reChartPNG(M){
 function reHTML(lang, M, o){
   o = o || {}; const rtl = lang === 'ar', al = rtl ? 'right' : 'left', S = (s, i) => RE_SECTIONS[s][i];
   const ed = s => o.edit ? ` <span class="re-tools"><button class="btn secondary cp-mini" onclick="reEdit('${s}')" title="Reword this part">✏️</button>${M.edited[s] ? `<span class="re-edited">edited</span>` : ''}</span>` : '';
-  const head = s => `<p style="font-size:10pt;font-weight:bold;letter-spacing:1px;color:#C0266A;margin:18px 0 4px;text-align:${al};">${rtl ? S(s,1) : S(s,0).toUpperCase()}${ed(s)}</p>`;
-  const list = s => `<ul style="margin:0 0 6px;padding-${rtl ? 'right' : 'left'}:22px;padding-${rtl ? 'left' : 'right'}:0;">${M[s][lang].map(x=>`<li style="margin-bottom:5px;">${x}</li>`).join('')}</ul>`;
-  const paras = s => M[s][lang].map((x, i)=>`<p style="margin:${i ? '4px' : '0'} 0 0;text-align:${al};">${x}${!i ? ed(s) : ''}</p>`).join('');
-  const nums = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;border-spacing:8px 0;margin:14px -8px 6px;" dir="${rtl ? 'rtl' : 'ltr'}"><tr>${M.nums.map(n=>`
-    <td align="center" valign="top" width="190" style="background:#F4F6F9;border:1px solid #D8E2EC;padding:12px 10px;text-align:center;">
-      <div style="font-size:26pt;font-weight:bold;line-height:1.1;color:${n.color};">${n.n}</div>
+  const head = s => `<p${rtl ? ' dir="rtl"' : ''} style="font-size:10pt;font-weight:bold;letter-spacing:${rtl ? '0' : '1px'};color:#C0266A;margin:18px 0 4px;text-align:${al};">${rtl ? S(s,1) : S(s,0).toUpperCase()}${ed(s)}</p>`;
+  const dirA = rtl ? ' dir="rtl"' : '', dirS = rtl ? 'direction:rtl;text-align:right;' : '';   // said on every paragraph: Word does not inherit it reliably
+  const list = s => `<ul${dirA} style="margin:0 0 6px;padding-${rtl ? 'right' : 'left'}:22px;padding-${rtl ? 'left' : 'right'}:0;${dirS}">${M[s][lang].map(x=>`<li${dirA} style="margin-bottom:5px;${dirS}">${x}</li>`).join('')}</ul>`;
+  const paras = s => M[s][lang].map((x, i)=>`<p${rtl ? ' dir="rtl"' : ''} style="margin:${i ? '4px' : '0'} 0 0;text-align:${al};">${x}${!i ? ed(s) : ''}</p>`).join('');
+  const nums = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;table-layout:fixed;border-collapse:collapse;margin:14px 0 8px;" dir="${rtl ? 'rtl' : 'ltr'}"><tr>${M.nums.map(n=>`
+    <td align="center" valign="top" width="33%" style="width:33%;background:#F4F6F9;border:5px solid #FFFFFF;padding:12px 8px;text-align:center;">
+      <div style="font-size:26pt;font-weight:bold;line-height:1.1;color:${n.color};" dir="ltr">${n.n}</div>
       <div style="font-size:9pt;font-weight:bold;color:#1B2A4A;margin-top:4px;">${rtl ? n.ar[0] : n.en[0].toUpperCase()}</div>
       <div style="font-size:9pt;color:#667085;">${rtl ? n.ar[1] : n.en[1]}</div></td>`).join('')}</tr></table>`;
   return `<div dir="${rtl ? 'rtl' : 'ltr'}" style="font-family:Calibri,'Segoe UI',Arial,Tahoma,sans-serif;font-size:11pt;color:#1F2937;line-height:1.5;text-align:${al};">
     ${paras('intro')}${nums}
     ${head('week')}${list('week')}
-    ${head('milestones')}${o.chart ? `<p style="margin:6px 0 8px;"><img src="${o.chart}" width="620" alt="Milestone progress" style="width:620px;max-width:100%;height:auto;border:1px solid #D8E2EC;"></p>` : ''}${list('milestones')}
+    ${head('milestones')}${o.chart ? `<p style="margin:6px 0 8px;"><img src="${o.chart}" width="600" height="${Math.round(600 * (70 + M.chart.length * 54 + 24) / 1280)}" alt="Milestone progress" style="width:600px;max-width:100%;height:auto;border:1px solid #D8E2EC;"></p>` : ''}${list('milestones')}
     ${head('attention')}${list('attention')}
     ${head('next')}${list('next')}
     <div style="margin-top:16px;">${paras('closing')}</div></div>`;
@@ -5051,8 +5057,8 @@ function reShow(){
   const subj = lang === 'ar' ? M.subject.ar : M.subject.en;
   area.innerHTML = `
     <div class="re-bar">
-      <button class="btn primary" onclick="reCopy()" title="Copy the email, then paste it in Outlook">📋 Copy email</button>
-      <button class="btn green" onclick="reWord()">📥 Export as Word</button>
+      <button class="btn green" onclick="reWord()" title="Recommended: keeps the fonts, colours and the chart. Open it, select all, copy into the email.">📥 Export as Word</button>
+      <button class="btn secondary" onclick="reCopy()" title="Quick copy - Outlook may change fonts or colours; Word export is safer">📋 Copy email</button>
       <button class="btn secondary" onclick="reCopyChart()" title="Copy only the chart, as a picture">📷 Copy chart</button>
       <span class="view-toggle">${[['both','Both'],['en','English'],['ar','العربية']].map(([k,l])=>`<button class="${lang===k?'active':''}" onclick="reSetPref('lang','${k}')">${l}</button>`).join('')}</span>
       <label class="re-chk"><input type="checkbox" ${chartOn ? 'checked' : ''} onchange="reSetPref('chart', this.checked ? '1' : '0')"> Chart picture</label>
@@ -5062,7 +5068,8 @@ function reShow(){
       <button class="btn secondary" onclick="renderEmailLocked()">🔒 Re-lock</button>
     </div>
     <div class="re-subject"><span>Subject</span><b dir="auto" id="reSubject">${escapeHtml(subj)}</b><button class="btn secondary cp-mini" onclick="reCopySubject()">📋</button></div>
-    <div class="re-paper" id="reportBody">${reBody(M, { edit:true })}</div>
+    ${lang === 'both' ? `<div class="re-two" id="reportBody"><div class="re-paper">${reHTML('en', M, { edit:true, chart: chartOn ? reChartPNG(M) : null })}</div><div class="re-paper">${reHTML('ar', M, { edit:true, chart: chartOn ? reChartPNG(M) : null })}</div></div>`
+      : `<div class="re-paper" id="reportBody">${reBody(M, { edit:true })}</div>`}
     <p class="note" style="margin-top:10px;">Built from the same numbers as the Client View. ✏️ rewords one part for this week only (${escapeHtml(reWeekId()==='first' ? 'until the first Close Week' : 'after ' + reWeekId())}); next week it is generated again.</p>`;
 }
 window.reShow = reShow; window.reSetPref = reSetPref;
@@ -6777,7 +6784,7 @@ function renderDeltaExtras(){
     info.innerHTML = s
       ? `Compared with the last closed week <b>${escapeHtml(s.weekId||'')}</b> - closed ${s.closedAt ? fmtDate(s.closedAt) : 'just now'} by ${escapeHtml(s.closedBy||'-')}.`
       : 'No week closed yet.';
-    info.innerHTML += '<br><span style="font-size:12px;">🕕 The week closes <b>automatically every Thursday at 6 PM</b>. Use 🔒 Close Week only to close it yourself (Thursday from 12 PM).</span>';
+    info.innerHTML += '<br><span style="font-size:12px;">🕕 The week closes <b>automatically every Thursday at 8 PM</b>. Use 🔒 Close Week only to close it yourself (Thursday from 12 PM).</span>';
   }
   const box = document.getElementById('deltaCompletedList');
   if(!box) return;
@@ -6792,9 +6799,9 @@ function renderDeltaExtras(){
     </div>`).join('')
     : '<p class="note">No tasks completed since the last closed week yet.</p>';
 }
-/* Week = Sunday -> Thursday. It closes by itself every Thursday 6 PM; the button is for closing it yourself. */
-const WEEK_AUTO_CLOSE_HOUR = 18;          // Thursday 6 PM
-function lastThursdayClose(now){          // most recent Thursday 18:00 that is <= now
+/* Week = Sunday -> Thursday. It closes by itself every Thursday 8 PM; the button is for closing it yourself. */
+const WEEK_AUTO_CLOSE_HOUR = 20;          // Thursday 8 PM - after the working day and the Thursday report (change this one number to move it)
+function lastThursdayClose(now){          // most recent Thursday 20:00 that is <= now
   const d = new Date(now); d.setHours(WEEK_AUTO_CLOSE_HOUR,0,0,0);
   const back = (d.getDay() - 4 + 7) % 7; d.setDate(d.getDate() - back);
   if(d > now) d.setDate(d.getDate() - 7);
@@ -6811,10 +6818,10 @@ window.autoCloseWeekIfDue = async function(){
   const due = lastThursdayClose(new Date());
   const s = window.LAST_SNAPSHOT;
   const last = s && s.closedAt ? new Date(s.closedAt) : null;
-  if(last && last >= due) return;           // already closed after the last Thursday 6 PM
+  if(last && last >= due) return;           // already closed after the last Thursday 8 PM
   try{
     const id = await FB.closeWeek({ auto:true, forDate: due });
-    showInfoToast('🔒 Week ' + id + ' was closed automatically (Thursday 6 PM).');
+    showInfoToast('🔒 Week ' + id + ' was closed automatically (Thursday 8 PM).');
   }catch(e){ console.warn('auto close week', e); }
 };
 window.closeWeekClicked = async function(){
@@ -6824,19 +6831,19 @@ window.closeWeekClicked = async function(){
   if(!inCloseWindow(now)){
     if(myLevel() < 4){
       await askConfirm({ title:'Too early to close the week',
-        html:'The week closes <b>automatically every Thursday at 6 PM</b>.<br>You can close it yourself from <b>Thursday 12 PM</b> until Saturday.',
+        html:'The week closes <b>automatically every Thursday at 8 PM</b>.<br>You can close it yourself from <b>Thursday 12 PM</b> until Saturday.',
         yes:'OK', single:true });
       return;
     }
     const force = await askConfirm({ title:'Close the week early?',
-      html:'It is not Thursday yet. The week normally closes <b>automatically on Thursday at 6 PM</b>.<br><br>Closing now makes <b>today</b> the starting point for next week\'s Weekly Delta, so this week\'s remaining work will count as next week.<div class="ask-warn">Only do this if you really need to (Admin only).</div>',
+      html:'It is not Thursday yet. The week normally closes <b>automatically on Thursday at 8 PM</b>.<br><br>Closing now makes <b>today</b> the starting point for next week\'s Weekly Delta, so this week\'s remaining work will count as next week.<div class="ask-warn">Only do this if you really need to (Admin only).</div>',
       yes:'Yes, close it now', no:'No, wait for Thursday', danger:true });
     if(!force) return;
   } else {
     const ok = await askConfirm({ title:'Close this week?',
       html:`This saves today's Milestone and Epic % as the starting point for next week's <b>Weekly Delta</b>.
         ${s && s.closedAt ? `<p style="margin:10px 0 0;color:var(--muted);font-size:12px;">Last closed: <b>${escapeHtml(s.weekId||'')}</b> on ${fmtDate(new Date(s.closedAt))}${s.auto ? ' (automatically)' : ''}.</p>` : ''}
-        <p style="margin:10px 0 0;color:var(--muted);font-size:12px;">If you don't, it closes automatically on Thursday at 6 PM.</p>`,
+        <p style="margin:10px 0 0;color:var(--muted);font-size:12px;">If you don't, it closes automatically on Thursday at 8 PM.</p>`,
       yes:'Yes, close the week', no:'Cancel' });
     if(!ok) return;
   }
