@@ -2939,7 +2939,7 @@ const CP_RENDER = {
             <td>${escapeHtml(r.description||'')}${r.mitigation ? `<span class="sub"><b>Mitigation:</b> ${escapeHtml(r.mitigation)}</span>` : ''}</td>
             <td style="white-space:nowrap;">${escapeHtml(r.likelihood||'-')} · ${escapeHtml(r.impact||'-')} <span class="cp-pill" style="background:${sc>=6?'#FBEAE8':sc>=3?'#FBF0DE':'#E4F5EB'};color:${sc>=6?'#C0392B':sc>=3?'#B4790A':'#1E7F4C'};">${sc}</span></td>
             <td>${escapeHtml(r.owner||'')}</td>
-            <td style="white-space:nowrap;">${r.phase ? `${escapeHtml(cpPhaseName(r.phase))}${r.delayTo ? `<span class="sub" style="color:var(--red);font-weight:700;">→ ${cpFmt(r.delayTo)}</span>` : ''}` : '-'}</td>
+            <td style="white-space:nowrap;">${r.phase ? `${escapeHtml(cpPhaseName(r.phase))}${r.delayTo ? `<span class="sub" style="color:${cpRiskOpen(r) ? 'var(--red)' : 'var(--muted)'};font-weight:700;">→ ${cpFmt(r.delayTo)}</span>` : ''}` : '-'}</td>
             <td>${cpPill(r.status)}</td><td class="no-shot">${cpEditBtn('cp_risks', r.id)}</td></tr>`; }).join('') || '<tr><td colspan="7" class="note">No risks.</td></tr>'}
       </table></div>`;
   },
