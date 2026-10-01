@@ -1438,6 +1438,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .cp-g-dot{position:absolute;top:7px;width:14px;height:14px;border-radius:50%;margin-left:-7px;}
 .cp-g-flag{position:absolute;top:4px;margin-left:-8px;font-size:13px;}
 .cp-g-flag.red{color:var(--red);}
+.cp-g-flag.closed{color:var(--muted);font-weight:800;}
 .cp-g-none{position:absolute;top:6px;left:6px;font-size:11px;color:var(--muted);font-style:italic;}
 /* client view: pilot readiness strip */
 .cv-pilot{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:14px;}
@@ -2799,7 +2800,7 @@ window.cpOpenRisk = function(id){ cpGo('risks', { focus:id }); };
 function cpPhaseNode(p){
   const s = cpPhaseStats(p.n), st = cpPhaseStatus(s), slip = cpPhaseSlip(p.n);
   const cc = st==='Completed' ? '#1E7F4C' : st==='In Progress' ? '#B4790A' : st==='Blocked' ? '#C0392B' : '#8891A0';
-  const dates = slip ? `<s>${cpFmt(p.due)}</s> → <b ${slip.open ? '' : 'style="color:var(--navy);"'}>${cpFmt(slip.date)}</b>` : (p.due ? 'By ' + cpFmt(p.due) : '');
+  const dates = slip ? `<s>${cpFmt(p.due)}</s> → <b ${slip.open ? '' : 'style="color:var(--muted);"'}>${cpFmt(slip.date)}</b>` : (p.due ? 'By ' + cpFmt(p.due) : '');
   return `<div class="cp-tl-node">
     <div class="cp-tl-c ${st==='Not Started' ? 'ns' : ''}" style="--cc:${cc};">${st==='Completed' ? '✓' : p.n}</div>
     <div class="cp-tl-name">${escapeHtml(p.name)}</div>
@@ -2873,7 +2874,7 @@ const CP_RENDER = {
       return `<div class="cp-ph">
         <div class="cp-ph-h"><span class="cp-ph-n">${p.n}</span><b style="font-size:15px;">${escapeHtml(p.name)}</b> ${cpPill(cpPhaseStatus(s))}
           <span style="color:var(--muted);font-size:12.5px;">${s.done}/${s.total} done · ${s.pct}%</span>
-          <span style="font-size:12.5px;">${slip ? `<s style="color:var(--muted);">${cpFmt(p.due)}</s> → <b style="color:${slip.open ? 'var(--red)' : 'var(--navy)'};">${cpFmt(slip.date)}</b> ${slip.risks.map(r=>cpRiskChip(r)).join(' ')}` : p.due ? '🎯 ' + cpFmt(p.due) : ''}</span>
+          <span style="font-size:12.5px;">${slip ? `<s style="color:var(--muted);">${cpFmt(p.due)}</s> → <b style="color:${slip.open ? 'var(--red)' : 'var(--muted)'};">${cpFmt(slip.date)}</b> ${slip.risks.map(r=>cpRiskChip(r)).join(' ')}` : p.due ? '🎯 ' + cpFmt(p.due) : ''}</span>
           <span style="flex:1"></span>
           <button class="btn secondary cp-mini no-shot" onclick="window._cpDefPhase=${p.n};cpEdit('cp_tasks')" title="Add an activity to this phase">＋</button>${cpEditBtn('cp_phases', p.id, 'Edit phase name / due date')}</div>
         <div style="overflow-x:auto;border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;">
@@ -3009,7 +3010,7 @@ function cpGantt(match){
   const rows = cpPhasesSorted().map(p=>{
     const list = ts.filter(t=>+t.phase===+p.n); if(!list.length) return '';
     const slip = cpPhaseSlip(p.n);
-    return `<div class="cp-g-row ph"><div>${p.n}. ${escapeHtml(p.name)}</div><div class="cp-g-track">${p.due ? `<span class="cp-g-flag" style="left:${pos(p.due)}%" title="Due ${cpFmt(p.due)}">🎯</span>` : ''}${slip ? `<span class="cp-g-flag red" style="left:${pos(slip.date)}%" title="Expected ${cpFmt(slip.date)} (${slip.risks.join(', ')})">⚠</span>` : ''}</div></div>` +
+    return `<div class="cp-g-row ph"><div>${p.n}. ${escapeHtml(p.name)}</div><div class="cp-g-track">${p.due ? `<span class="cp-g-flag" style="left:${pos(p.due)}%" title="Due ${cpFmt(p.due)}">🎯</span>` : ''}${slip ? `<span class="cp-g-flag ${slip.open ? 'red' : 'closed'}" style="left:${pos(slip.date)}%" title="Expected ${cpFmt(slip.date)} (${slip.risks.join(', ')}${slip.open ? '' : ' - closed'})">${slip.open ? '⚠' : '✓'}</span>` : ''}</div></div>` +
       list.map(t=>{ const c = (CP_ST_C[t.status]||CP_ST_C['Not Started'])[0];
         let bar = '';
         if(t.start && t.due) bar = `<span class="cp-g-bar" style="left:${pos(t.start)}%;width:${Math.max(0.8, pos(t.due)-pos(t.start))}%;background:${c};" title="${cpFmt(t.start)} → ${cpFmt(t.due)}"></span>`;
@@ -3055,7 +3056,7 @@ function cpPayload(){
   const ph = cpPhasesSorted(), o = cpOverall(), cm = MILESTONES_DATA.find(m=>/copilot|copliot/i.test(m.name)), U = CP_USERS, cnt = f => U.filter(f).length;
   return { pct:o.pct, target: cm && cm.targetDate ? (d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))(new Date(cm.targetDate)) : cfgCopilot().target, tasks:o.t, done:o.d, fromWorkspace:true, untagged:0,
     phases: ph.map(p=>{ const s = cpPhaseStats(p.n), sl = cpPhaseSlip(p.n), st = cpPhaseStatus(s);
-      return { n:p.n, name:p.name, desc:p.desc||'', by:p.due||null, expected: sl ? sl.date : null, total:s.total, done:s.done, status: st==='Completed' ? 'Completed' : st==='Not Started' ? 'Planned' : 'In progress' }; }),
+      return { n:p.n, name:p.name, desc:p.desc||'', by:p.due||null, expected: sl ? sl.date : null, expectedOpen: sl ? sl.open : null, total:s.total, done:s.done, status: st==='Completed' ? 'Completed' : st==='Not Started' ? 'Planned' : 'In progress' }; }),
     pilot: { users:U.length, licensed:cnt(u=>u.license==='Assigned'), access:cnt(u=>/^yes$/i.test(u.access_tested||'')), trained:cnt(u=>u.training==='Completed'),
       pre:cnt(u=>u.pre_survey==='Completed'), mid:cnt(u=>u.mid_survey==='Completed'), post:cnt(u=>u.post_survey==='Completed'), ready:cnt(cpUserReady), active:cnt(u=>u.usage_status==='Active') } };
 }
@@ -7351,7 +7352,7 @@ function renderClientView(){
             <span class="rm-n" style="background:${c};">${p.n}</span>
             <div class="rm-body"><div class="rm-name">${p.name}</div><div class="rm-desc">${p.desc}</div></div>
             <div class="rm-bar">${p.total ? `<div class="cv-bar"><i style="width:${Math.round(p.done*100/p.total)}%;background:${c};"></i></div><div class="rm-cnt">${p.done}/${p.total} ${CP.fromWorkspace ? 'activities' : 'tasks'}</div>` : '<div class="rm-cnt">no tasks yet</div>'}</div>
-            <div class="rm-st"><b style="color:${c === '#1F4E6B' ? 'var(--navy2)' : c};">${p.status}</b>${p.expected ? `${p.by ? `<div class="rm-by"><s style="color:var(--muted);font-weight:500;">By: ${fmtDate(new Date(p.by))}</s></div>` : ''}<div class="rm-by" style="color:var(--red);">Expected: ${fmtDate(new Date(p.expected))}</div>` : p.by ? `<div class="rm-by">By: ${fmtDate(new Date(p.by))}</div>` : ''}</div>
+            <div class="rm-st"><b style="color:${c === '#1F4E6B' ? 'var(--navy2)' : c};">${p.status}</b>${p.expected ? `${p.by ? `<div class="rm-by"><s style="color:var(--muted);font-weight:500;">By: ${fmtDate(new Date(p.by))}</s></div>` : ''}<div class="rm-by" style="color:${p.expectedOpen === false ? 'var(--muted)' : 'var(--red)'};">Expected: ${fmtDate(new Date(p.expected))}</div>` : p.by ? `<div class="rm-by">By: ${fmtDate(new Date(p.by))}</div>` : ''}</div>
           </div>`; }).join('')}
         ${CP.pilot && CP.pilot.users ? `<div class="cv-pilot">${[['users','Pilot users'],['licensed','Licensed'],['trained','Trained'],['ready','Ready to start'],['active','Using Copilot']].map(([k,l])=>`<div><b>${CP.pilot[k]||0}</b><span>${l}</span></div>`).join('')}</div>` : ''}
       </div>
@@ -7938,7 +7939,7 @@ window.downloadClientPptx = async function(mode){
       else T(sl, 'no tasks yet', 7.95, y+h/2-0.12, 2.1, 0.24, { fontSize:9.5, color:GREY });
       T(sl, p.status, 10.3, y+0.12, 2.35, 0.3, { fontSize:14, bold:true, color: c==='1F4E6B' ? NAVY : c, align:'right' });
       const dd = x => new Date(x).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-      if(p.expected) sl.addText([{ text:(p.by ? dd(p.by) : ''), options:{ strike:'sngStrike', color:GREY, bold:false } }, { text:'  Expected: ' + dd(p.expected), options:{ color:'C0392B' } }], { x:9.3, y:y+0.45, w:3.35, h:0.28, fontFace:FONT, fontSize:11, bold:true, align:'right', margin:0, valign:'middle' });
+      if(p.expected) sl.addText([{ text:(p.by ? dd(p.by) : ''), options:{ strike:'sngStrike', color:GREY, bold:false } }, { text:'  Expected: ' + dd(p.expected), options:{ color: p.expectedOpen === false ? '667085' : 'C0392B' } }], { x:9.3, y:y+0.45, w:3.35, h:0.28, fontFace:FONT, fontSize:11, bold:true, align:'right', margin:0, valign:'middle' });
       else if(p.by) T(sl, 'By: ' + dd(p.by), 10.3, y+0.45, 2.35, 0.28, { fontSize:11, bold:true, color:AMBER, align:'right' }); }); }
 
   // ---- 7. More detail (1/2): coming up · needs attention · this week ----
