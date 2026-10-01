@@ -1489,6 +1489,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .re-two .re-paper{max-width:none;margin:0;padding:26px 26px;}
 @media(max-width:1250px){.re-two{grid-template-columns:1fr;}.re-two .re-paper{max-width:860px;margin:0 auto;width:100%;}}
 .re-tools{display:inline-flex;align-items:center;gap:6px;vertical-align:middle;margin-inline-start:6px;letter-spacing:0;font-weight:500;}
+.re-empty{font-size:12px;color:var(--muted);font-style:italic;border:1px dashed var(--border);border-radius:8px;padding:8px 10px;margin:14px 0 4px;}
 .re-edited{font-size:10px;font-weight:800;background:#FBF0DE;color:#9A5B00;border-radius:99px;padding:1px 8px;text-transform:none;}
 .cp-wrap{display:block !important;}
 .cp-nav{display:none !important;}
@@ -4899,8 +4900,9 @@ function renderRisk(){
    in settings/clientPage → reportEmail). English + Arabic. Copy for Outlook, or export as Word.
    ===================================================================== */
 const RE_KEY = 'reportEmail';
-const RE_SECTIONS = { intro:['Greeting','التحية'], week:['This week','هذا الأسبوع'], milestones:['Progress by milestone','التقدم حسب الـMilestone'],
-  attention:['Needs attention','يحتاج إلى متابعة'], next:['Coming up','القادم'], closing:['Closing','الخاتمة'] };
+const RE_SECTIONS = { intro:['Greeting','التحية'], week:['Key accomplishments','أبرز الإنجازات'], milestones:['Progress by milestone','التقدم حسب الـMilestone'],
+  attention:['Needs attention','يحتاج إلى متابعة'], asks:['Decisions / support needed','قرارات ودعم مطلوب'], plan:["Next week's plan",'خطة الأسبوع القادم'],
+  next:['Key dates','مواعيد مهمة'], closing:['Closing','الخاتمة'] };
 function reWeekId(){ return (window.LAST_SNAPSHOT && window.LAST_SNAPSHOT.weekId) || 'first'; }   // edits belong to the week that follows this close
 function reOverrides(){ const o = cps(RE_KEY); return o && o.forWeek === reWeekId() ? o : { forWeek: reWeekId() }; }   // forWeek = which week these edits belong to
 function rePref(k, d){ try{ return localStorage.getItem('re_' + k) || d; }catch(e){ return d; } }
@@ -4942,15 +4944,33 @@ function reModel(){
   add('closing', 'Full details are available on the project dashboard. Please reach out for any questions.', 'التفاصيل الكاملة متاحة على لوحة متابعة المشروع. لا تترددوا بالتواصل معنا لأي استفسار.');
   add('closing', 'Best regards,', 'مع خالص التحية،');
 
-  // ---- this week ----
+  // ---- key accomplishments: what was actually done this week, in words (max 3) ----
   const movers = eps.map(e=>({ e, p: prevEp(e) })).filter(x=>x.p != null && x.e.pct > x.p).sort((a,b2)=>(b2.e.pct - b2.p) - (a.e.pct - a.p));
   const newlyDone = ms.filter(m=>m.pct >= 100 && prevMs(m) != null && prevMs(m) < 100);
   newlyDone.forEach(m=> add('week', `${b(m.name)} is now complete.`, `اكتملت مرحلة ${bA(m.name)}.`));
-  if(tasksWeek) add('week', `<b>${tasksWeek}</b> task${tasksWeek===1?'':'s'} completed since the last weekly update.`, `تم إنجاز <b>${tasksWeek}</b> مهمة منذ التحديث الأسبوعي السابق.`);
-  movers.slice(0, 3).forEach(x=> add('week', `${b(x.e.name)} moved from ${x.p}% to <b>${x.e.pct}%</b>.`, `${bA(x.e.name)}: من ${L(x.p + '%')} إلى <b>${L(x.e.pct + '%')}</b>.`));
-  if(movers.length > 3) add('week', `${movers.length - 3} more epic${movers.length - 3===1?'':'s'} progressed.`, `تقدّم ${movers.length - 3} Epics أخرى.`);
+  const since = base && base.closedAt ? new Date(base.closedAt) : null, doneBy = {};
+  if(since) TASKS_DATA.forEach(t=>{ if(t.status === 'Completed' && t.completedAt && new Date(t.completedAt) > since){ const k = normKey(t.workstream); doneBy[k] = (doneBy[k] || 0) + 1; } });
+  const acc = eps.map(e=>({ e, n: doneBy[normKey(e.name)] || 0, p: prevEp(e) })).filter(x=>x.n > 0 || (x.p != null && x.e.pct > x.p))
+    .sort((a,c)=>(c.n - a.n) || ((c.e.pct - (c.p||0)) - (a.e.pct - (a.p||0))));
+  acc.slice(0, 3).forEach(x=>{ const e = x.e, txt = String(e.past || '').trim().replace(/\.$/, ''), moved = x.p != null && e.pct > x.p;
+    const tail = e.pct >= 100 ? [' - now complete', ' - اكتمل'] : moved ? [` - now at <b>${e.pct}%</b> (was ${x.p}%)`, ` - الآن <b>${L(e.pct + '%')}</b> (كان ${L(x.p + '%')})`] : [` - at <b>${e.pct}%</b>`, ` - عند <b>${L(e.pct + '%')}</b>`];
+    const what = txt ? [escapeHtml(txt), L(escapeHtml(txt))] : x.n ? [`${x.n} task${x.n===1?'':'s'} completed`, `إنجاز ${x.n} مهمة`] : ['progressed', 'تقدّم'];
+    add('week', `${b(e.name)}: ${what[0]}${tail[0]}.`, `${bA(e.name)}: ${what[1]}${tail[1]}.`); });
+  if(acc.length > 3) add('week', `Progress on ${acc.length - 3} more epic${acc.length - 3===1?'':'s'}.`, `تقدّم في ${acc.length - 3} Epics أخرى.`);
   if(!M.week) base ? add('week', 'No change in progress this week.', 'لا يوجد تغيير في نسب الإنجاز هذا الأسبوع.')
                    : add('week', 'This is the first weekly summary - week-on-week comparison starts from the next one.', 'هذا أول ملخص أسبوعي، وتبدأ المقارنة الأسبوعية من الملخص القادم.');
+
+  // ---- next week's plan (max 3): the "Next Step" written on the epics in progress; then what is closest to done; then what starts ----
+  const msOf = e => ms.find(m=>normKey(m.name) === normKey(e.milestone)), tgt = e => { const m = msOf(e); return m && m.targetDate ? D(m.targetDate).getTime() : 9e15; };
+  const live = eps.filter(e=>e.pct > 0 && e.pct < 100), plan = [];
+  live.filter(e=>String(e.next || '').trim()).sort((a,c)=>tgt(a) - tgt(c)).forEach(e=>{ const t = escapeHtml(String(e.next).trim().replace(/\.$/, '')); plan.push([`${b(e.name)}: ${t}.`, `${bA(e.name)}: ${L(t)}.`]); });
+  live.filter(e=>!String(e.next || '').trim()).sort((a,c)=>c.pct - a.pct).forEach(e=> plan.push([`Complete ${b(e.name)} (now ${e.pct}%).`, `استكمال ${bA(e.name)} (الآن ${L(e.pct + '%')}).`]));
+  ms.filter(m=>!m.pct && m.startDate && D(m.startDate) >= today && (D(m.startDate) - today) / 864e5 <= 10).forEach(m=> plan.unshift([`Start ${b(m.name)} (${fe(m.startDate)}).`, `بدء ${bA(m.name)} (${fa(m.startDate)}).`]));
+  plan.slice(0, 3).forEach(x=> add('plan', x[0], x[1]));
+  if(!plan.length) add('plan', 'No work is planned for next week.', 'لا يوجد عمل مخطط للأسبوع القادم.');
+
+  // ---- decisions / support needed from the client: written by hand, left out of the email while empty ----
+  M.asks = { en:[], ar:[] };
 
   // ---- one line per milestone ----
   ms.forEach(m=>{
@@ -5035,8 +5055,10 @@ function reHTML(lang, M, o){
   return `<div dir="${rtl ? 'rtl' : 'ltr'}" style="font-family:Calibri,'Segoe UI',Arial,Tahoma,sans-serif;font-size:11pt;color:#1F2937;line-height:1.5;text-align:${al};">
     ${paras('intro')}${nums}
     ${head('week')}${list('week')}
-    ${head('milestones')}${o.chart ? `<p style="margin:6px 0 8px;"><img src="${o.chart}" width="600" height="${Math.round(600 * (70 + M.chart.length * 54 + 24) / 1280)}" alt="Milestone progress" style="width:600px;max-width:100%;height:auto;border:1px solid #D8E2EC;"></p>` : ''}${list('milestones')}
+    ${head('milestones')}${o.chart ? `<p style="margin:6px 0 8px;"><img src="${o.chart}" width="600" height="${Math.round(600 * (70 + M.chart.length * 54 + 24) / 1280)}" alt="Milestone progress" style="width:600px;max-width:100%;height:auto;border:1px solid #D8E2EC;"></p>` : ''}${!o.chart || M.edited.milestones ? list('milestones') : ''}
     ${head('attention')}${list('attention')}
+    ${M.asks.en.length ? head('asks') + list('asks') : o.edit && !rtl ? `<p class="re-empty">${RE_SECTIONS.asks[0]} - nothing written, so this part is left out of the email. <button class="btn secondary cp-mini" onclick="reEdit('asks')">✏️ Add</button></p>` : ''}
+    ${head('plan')}${list('plan')}
     ${head('next')}${list('next')}
     <div style="margin-top:16px;">${paras('closing')}</div></div>`;
 }
@@ -5093,7 +5115,8 @@ window.reSave = function(sec, reset){
   const o = { ...reOverrides() };
   if(reset) delete o[sec];
   else { const L = id => document.getElementById(id).value.split('\n').map(x=>x.trim()).filter(Boolean); const en = L('reEn'), ar = L('reAr');
-    if(!en.length){ showInfoToast('Write at least one line, or use "Back to automatic".'); return; } o[sec] = { en, ar }; }
+    if(!en.length && sec !== 'asks'){ showInfoToast('Write at least one line, or use "Back to automatic".'); return; }
+    if(en.length) o[sec] = { en, ar }; else delete o[sec]; }   // "Decisions / support needed" may be left empty = not in the email
   reStore(o, 'Report email - ' + RE_SECTIONS[sec][0]); showInfoToast(reset ? 'Back to automatic' : '✓ Saved for this week');
 };
 window.reResetAll = function(){ reStore({ forWeek: reWeekId() }, 'Report email - back to automatic'); showInfoToast('All parts are automatic again'); };
@@ -6784,7 +6807,7 @@ function renderDeltaExtras(){
     info.innerHTML = s
       ? `Compared with the last closed week <b>${escapeHtml(s.weekId||'')}</b> - closed ${s.closedAt ? fmtDate(s.closedAt) : 'just now'} by ${escapeHtml(s.closedBy||'-')}.`
       : 'No week closed yet.';
-    info.innerHTML += '<br><span style="font-size:12px;">🕕 The week closes <b>automatically every Thursday at 8 PM</b>. Use 🔒 Close Week only to close it yourself (Thursday from 12 PM).</span>';
+    info.innerHTML += '<br><span style="font-size:12px;">🕕 The week closes <b>automatically every Thursday at 6 PM</b>. Use 🔒 Close Week only to close it yourself (Thursday from 12 PM).</span>';
   }
   const box = document.getElementById('deltaCompletedList');
   if(!box) return;
@@ -6799,9 +6822,9 @@ function renderDeltaExtras(){
     </div>`).join('')
     : '<p class="note">No tasks completed since the last closed week yet.</p>';
 }
-/* Week = Sunday -> Thursday. It closes by itself every Thursday 8 PM; the button is for closing it yourself. */
-const WEEK_AUTO_CLOSE_HOUR = 20;          // Thursday 8 PM - after the working day and the Thursday report (change this one number to move it)
-function lastThursdayClose(now){          // most recent Thursday 20:00 that is <= now
+/* Week = Sunday -> Thursday. It closes by itself every Thursday 6 PM; the button is for closing it yourself. */
+const WEEK_AUTO_CLOSE_HOUR = 18;          // Thursday 6 PM - the safety net if nobody closed it by hand (change this one number to move it)
+function lastThursdayClose(now){          // most recent Thursday 18:00 that is <= now
   const d = new Date(now); d.setHours(WEEK_AUTO_CLOSE_HOUR,0,0,0);
   const back = (d.getDay() - 4 + 7) % 7; d.setDate(d.getDate() - back);
   if(d > now) d.setDate(d.getDate() - 7);
@@ -6818,10 +6841,10 @@ window.autoCloseWeekIfDue = async function(){
   const due = lastThursdayClose(new Date());
   const s = window.LAST_SNAPSHOT;
   const last = s && s.closedAt ? new Date(s.closedAt) : null;
-  if(last && last >= due) return;           // already closed after the last Thursday 8 PM
+  if(last && last >= due) return;           // already closed after the last Thursday 6 PM
   try{
     const id = await FB.closeWeek({ auto:true, forDate: due });
-    showInfoToast('🔒 Week ' + id + ' was closed automatically (Thursday 8 PM).');
+    showInfoToast('🔒 Week ' + id + ' was closed automatically (Thursday 6 PM).');
   }catch(e){ console.warn('auto close week', e); }
 };
 window.closeWeekClicked = async function(){
@@ -6831,19 +6854,26 @@ window.closeWeekClicked = async function(){
   if(!inCloseWindow(now)){
     if(myLevel() < 4){
       await askConfirm({ title:'Too early to close the week',
-        html:'The week closes <b>automatically every Thursday at 8 PM</b>.<br>You can close it yourself from <b>Thursday 12 PM</b> until Saturday.',
+        html:'The week closes <b>automatically every Thursday at 6 PM</b>.<br>You can close it yourself from <b>Thursday 12 PM</b> until Saturday.',
         yes:'OK', single:true });
       return;
     }
-    const force = await askConfirm({ title:'Close the week early?',
-      html:'It is not Thursday yet. The week normally closes <b>automatically on Thursday at 8 PM</b>.<br><br>Closing now makes <b>today</b> the starting point for next week\'s Weekly Delta, so this week\'s remaining work will count as next week.<div class="ask-warn">Only do this if you really need to (Admin only).</div>',
-      yes:'Yes, close it now', no:'No, wait for Thursday', danger:true });
+    const force = await askConfirm({ title:'Close the week before its time?',
+      html:'The scheduled closing has <b>not come yet</b> - the week closes automatically on <b>Thursday at 6 PM</b>.<br><br>Closing now makes <b>this moment</b> the starting point for next week\'s Weekly Delta, so this week\'s remaining work will count as next week.<div class="ask-warn">Only do this if you really need to (Admin only). You can close it again later.</div>',
+      yes:'Yes, close it now', no:'No, wait', danger:true });
     if(!force) return;
+  } else if(s && s.closedAt && new Date(s.closedAt) >= (()=>{ const w = new Date(now); w.setHours(12,0,0,0); w.setDate(w.getDate() - ((w.getDay() - 4 + 7) % 7)); return w; })()){   // closed since THIS Thursday 12:00
+    // the scheduled time has passed and the week is already closed: closing again replaces that closing
+    const when = new Date(s.closedAt).toLocaleString('en-GB', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    const again = await askConfirm({ title:'This week is already closed',
+      html:`Week <b>${escapeHtml(s.weekId||'')}</b> was closed ${s.auto ? '<b>automatically</b>' : 'by hand'} on ${when}.<br><br>Closing it again <b>replaces</b> that closing with the numbers as they are <b>right now</b> - use it if something was changed after the closing and the report should include it.<div class="ask-warn">The earlier closing of this week is overwritten.</div>`,
+      yes:'Yes, close it again', no:'No, keep it', danger:true });
+    if(!again) return;
   } else {
-    const ok = await askConfirm({ title:'Close this week?',
-      html:`This saves today's Milestone and Epic % as the starting point for next week's <b>Weekly Delta</b>.
+    const ok = await askConfirm({ title:'Close this week now?',
+      html:`The scheduled closing (<b>Thursday 6 PM</b>) has not come yet. Closing now saves today's Milestone and Epic % as the starting point for next week's <b>Weekly Delta</b>.
         ${s && s.closedAt ? `<p style="margin:10px 0 0;color:var(--muted);font-size:12px;">Last closed: <b>${escapeHtml(s.weekId||'')}</b> on ${fmtDate(new Date(s.closedAt))}${s.auto ? ' (automatically)' : ''}.</p>` : ''}
-        <p style="margin:10px 0 0;color:var(--muted);font-size:12px;">If you don't, it closes automatically on Thursday at 8 PM.</p>`,
+        <p style="margin:10px 0 0;color:var(--muted);font-size:12px;">If you don't, it closes automatically on Thursday at 6 PM. You can close it again later if something changes.</p>`,
       yes:'Yes, close the week', no:'Cancel' });
     if(!ok) return;
   }
