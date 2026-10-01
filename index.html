@@ -184,7 +184,8 @@ const COLL = {
   cp_prompts: { get:()=>CP_PROMPTS, set:v=>{ CP_PROMPTS = v; }, key:x=>x.id, minLevel:2, fields:null },
   cp_meetings: { get:()=>CP_MEETINGS, set:v=>{ CP_MEETINGS = v; }, key:x=>x.id, minLevel:2, fields:null },
   cp_support: { get:()=>CP_SUPPORT, set:v=>{ CP_SUPPORT = v; }, key:x=>x.id, minLevel:2, fields:null },
-  cp_metrics: { get:()=>CP_METRICS, set:v=>{ CP_METRICS = v; }, key:x=>x.id, minLevel:2, fields:null }
+  cp_metrics: { get:()=>CP_METRICS, set:v=>{ CP_METRICS = v; }, key:x=>x.id, minLevel:2, fields:null },
+  cp_surveys: { get:()=>CP_SURVEYS, set:v=>{ CP_SURVEYS = v; }, key:x=>x.id, minLevel:2, fields:null }
 };
 const SERVER = {};   // coll -> Map(key -> {data, deleted})
 Object.keys(COLL).forEach(c=> SERVER[c] = new Map());
@@ -1402,6 +1403,37 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .cp-risk-chip:hover{background:#C0392B;color:#fff;}
 .cp-risk-chip.closed{background:#EEF0F4;color:#667085;border-color:#D8DEE8;}
 .cp-risk-chip.closed:hover{background:#667085;color:#fff;}
+/* Surveys & Value */
+.cp-table th.r,.cp-table td.r{text-align:right;}
+.sv-cmp th.grp{text-align:center;border-left:1px solid var(--border);}
+.sv-cmp td:nth-child(2),.sv-cmp td:nth-child(6),.sv-cmp tr:nth-child(2) th:nth-child(1),.sv-cmp tr:nth-child(2) th:nth-child(5){border-left:1px solid var(--border);}
+.sv-cmp td.sep{background:var(--surface2);font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-left:none !important;}
+.sv-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}
+@media(max-width:980px){.sv-cards{grid-template-columns:1fr;}}
+.sv-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;box-shadow:0 6px 18px rgba(20,33,61,.05);border-top:4px solid var(--navy);transition:border-color .12s,transform .12s;}
+.sv-card:hover{transform:translateY(-2px);border-color:var(--navy);}
+.sv-card.open{border-top-color:var(--pink);box-shadow:0 10px 26px rgba(192,38,106,.14);}
+.sv-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.sv-stage{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);}
+.sv-name{font-size:17px;font-weight:800;color:var(--navy);margin:8px 0 10px;text-align:left;}
+.sv-n{font-size:12.5px;color:var(--muted);margin-bottom:5px;} .sv-n b{font-size:22px;color:var(--navy);}
+.sv-meta{font-size:11.5px;color:var(--muted);margin-top:8px;}
+.sv-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
+.sv-caret{font-size:12px;font-weight:800;color:var(--pink);}
+.sv-panel{margin-top:14px;border-top:4px solid var(--pink);animation:svDrop .22s ease-out;transform-origin:top;}
+@keyframes svDrop{from{opacity:0;transform:scaleY(.96) translateY(-8px);}to{opacity:1;transform:none;}}
+.sv-panel-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.sv-panel-h b{font-size:17px;color:var(--navy);display:block;} .sv-panel-h span{font-size:12px;color:var(--muted);}
+.sv-q{padding:14px 4px;border-bottom:1px solid var(--border);} .sv-q:last-child{border-bottom:none;}
+.sv-qt{display:flex;gap:8px;align-items:flex-start;} .sv-qt > div{flex:1;} .sv-qt b{font-size:14px;}
+.sv-qn{font-weight:800;color:var(--pink);min-width:26px;}
+.sv-hint{display:block;font-size:12px;color:#B4790A;margin-top:2px;font-style:italic;}
+.sv-a{margin:9px 34px 0 0;}
+.sv-none{font-size:12px;color:var(--muted);font-style:italic;direction:ltr;display:inline-block;}
+.sv-num{display:flex;align-items:center;gap:10px;flex-wrap:wrap;} .sv-num b{font-size:24px;color:var(--navy);} .sv-num span{font-size:12px;color:var(--muted);} .sv-num em{font-style:normal;font-size:12px;color:var(--muted);}
+.sv-opt{display:grid;grid-template-columns:minmax(140px,300px) 1fr 86px;gap:10px;align-items:center;font-size:13px;margin-bottom:6px;} .sv-opt b{text-align:left;font-size:12.5px;} .sv-opt small{color:var(--muted);font-weight:500;}
+.sv-texts{margin:0;padding:0 18px 0 0;font-size:13px;line-height:1.7;}
+
 /* overview timeline */
 .cp-tl{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:6px 2px 4px;}
 .cp-tl-node{flex:1 1 0;min-width:118px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;}
@@ -2638,15 +2670,16 @@ let CP_USERS = [{"id": "USR-001", "name": "Mohammed Asseri", "email": "masseri@m
 let CP_PROMPTS = [{"id": "PRM-001", "title": "Draft a formal email", "category": "Email & Communication", "department": "General", "audience": "All Users", "prompt": "Draft a concise professional email based on the following points: [insert points]. Keep the tone formal and suitable for government communication.", "value": "Faster professional email drafting", "owner": "IIH", "approval": "Approved", "weekly_tip": "Yes", "email_tip": "Yes", "notes": "Generic starter prompt for pilot users."}, {"id": "PRM-002", "title": "Summarize a meeting", "category": "Meeting Support", "department": "General", "audience": "Pilot Users", "prompt": "Summarize the following meeting notes into: key discussion points, decisions, actions, owners, and due dates: [insert notes].", "value": "Faster meeting follow-up and action tracking", "owner": "IIH", "approval": "Approved", "weekly_tip": "Yes", "email_tip": "Yes", "notes": "Useful for weekly project and departmental meetings."}, {"id": "PRM-003", "title": "Prepare executive summary", "category": "Summarization", "department": "General", "audience": "Managers", "prompt": "Create an executive summary of the following content. Focus on progress, key risks, decisions required, and next steps: [insert content].", "value": "Improved management reporting", "owner": "IIH", "approval": "Approved", "weekly_tip": "Yes", "email_tip": "No", "notes": "Suitable for management updates."}, {"id": "PRM-004", "title": "Create presentation outline", "category": "Presentation Support", "department": "General", "audience": "Pilot Users", "prompt": "Create a clear presentation outline from the following information. Organize it into title, key message, supporting points, and recommended next steps: [insert content].", "value": "Faster presentation preparation", "owner": "IIH", "approval": "Draft", "weekly_tip": "No", "email_tip": "No", "notes": "Review before sharing as a tip."}, {"id": "PRM-005", "title": "Analyze a document", "category": "Research & Analysis", "department": "General", "audience": "Pilot Users", "prompt": "Review the following document and identify the main themes, gaps, risks, required actions, and questions that need clarification: [insert content].", "value": "Faster document analysis and review", "owner": "IIH", "approval": "Draft", "weekly_tip": "No", "email_tip": "No", "notes": "Generic analytical use case."}, {"id": "PRM-006", "title": "Work faster in Excel with Copilot", "category": "Data & Reporting", "department": "General", "audience": "All Users", "prompt": "Use Copilot in Excel to work with a data range: ask it to summarize totals by category, build a formula from a plain-language description, spot trends or outliers, or set up a quick pivot table. For example: \"Summarize total spend by department for Q3\" or \"Write a formula that flags rows where budget exceeds actual spend.\"", "value": "Faster spreadsheet analysis and formula-building without deep Excel expertise", "owner": "IIH", "approval": "Approved", "weekly_tip": "Yes", "email_tip": "Yes", "notes": "Added as a usability tip for Copilot in Excel."}, {"id": "PRM-007", "title": "Translate between English and Arabic", "category": "Writing & Drafting", "department": "General", "audience": "All Users", "prompt": "Translate the following text from English to Arabic (or Arabic to English). Keep the tone formal and appropriate for government communication, and preserve any names, dates or figures exactly: [insert text].", "value": "Faster bilingual communication across English and Arabic without external translation tools", "owner": "IIH", "approval": "Approved", "weekly_tip": "Yes", "email_tip": "Yes", "notes": "Added for English<->Arabic translation use cases."}];   // PREVIEW: from 07_Copilot export
 let CP_MEETINGS = [];   // PREVIEW: from 07_Copilot export
 let CP_SUPPORT = [];   // PREVIEW: from 07_Copilot export
-let CP_METRICS = [{"id": "KM01", "metric": "Outlook emails (writing and editing) - hours per week", "unit": "h / week", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q7", "group": "Time spent", "notes": "المهمة: انشاء الرسائل الإلكترونية وتحريرها (Outlook) — عدد الساعات المستغرقة خلال أسبوع عمل (0 إلى 40)", "order": 0}, {"id": "KM02", "metric": "Meeting minutes - hours per week", "unit": "h / week", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q9", "group": "Time spent", "notes": "المهمة: محاضر الاجتماعات — عدد الساعات المستغرقة خلال أسبوع عمل (0 إلى 40)", "order": 1}, {"id": "KM03", "metric": "Word documents and reports - hours per week", "unit": "h / week", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q11", "group": "Time spent", "notes": "المهمة: صياغة المستندات والتقارير (Word) — عدد الساعات المستغرقة خلال أسبوع عمل (0 إلى 40)", "order": 2}, {"id": "KM04", "metric": "Excel data and tables analysis - hours per week", "unit": "h / week", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q13", "group": "Time spent", "notes": "المهمة: تحليل البيانات والجداول (Excel) — عدد الساعات المستغرقة خلال أسبوع عمل (0 إلى 40)", "order": 3}, {"id": "KM05", "metric": "PowerPoint presentations - hours per week", "unit": "h / week", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q15", "group": "Time spent", "notes": "المهمة: العروض التقديمية (PowerPoint) — عدد الساعات المستغرقة خلال أسبوع عمل (0 إلى 40)", "order": 4}, {"id": "KM06", "metric": "Reading and summarising long documents - hours per week", "unit": "h / week", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q17", "group": "Time spent", "notes": "المهمة: قراءة وتلخيص المستندات الطويلة — عدد الساعات المستغرقة خلال أسبوع عمل (0 إلى 40)", "order": 5}, {"id": "KM07", "metric": "Arabic–English translation - hours per week", "unit": "h / week", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q19", "group": "Time spent", "notes": "المهمة: الترجمة بين العربية والإنجليزية — عدد الساعات المستغرقة خلال أسبوع عمل (0 إلى 40)", "order": 6}, {"id": "KM08", "metric": "Outlook emails (writing and editing) - difficulty", "unit": "1-5", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q8", "group": "Difficulty", "notes": "المهمة: انشاء الرسائل الإلكترونية وتحريرها (Outlook) — درجة الصعوبة (1 = سهل جدًا ولا يستغرق وقتًا … 5 = صعب جداً ويستغرق وقتاً طويلاً)", "order": 7}, {"id": "KM09", "metric": "Meeting minutes - difficulty", "unit": "1-5", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q10", "group": "Difficulty", "notes": "المهمة: محاضر الاجتماعات — درجة الصعوبة (1 = سهل جدًا ولا يستغرق وقتًا … 5 = صعب جداً ويستغرق وقتاً طويلاً)", "order": 8}, {"id": "KM10", "metric": "Word documents and reports - difficulty", "unit": "1-5", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q12", "group": "Difficulty", "notes": "المهمة: صياغة المستندات والتقارير (Word) — درجة الصعوبة (1 = سهل جدًا ولا يستغرق وقتًا … 5 = صعب جداً ويستغرق وقتاً طويلاً)", "order": 9}, {"id": "KM11", "metric": "Excel data and tables analysis - difficulty", "unit": "1-5", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q14", "group": "Difficulty", "notes": "المهمة: تحليل البيانات والجداول (Excel) — درجة الصعوبة (1 = سهل جدًا ولا يستغرق وقتًا … 5 = صعب جداً ويستغرق وقتاً طويلاً)", "order": 10}, {"id": "KM12", "metric": "PowerPoint presentations - difficulty", "unit": "1-5", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q16", "group": "Difficulty", "notes": "المهمة: العروض التقديمية (PowerPoint) — درجة الصعوبة (1 = سهل جدًا ولا يستغرق وقتًا … 5 = صعب جداً ويستغرق وقتاً طويلاً)", "order": 11}, {"id": "KM13", "metric": "Reading and summarising long documents - difficulty", "unit": "1-5", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q18", "group": "Difficulty", "notes": "المهمة: قراءة وتلخيص المستندات الطويلة — درجة الصعوبة (1 = سهل جدًا ولا يستغرق وقتًا … 5 = صعب جداً ويستغرق وقتاً طويلاً)", "order": 12}, {"id": "KM14", "metric": "Arabic–English translation - difficulty", "unit": "1-5", "direction": "Lower", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q20", "group": "Difficulty", "notes": "المهمة: الترجمة بين العربية والإنجليزية — درجة الصعوبة (1 = سهل جدًا ولا يستغرق وقتًا … 5 = صعب جداً ويستغرق وقتاً طويلاً)", "order": 13}, {"id": "KM15", "metric": "Satisfaction with the AI tools used today", "unit": "1-10", "direction": "Higher", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q5", "group": "Tools", "notes": "من 1 إلى 10، أذكر مدى رضاك عن الأداة/الأدوات التي تستخدمها؟", "order": 14}, {"id": "KM16", "metric": "Expected Copilot benefit (speed of daily tasks)", "unit": "1-5", "direction": "Higher", "baseline": null, "mid": null, "post": null, "target": null, "source": "Survey Q21", "group": "Expectation", "notes": "إلى أي مدى تتوقع أن يساعدك Copilot في إنجاز مهامك اليومية بشكل أسرع؟ (1 = لا أتوقع أي فائدة … 5 = فائدة كبيرة جدًا)", "order": 15}];   // PREVIEW: from 07_Copilot export
+let CP_METRICS = [];   // PREVIEW: from 07_Copilot export
+let CP_SURVEYS = [{"id": "pre", "stage": "Before the pilot", "name": "استبيان ما قبل التجربة", "status": "Collecting", "sentOn": null, "closedOn": null, "link": "", "responses": null, "notes": "", "order": 0}, {"id": "mid", "stage": "Mid-pilot", "name": "استبيان منتصف التجربة", "status": "Not sent", "sentOn": null, "closedOn": null, "link": "", "responses": null, "notes": "", "order": 1}, {"id": "post", "stage": "End of the pilot", "name": "استبيان نهاية التجربة", "status": "Not sent", "sentOn": null, "closedOn": null, "link": "", "responses": null, "notes": "", "order": 2}];   // PREVIEW: from 07_Copilot export
 const CP = { cp_phases:()=>CP_PHASES, cp_tasks:()=>CP_TASKS, cp_risks:()=>CP_RISKS, cp_raci:()=>CP_RACI, cp_channels:()=>CP_CHANNELS,
-  cp_users:()=>CP_USERS, cp_prompts:()=>CP_PROMPTS, cp_meetings:()=>CP_MEETINGS, cp_support:()=>CP_SUPPORT, cp_metrics:()=>CP_METRICS };
+  cp_users:()=>CP_USERS, cp_prompts:()=>CP_PROMPTS, cp_meetings:()=>CP_MEETINGS, cp_support:()=>CP_SUPPORT, cp_metrics:()=>CP_METRICS, cp_surveys:()=>CP_SURVEYS };
 
 const CP_ST = ['Not Started','In Progress','Completed','Blocked'];
 const CP_ST_C = { 'Completed':['#1E7F4C','#E4F5EB'], 'In Progress':['#B4790A','#FBF0DE'], 'Not Started':['#8891A0','#EEF0F4'], 'Blocked':['#C0392B','#FBEAE8'],
   'Open':['#C0392B','#FBEAE8'], 'Mitigated':['#1E7F4C','#E4F5EB'], 'Closed':['#667085','#EEF0F4'], 'Resolved':['#1E7F4C','#E4F5EB'], 'On Hold':['#B4790A','#FBF0DE'],
   'Planned':['#2D6CDF','#E7EEFB'], 'Cancelled':['#667085','#EEF0F4'], 'Rescheduled':['#B4790A','#FBF0DE'], 'Live':['#1E7F4C','#E4F5EB'], 'Paused':['#B4790A','#FBF0DE'],
-  'Approved':['#1E7F4C','#E4F5EB'], 'Draft':['#8891A0','#EEF0F4'], 'Under Review':['#B4790A','#FBF0DE'], 'Retired':['#667085','#EEF0F4'] };
+  'Approved':['#1E7F4C','#E4F5EB'], 'Collecting':['#2D6CDF','#E7EEFB'], 'Not sent':['#8891A0','#EEF0F4'], 'Draft':['#8891A0','#EEF0F4'], 'Under Review':['#B4790A','#FBF0DE'], 'Retired':['#667085','#EEF0F4'] };
 const CP_RACI_OPTS = ['R','A','C','I','A/R','A/C','R/C','-'];
 const CP_RACI_C = { R:['#781943','#F3E6EA'], A:['#0F2837','#E7EEFB'], C:['#B4790A','#FBF0DE'], I:['#8891A0','#EEF0F4'] };
 
@@ -2691,7 +2724,10 @@ const CP_SCHEMA = {
     {k:'audience',l:'Audience',t:'select',o:['Executives','Pilot Users','Managers','All Users']}, {k:'department',l:'Department',t:'text'}, {k:'owner',l:'Owner',t:'text'},
     {k:'approval',l:'Approval',t:'select',o:['Draft','Under Review','Approved','Retired'],d:'Draft'}, {k:'weekly_tip',l:'Weekly tip',t:'select',o:['No','Yes']},
     {k:'email_tip',l:'Email tip',t:'select',o:['No','Yes']}, {k:'prompt',l:'Prompt / guidance',t:'textarea'}, {k:'value',l:'Expected value',t:'text',full:1}, {k:'notes',l:'Notes',t:'textarea'} ] },
-  cp_metrics: { title:'Survey metric', prefix:'KM', fields:[ {k:'metric',l:'Metric (e.g. Minutes to draft a formal email)',t:'text',req:1,full:1}, {k:'unit',l:'Unit',t:'text'},
+  cp_surveys: { title:'Survey', prefix:'SV', fields:[ {k:'name',l:'Survey name',t:'text',req:1,full:1}, {k:'stage',l:'Stage',t:'text'},
+    {k:'status',l:'Status',t:'select',o:['Not sent','Collecting','Closed'],d:'Not sent'}, {k:'sentOn',l:'Sent on',t:'date'}, {k:'closedOn',l:'Closed on',t:'date'},
+    {k:'responses',l:'Number of responses (empty = count from Pilot Users)',t:'number'}, {k:'link',l:'Microsoft Forms link',t:'text',full:1}, {k:'notes',l:'Notes',t:'textarea'} ] },
+  cp_metrics: { title:'Measure', prefix:'KM', fields:[ {k:'metric',l:'Metric (e.g. Minutes to draft a formal email)',t:'text',req:1,full:1}, {k:'unit',l:'Unit',t:'text'},
     {k:'direction',l:'Better when',t:'select',o:['Higher','Lower'],d:'Higher'}, {k:'group',l:'Group',t:'select',o:['Time spent','Difficulty','Tools','Expectation','Other'],d:'Other'}, {k:'baseline',l:'Pre-pilot (baseline)',t:'number'}, {k:'mid',l:'Mid-pilot',t:'number'},
     {k:'post',l:'Post-pilot',t:'number'}, {k:'target',l:'Target',t:'number'}, {k:'source',l:'Source (survey / analytics)',t:'text'}, {k:'notes',l:'Notes',t:'textarea'} ] }
 };
@@ -2975,30 +3011,119 @@ const CP_RENDER = {
         <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;" class="no-shot"><button class="btn secondary cp-mini" onclick="cpCopyPrompt('${escapeHtml(p.id)}')">📋 Copy prompt</button>${cpEditBtn('cp_prompts', p.id)}</div></div>`).join('') || '<p class="note">No prompts yet.</p>'}</div>`;
   },
 
-  value(){
-    const U = CP_USERS, n = U.length || 1, c = k => U.filter(u=>u[k]==='Completed').length;
-    const chg = m => { const b = m.baseline, l = m.post != null ? m.post : m.mid; if(b == null || l == null || b === 0) return null; return (l - b) * 100 / Math.abs(b); };
-    const good = m => { const x = chg(m); if(x == null) return null; return m.direction==='Lower' ? x < 0 : x > 0; };
-    const met = m => { const l = m.post != null ? m.post : m.mid; if(m.target == null || l == null) return null; return m.direction==='Lower' ? l <= m.target : l >= m.target; };
-    const L = [...CP_METRICS].sort((a,b)=>(+a.order||0) - (+b.order||0)), groups = [...new Set(L.map(m=>m.group || 'Other'))];
-    const T = L.filter(m=>m.group==='Time spent'), sum = k => T.every(m=>m[k]==null) ? null : T.reduce((s,m)=>s + (+m[k]||0), 0);
-    const hb = sum('baseline'), hl = sum('post') != null ? sum('post') : sum('mid'), saved = hb != null && hl != null ? hb - hl : null;
-    return cpHead('Surveys &amp; Value', 'Did Copilot make a difference? The same survey is answered before, in the middle and at the end of the pilot - each number below is the <b>average of the answers</b>.', cpAddBtn('cp_metrics','Metric')) + `
-      <div class="fact-cards four compact">${cpFact(c('pre_survey') + ' / ' + U.length,'Pre-pilot survey','baseline answers')}${cpFact(c('mid_survey') + ' / ' + U.length,'Mid-pilot survey','')}${cpFact(c('post_survey') + ' / ' + U.length,'Post-pilot survey','')}${cpFact(U.filter(u=>u.usage_status==='Active').length + ' / ' + U.length,'Using Copilot','active users')}</div>
-      ${T.length ? `<div class="card" style="margin-bottom:16px;"><h3 class="cv-cap">Hours per week on the ${T.length} measured tasks (per person, average)</h3>
-        <div class="fact-cards four compact" style="margin:0;">${cpFact(hb==null ? '-' : (+hb.toFixed(1)) + ' h','Before the pilot','baseline')}${cpFact(hl==null ? '-' : (+hl.toFixed(1)) + ' h','Latest','mid / post survey')}
-          ${cpFact(saved==null ? '-' : (saved>0?'−':'+') + Math.abs(+saved.toFixed(1)) + ' h','Change per person / week','', saved==null ? '#1F4E6B' : saved>0 ? '#00845A' : '#C0392B')}
-          ${cpFact(saved==null || !U.length ? '-' : Math.round(saved * U.length) + ' h','Saved per week','all ' + U.length + ' pilot users', '#00845A')}</div></div>` : ''}
-      <div class="card" style="overflow-x:auto;"><h3 class="cv-cap">Before / after</h3>
-        <table class="cp-table"><tr><th>Metric</th><th style="text-align:right;">Baseline</th><th style="text-align:right;">Mid</th><th style="text-align:right;">Post</th><th style="text-align:right;">Target</th><th style="text-align:right;">Change</th><th>Target met</th><th class="no-shot"></th></tr>
-        ${groups.map(G=>`<tr><td colspan="8" style="background:var(--surface2);font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);">${escapeHtml(G)}</td></tr>` + L.filter(m=>(m.group||'Other')===G).map(m=>{ const x = chg(m), g = good(m), t = met(m); const f = v => v==null || v==='' ? '<span style="color:var(--muted);">-</span>' : escapeHtml(String(v)) + (m.unit ? ' <span style="color:var(--muted);font-size:11px;">' + escapeHtml(m.unit) + '</span>' : '');
-          return `<tr><td><b>${escapeHtml(m.metric||'')}</b><span class="sub">${escapeHtml(m.source||'')}${m.direction ? ' · better when ' + m.direction.toLowerCase() : ''}</span>${m.notes ? `<span class="sub" dir="auto" style="font-size:11px;">${escapeHtml(m.notes)}</span>` : ''}</td>
-            <td style="text-align:right;">${f(m.baseline)}</td><td style="text-align:right;">${f(m.mid)}</td><td style="text-align:right;">${f(m.post)}</td><td style="text-align:right;">${f(m.target)}</td>
-            <td style="text-align:right;font-weight:800;color:${g==null?'var(--muted)':g?'var(--green)':'var(--red)'};">${x==null ? '-' : (x>0?'+':'') + Math.round(x) + '%'}</td>
-            <td>${t==null ? '<span style="color:var(--muted);">-</span>' : t ? cpPill('Completed').replace('Completed','Yes') : cpPill('Blocked').replace('Blocked','Not yet')}</td><td class="no-shot">${cpEditBtn('cp_metrics', m.id)}</td></tr>`; }).join('')).join('') || '<tr><td colspan="8" class="note">No metrics yet. Add what the pre-pilot survey measures (e.g. <i>minutes to draft a formal email</i>, <i>hours per week on meeting notes</i>, <i>satisfaction 1-5</i>) with the baseline, then fill Mid and Post as results come in. Change and "target met" are calculated.</td></tr>'}
-      </table></div>`;
-  }
+  value(){ return cpValuePage(); }
 };
+/* ---------- Surveys & Value: the pilot survey (Microsoft Forms, 24 questions) ----------
+   The SAME questions are asked before / in the middle / at the end of the pilot (cp_surveys: pre, mid, post).
+   Each stage keeps one result per question in field q<N>: a number (average), {option: count} or [free-text answers].
+   Until the Forms Excel import exists, the team types the averages / counts with ✏️. */
+const CP_SV_SCALE = ['سهل جدًا ولا يستغرق وقتًا','سهل نسبياً','متوسط','صعب ويستغرق وقتاً','صعب جداً ويستغرق وقتاً طويلاً'];
+const CP_SV_TASKS = [ ['Outlook emails','انشاء الرسائل الإلكترونية وتحريرها (Outlook)'], ['Meeting minutes','محاضر الاجتماعات'], ['Word documents & reports','صياغة المستندات والتقارير (Word)'],
+  ['Excel data analysis','تحليل البيانات والجداول (Excel)'], ['PowerPoint presentations','العروض التقديمية (PowerPoint)'], ['Reading & summarising long documents','قراءة وتلخيص المستندات الطويلة'], ['Arabic–English translation','الترجمة بين العربية والإنجليزية'] ];
+const CP_SV_Q = (()=>{
+  const Q = [
+    { n:1, t:'id', q:'البريد الإلكتروني الوظيفي', hint:'مطلوب لربط إجاباتك بين مراحل التجربة فقط.' },
+    { n:2, t:'id', q:'الاسم' },
+    { n:3, t:'choice', q:'الدور الوظيفي', o:['فرد / موظف','قائد فريق','مدير إدارة أو أعلى'] },
+    { n:4, t:'multi', q:'هل تستخدم حاليًا أدوات ذكاء اصطناعي أو ترجمة أخرى؟ (يمكن اختيار أكثر من إجابة)', o:['ChatGPT','Claude','Gemini','Grok','أداة ترجمة (Google Translate أو غيرها)','لا أستخدم أي أداة','غير ذلك'] },
+    { n:5, t:'num', max:10, unit:'/ 10', q:'من 1 إلى 10، أذكر مدى رضاك عن الأداة/الأدوات التي تستخدمها؟', hint:'الدرجة 1 تعني: لا أوصي بها إطلاقًا · الدرجة 10 تعني: أوصي بها بشدة' },
+    { n:6, t:'multi', q:'أي أدوات مايكروسوفت تستخدمها في عملك اليومي؟ (يمكن اختيار أكثر من إجابة)', o:['Outlook - البريد','Word - المستندات','Excel - الجداول','PowerPoint - العروض','Teams - الاجتماعات','OneNote - الملاحظات','SharePoint - مشاركة الملفات'] } ];
+  CP_SV_TASKS.forEach(([en, ar], i)=>{
+    Q.push({ n:7+i*2, t:'num', max:40, unit:'ساعة / أسبوع', q:'المهمة: ' + ar, hint:'أذكر عدد الساعات المستغرقة خلال أسبوع عمل (0 إلى 40)' });
+    Q.push({ n:8+i*2, t:'num', max:5, unit:'/ 5', scale:CP_SV_SCALE, q:'المهمة: ' + ar, hint:'درجة الصعوبة بالنسبة لك' }); });
+  Q.push({ n:21, t:'num', max:5, unit:'/ 5', scale:['لا أتوقع أي فائدة','فائدة محدودة','فائدة متوسطة','فائدة كبيرة','فائدة كبيرة جدًا'], q:'إلى أي مدى تتوقع أن يساعدك Copilot في إنجاز مهامك اليومية بشكل أسرع؟' },
+    { n:22, t:'choice', q:'عند إعداد ملف أو مستند، كم مرة تقريبًا تعود عليه بالتعديل قبل أن يحصل على الموافقة النهائية؟', o:['مرة واحدة - أنجزه من أول مرة في الغالب','مرتان إلى ثلاث - تعديلات طفيفة','أربع مرات أو أكثر - دورة مراجعة طويلة','يتفاوت كثيرًا حسب نوع الملف'] },
+    { n:23, t:'choice', q:'هل تتعامل مع بيانات مصنّفة حساسة في عملك اليومي؟', o:['نعم، بشكل يومي','أحيانًا','لا'] },
+    { n:24, t:'text', q:'ما المهمة أو التحدي في عملك اليومي الذي تتمنى أن يساعدك الذكاء الاصطناعي في حله بشكل أساسي؟' });
+  return Q;
+})();
+const CP_SV_DEFAULT = [ { id:'pre', stage:'Before the pilot', name:'استبيان ما قبل التجربة', status:'Collecting', order:0 },
+  { id:'mid', stage:'Mid-pilot', name:'استبيان منتصف التجربة', status:'Not sent', order:1 }, { id:'post', stage:'End of the pilot', name:'استبيان نهاية التجربة', status:'Not sent', order:2 } ];
+let cpSvOpen = null;
+const cpSv = id => CP_SURVEYS.find(s=>s.id===id) || null;
+const cpSvNum = (id, n) => { const s = cpSv(id), v = s ? s['q'+n] : null; return typeof v==='number' ? v : null; };
+const cpSvHas = (s, q) => { const v = s['q'+q.n]; return v != null && v !== '' && !(typeof v==='object' && !Object.keys(v).length); };
+window.cpSvToggle = function(id){ cpSvOpen = cpSvOpen===id ? null : id; renderCopilot(); if(cpSvOpen){ const el = document.getElementById('svPanel'); if(el) setTimeout(()=>el.scrollIntoView({ block:'nearest', behavior:'smooth' }), 30); } };
+window.cpSvInit = function(){ CP_SV_DEFAULT.forEach(d=>{ if(!cpSv(d.id)) CP_SURVEYS.push({ ...d, sentOn:null, closedOn:null, link:'', responses:null, notes:'' }); }); setLastUpdate(); renderAllViews(); };
+
+/* type one question's result by hand (average / count per option / free-text answers) */
+window.cpSvEdit = function(sid, n){
+  const s = cpSv(sid), q = CP_SV_Q.find(x=>x.n===n); if(!s || !q) return; const v = s['q'+n];
+  let body;
+  if(q.t==='num') body = `<div class="form-field"><label>Average of the answers (0 - ${q.max})</label><input type="number" step="any" min="0" max="${q.max}" id="svVal" value="${typeof v==='number' ? v : ''}"></div>`;
+  else if(q.t==='text') body = `<div class="form-field"><label>Answers - one per line</label><textarea id="svVal" rows="9" dir="auto">${escapeHtml(Array.isArray(v) ? v.join('\n') : '')}</textarea></div>`;
+  else body = `<p class="note" style="margin:0 0 10px;">How many people chose each option${q.t==='multi' ? ' (a person can choose several)' : ''}:</p>` + q.o.map((o, i)=>`<div class="form-field" style="display:grid;grid-template-columns:1fr 90px;gap:10px;align-items:center;margin-bottom:8px;"><label dir="rtl" style="margin:0;text-transform:none;font-size:13px;font-weight:600;color:var(--text);letter-spacing:0;">${escapeHtml(o)}</label><input type="number" min="0" data-opt="${i}" value="${v && v[o] != null ? v[o] : ''}"></div>`).join('');
+  openDetailModal(`${popupHeaderHTML('Result of question ' + n, escapeHtml(s.stage) + ' · typed by hand until the Forms export is imported')}
+    <div class="popup-body"><p dir="rtl" style="margin:0 0 14px;font-weight:700;font-size:14px;">${n}. ${escapeHtml(q.q)}${q.hint ? `<span style="display:block;font-weight:500;color:var(--muted);font-size:12px;margin-top:3px;">${escapeHtml(q.hint)}</span>` : ''}</p>${body}
+      <div class="modal-actions"><button class="btn danger" style="margin-inline-end:auto;" onclick="cpSvSave('${sid}',${n},true)">Clear</button><button class="btn secondary" onclick="closeDetailModal()">Cancel</button><button class="btn primary" onclick="cpSvSave('${sid}',${n})">Save</button></div></div>`);
+};
+window.cpSvSave = function(sid, n, clear){
+  const s = cpSv(sid), q = CP_SV_Q.find(x=>x.n===n); let val = null;
+  if(!clear){
+    if(q.t==='num'){ const x = document.getElementById('svVal').value.trim(); val = x==='' ? null : Number(x);
+      if(val != null && (isNaN(val) || val < 0 || val > q.max)){ showInfoToast('Enter a number between 0 and ' + q.max); return; } }
+    else if(q.t==='text'){ const L = document.getElementById('svVal').value.split('\n').map(x=>x.trim()).filter(Boolean); val = L.length ? L : null; }
+    else { val = {}; document.querySelectorAll('#detailModalContent [data-opt]').forEach(i=>{ if(i.value.trim() !== '') val[q.o[+i.dataset.opt]] = Math.max(0, Math.round(+i.value) || 0); }); if(!Object.keys(val).length) val = null; }
+  }
+  s['q'+n] = val;   // always a NEW value/object, so the sync engine sees the change
+  closeDetailModal(); setLastUpdate(); renderAllViews(); showInfoToast(clear ? 'Cleared' : '✓ Saved');
+};
+
+function cpSvAnswer(s, q, total){
+  const v = s['q'+q.n], none = '<span class="sv-none">No answers yet</span>';
+  if(q.t==='id') return '<span class="sv-none">Only used to link one person\'s answers across the three stages - never shown.</span>';
+  if(!cpSvHas(s, q)) return none;
+  if(q.t==='num'){ const lbl = q.scale ? q.scale[Math.max(0, Math.min(q.scale.length-1, Math.round(v)-1))] : '';
+    return `<div class="sv-num"><b>${+(+v).toFixed(1)}</b><span>${escapeHtml(q.unit||'')}</span><div class="cv-bar" style="max-width:260px;"><i style="width:${Math.min(100, v*100/q.max)}%;background:var(--navy2);"></i></div>${lbl ? `<em>≈ ${escapeHtml(lbl)}</em>` : ''}</div>`; }
+  if(q.t==='text') return `<ul class="sv-texts">${v.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>`;
+  const sum = q.o.reduce((a,o)=>a + (+v[o]||0), 0), den = q.t==='multi' ? (total || Math.max(...q.o.map(o=>+v[o]||0), 1)) : (sum || 1);
+  return q.o.map(o=>{ const c = +v[o] || 0, p = Math.round(c*100/den); return `<div class="sv-opt"><span>${escapeHtml(o)}</span><div class="cv-bar"><i style="width:${Math.min(100,p)}%;background:var(--pink);"></i></div><b>${c} <small>(${p}%)</small></b></div>`; }).join('');
+}
+
+function cpValuePage(){
+  const U = CP_USERS, doneKey = { pre:'pre_survey', mid:'mid_survey', post:'post_survey' };
+  if(!CP_SURVEYS.length) return cpHead('Surveys &amp; Value', 'Did Copilot make a difference?') + `<div class="card" style="text-align:center;padding:34px;"><b>The three survey stages are not set up yet.</b><p class="note" style="margin:8px 0 14px;">Before the pilot · mid-pilot · end of the pilot - the same 24 questions each time.</p><button class="btn primary no-shot" onclick="cpSvInit()">Set up the survey stages</button></div>`;
+  const stages = [...CP_SURVEYS].sort((a,b)=>(+a.order||0) - (+b.order||0));
+  const resp = s => s.responses != null && s.responses !== '' ? +s.responses : U.filter(u=>u[doneKey[s.id]]==='Completed').length;
+  const hours = id => { const v = CP_SV_TASKS.map((t,i)=>cpSvNum(id, 7+i*2)); return v.every(x=>x==null) ? null : v.reduce((a,b)=>a + (b||0), 0); };
+  const latest = n => cpSvNum('post', n) != null ? cpSvNum('post', n) : cpSvNum('mid', n);
+  const hb = hours('pre'), hl = hours('post') != null ? hours('post') : hours('mid'), saved = hb != null && hl != null ? hb - hl : null;
+  const f = v => v==null ? '<span style="color:var(--muted);">-</span>' : (+v.toFixed(1));
+  const chg = (n, lowerBetter) => { const a = cpSvNum('pre', n), b = latest(n); if(a==null || b==null || a===0) return '<td class="r" style="color:var(--muted);">-</td>';
+    const x = (b-a)*100/Math.abs(a), good = lowerBetter ? x < 0 : x > 0; return `<td class="r" style="font-weight:800;color:${x===0 ? 'var(--muted)' : good ? 'var(--green)' : 'var(--red)'};">${x>0?'+':''}${Math.round(x)}%</td>`; };
+  const trio = n => ['pre','mid','post'].map(id=>`<td class="r">${f(cpSvNum(id, n))}</td>`).join('');
+  const open = cpSvOpen && cpSv(cpSvOpen);
+  const answered = s => CP_SV_Q.filter(q=>q.t!=='id' && cpSvHas(s, q)).length, totalQ = CP_SV_Q.filter(q=>q.t!=='id').length;
+  return cpHead('Surveys &amp; Value', 'Did Copilot make a difference? The same 24-question survey is answered before, in the middle and at the end of the pilot. Numbers are the <b>average of the answers</b>.') + `
+    <div class="card" style="margin-bottom:16px;"><h3 class="cv-cap">Hours per week on the ${CP_SV_TASKS.length} measured tasks (per person, average)</h3>
+      <div class="fact-cards four compact" style="margin:0;">${cpFact(hb==null ? '-' : (+hb.toFixed(1)) + ' h','Before the pilot','')}${cpFact(hl==null ? '-' : (+hl.toFixed(1)) + ' h','Latest','mid / end survey')}
+        ${cpFact(saved==null ? '-' : (saved>0?'−':saved<0?'+':'') + Math.abs(+saved.toFixed(1)) + ' h','Change per person / week','', saved==null ? '#1F4E6B' : saved>=0 ? '#00845A' : '#C0392B')}
+        ${cpFact(saved==null || !U.length ? '-' : Math.round(saved * U.length) + ' h','Saved per week','all ' + U.length + ' pilot users', '#00845A')}</div></div>
+    <div class="card" style="overflow-x:auto;margin-bottom:16px;"><h3 class="cv-cap">Before / after - by task</h3>
+      <table class="cp-table sv-cmp"><tr><th rowspan="2">Task</th><th colspan="4" class="grp">Hours per week</th><th colspan="4" class="grp">Difficulty (1 easy - 5 hard)</th></tr>
+        <tr><th class="r">Before</th><th class="r">Mid</th><th class="r">End</th><th class="r">Change</th><th class="r">Before</th><th class="r">Mid</th><th class="r">End</th><th class="r">Change</th></tr>
+        ${CP_SV_TASKS.map(([en], i)=>`<tr><td><b>${escapeHtml(en)}</b></td>${trio(7+i*2)}${chg(7+i*2, true)}${trio(8+i*2)}${chg(8+i*2, true)}</tr>`).join('')}
+        <tr><td colspan="9" class="sep">Also measured</td></tr>
+        <tr><td><b>Satisfaction with the AI tools in use</b> <span style="color:var(--muted);">(1-10)</span></td>${trio(5)}${chg(5, false)}<td colspan="4"></td></tr>
+        <tr><td><b>How much Copilot speeds up daily work</b> <span style="color:var(--muted);">(1-5 · expected, then actual)</span></td>${trio(21)}${chg(21, false)}<td colspan="4"></td></tr>
+      </table></div>
+    <h3 class="cv-cap" style="margin:22px 0 10px;">The surveys - click one to see its questions and answers</h3>
+    <div class="sv-cards">${stages.map(s=>`<div class="sv-card ${cpSvOpen===s.id ? 'open' : ''}" onclick="cpSvToggle('${s.id}')">
+        <div class="sv-top"><span class="sv-stage">${escapeHtml(s.stage||'')}</span>${cpPill(s.status)}</div>
+        <div class="sv-name" dir="rtl">${escapeHtml(s.name||'')}</div>
+        <div class="sv-n"><b>${resp(s)}</b> / ${U.length} responses</div>${cpBar(U.length ? resp(s)*100/U.length : 0, '#C0266A')}
+        <div class="sv-meta">${s.sentOn ? 'Sent ' + cpFmt(s.sentOn) : 'Not sent yet'}${s.closedOn ? ' · closed ' + cpFmt(s.closedOn) : ''} · results for ${answered(s)}/${totalQ} questions</div>
+        <div class="sv-foot"><span class="sv-caret">${cpSvOpen===s.id ? '▴ Hide questions' : '▾ Show questions and answers'}</span>
+          <span class="no-shot" onclick="event.stopPropagation()">${s.link ? `<a class="btn secondary cp-mini" href="${escapeHtml(s.link)}" target="_blank" rel="noopener">Forms ↗</a>` : ''}${cpEditBtn('cp_surveys', s.id, 'Status, dates, link, number of responses')}</span></div></div>`).join('')}</div>
+    ${open ? `<div class="card sv-panel" id="svPanel"><div class="sv-panel-h"><div><b dir="rtl">${escapeHtml(open.name||'')}</b><span>${escapeHtml(open.stage||'')} · ${resp(open)} responses</span></div><button class="btn secondary cp-mini no-shot" onclick="cpSvToggle('${open.id}')">▴ Close</button></div>
+      ${CP_SV_Q.map(q=>`<div class="sv-q" dir="rtl"><div class="sv-qt"><span class="sv-qn">${q.n}.</span><div><b>${escapeHtml(q.q)}</b>${q.hint ? `<span class="sv-hint">${escapeHtml(q.hint)}</span>` : ''}</div>
+          ${q.t==='id' ? '' : `<button class="btn secondary cp-mini no-shot" title="Type this question's result" onclick="cpSvEdit('${open.id}',${q.n})">✏️</button>`}</div>
+        <div class="sv-a">${cpSvAnswer(open, q, resp(open))}</div></div>`).join('')}</div>` : ''}
+    ${CP_METRICS.length ? `<div class="card" style="overflow-x:auto;margin-top:16px;"><div style="display:flex;justify-content:space-between;align-items:center;"><h3 class="cv-cap" style="margin:0;">Other measures (not from the survey)</h3><span class="no-shot">${cpAddBtn('cp_metrics','Measure')}</span></div>
+      <table class="cp-table" style="margin-top:10px;"><tr><th>Measure</th><th class="r">Before</th><th class="r">Mid</th><th class="r">End</th><th class="r">Target</th><th class="no-shot"></th></tr>
+      ${CP_METRICS.map(m=>`<tr><td><b>${escapeHtml(m.metric||'')}</b><span class="sub">${escapeHtml(m.source||'')}${m.unit ? ' · ' + escapeHtml(m.unit) : ''}</span></td><td class="r">${f(m.baseline)}</td><td class="r">${f(m.mid)}</td><td class="r">${f(m.post)}</td><td class="r">${f(m.target)}</td><td class="no-shot">${cpEditBtn('cp_metrics', m.id)}</td></tr>`).join('')}</table></div>`
+      : `<p class="note no-shot" style="margin-top:14px;">Need a number that is not in the survey (e.g. active users from Microsoft analytics)? <a href="javascript:void(0)" onclick="cpEdit('cp_metrics')">Add another measure</a>.</p>`}`;
+}
 window.cpCopyPrompt = function(id){ const p = CP_PROMPTS.find(x=>x.id===id); if(!p) return; const t = p.prompt || '';
   if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>showInfoToast('📋 Prompt copied')).catch(()=>prompt('Copy:', t)); else prompt('Copy:', t); };
 
@@ -7610,7 +7735,7 @@ window.askConfirm = function(o){
 /* ---- 🕘 Change History (Manager+) ---- */
 const H_COLL = { tasks:'Task', epics:'Epic', milestones:'Milestone', risks:'Risk', mapetasks:'MAPE task', users:'Access', settings:'Client page',
   cp_phases:'Copilot phase', cp_tasks:'Copilot activity', cp_risks:'Copilot risk', cp_raci:'Copilot RACI', cp_channels:'Copilot channel',
-  cp_users:'Pilot user', cp_prompts:'Copilot prompt', cp_meetings:'Copilot meeting', cp_support:'Copilot support log', cp_metrics:'Copilot metric' };
+  cp_users:'Pilot user', cp_prompts:'Copilot prompt', cp_meetings:'Copilot meeting', cp_support:'Copilot support log', cp_metrics:'Copilot measure', cp_surveys:'Copilot survey' };
 const H_FIELD = { title:'Title', session:'Purpose', description:'Description', workstream:'Epic', department:'Department', stage:'Stage',
   assignee:'Assignee', status:'Status', risk:'Risk', priority:'Priority', start:'Start Date', due:'Due Date', tags:'Tags', link:'Link',
   notes:'Notes', completedAt:'Completed on', name:'Name', initiative:'Milestone', pillar:'Pillar', lead:'Assignee', past:'Last Accomplishment',
