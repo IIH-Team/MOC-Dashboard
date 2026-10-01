@@ -1400,6 +1400,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .cp-ph .cp-table{background:var(--surface);}
 .cp-risk-chip{display:inline-block;background:#FBEAE8;color:#C0392B;border:1px solid #F1C4BE;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;text-decoration:none;}
 .cp-risk-chip:hover{background:#C0392B;color:#fff;}
+.cp-risk-chip.closed{background:#EEF0F4;color:#667085;border-color:#D8DEE8;}
+.cp-risk-chip.closed:hover{background:#667085;color:#fff;}
 /* overview timeline */
 .cp-tl{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:6px 2px 4px;}
 .cp-tl-node{flex:1 1 0;min-width:118px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;}
@@ -2706,8 +2708,11 @@ function cpPhaseStats(n){ const ts = CP_TASKS.filter(t=>+t.phase===+n); const do
 function cpPhaseStatus(s){ return s.total && s.done===s.total ? 'Completed' : (s.done || s.ip) ? 'In Progress' : s.bl ? 'Blocked' : 'Not Started'; }
 function cpRiskOpen(r){ return !/closed|mitigated/i.test(r.status || ''); }
 function cpPhaseSlip(n){ const p = CP_PHASES.find(x=>+x.n===+n);
-  const rs = CP_RISKS.filter(r=>+r.phase===+n && r.delayTo && cpRiskOpen(r) && (!p || !p.due || r.delayTo > p.due)).sort((a,b)=>String(b.delayTo).localeCompare(String(a.delayTo)));
-  return rs.length ? { date: rs[0].delayTo, risks: rs.map(r=>r.id) } : null; }
+  const rs = CP_RISKS.filter(r=>+r.phase===+n && r.delayTo && (!p || !p.due || r.delayTo > p.due)).sort((a,b)=>String(b.delayTo).localeCompare(String(a.delayTo)));
+  return rs.length ? { date: rs[0].delayTo, risks: rs.map(r=>r.id), open: rs.some(cpRiskOpen) } : null; }
+/* chip that links a phase to its risk: red while the risk is open, grey once it is closed (the delay stays) */
+function cpRiskChip(id, long){ const r = CP_RISKS.find(x=>x.id===id), open = r && cpRiskOpen(r);
+  return `<a class="cp-risk-chip ${open ? '' : 'closed'}" onclick="cpOpenRisk('${escapeHtml(id)}')" title="Open ${escapeHtml(id)} in the Risk Register${open ? '' : ' - this risk is closed, the delay it caused stays'}">${open ? '⚠' : '✓'} ${long ? 'Linked to ' : ''}${escapeHtml(id)}${open ? '' : ' (closed)'}</a>`; }
 function cpOverall(){ const t = CP_TASKS.length, d = CP_TASKS.filter(x=>x.status==='Completed').length; return { t, d, pct: t ? Math.round(d*100/t) : 0 }; }
 function cpUserReady(u){ return u.license==='Assigned' && /^yes$/i.test(u.access_tested || '') && u.training==='Completed' && u.pre_survey==='Completed'; }
 function cpTaskSort(a,b){ return (+a.phase||0) - (+b.phase||0) || (+a.order||0) - (+b.order||0); }
@@ -2794,13 +2799,13 @@ window.cpOpenRisk = function(id){ cpGo('risks', { focus:id }); };
 function cpPhaseNode(p){
   const s = cpPhaseStats(p.n), st = cpPhaseStatus(s), slip = cpPhaseSlip(p.n);
   const cc = st==='Completed' ? '#1E7F4C' : st==='In Progress' ? '#B4790A' : st==='Blocked' ? '#C0392B' : '#8891A0';
-  const dates = slip ? `<s>${cpFmt(p.due)}</s> → <b>${cpFmt(slip.date)}</b>` : (p.due ? 'By ' + cpFmt(p.due) : '');
+  const dates = slip ? `<s>${cpFmt(p.due)}</s> → <b ${slip.open ? '' : 'style="color:var(--navy);"'}>${cpFmt(slip.date)}</b>` : (p.due ? 'By ' + cpFmt(p.due) : '');
   return `<div class="cp-tl-node">
     <div class="cp-tl-c ${st==='Not Started' ? 'ns' : ''}" style="--cc:${cc};">${st==='Completed' ? '✓' : p.n}</div>
     <div class="cp-tl-name">${escapeHtml(p.name)}</div>
     <span class="cp-pill" style="color:#fff;background:${cc};">${st==='Completed' ? 'Complete' : s.pct + '% · ' + st.toLowerCase()}</span>
     <div class="cp-tl-dates">${dates}</div>
-    ${slip ? slip.risks.map(r=>`<a class="cp-risk-chip" onclick="cpOpenRisk('${escapeHtml(r)}')" title="Open ${escapeHtml(r)} in the Risk Register">⚠ Linked to ${escapeHtml(r)}</a>`).join(' ') : ''}
+    ${slip ? slip.risks.map(r=>cpRiskChip(r, true)).join(' ') : ''}
   </div>`;
 }
 function cpFunnel(){
@@ -2868,7 +2873,7 @@ const CP_RENDER = {
       return `<div class="cp-ph">
         <div class="cp-ph-h"><span class="cp-ph-n">${p.n}</span><b style="font-size:15px;">${escapeHtml(p.name)}</b> ${cpPill(cpPhaseStatus(s))}
           <span style="color:var(--muted);font-size:12.5px;">${s.done}/${s.total} done · ${s.pct}%</span>
-          <span style="font-size:12.5px;">${slip ? `<s style="color:var(--muted);">${cpFmt(p.due)}</s> → <b style="color:var(--red);">${cpFmt(slip.date)}</b> ${slip.risks.map(r=>`<a class="cp-risk-chip" onclick="cpOpenRisk('${escapeHtml(r)}')">⚠ ${escapeHtml(r)}</a>`).join(' ')}` : p.due ? '🎯 ' + cpFmt(p.due) : ''}</span>
+          <span style="font-size:12.5px;">${slip ? `<s style="color:var(--muted);">${cpFmt(p.due)}</s> → <b style="color:${slip.open ? 'var(--red)' : 'var(--navy)'};">${cpFmt(slip.date)}</b> ${slip.risks.map(r=>cpRiskChip(r)).join(' ')}` : p.due ? '🎯 ' + cpFmt(p.due) : ''}</span>
           <span style="flex:1"></span>
           <button class="btn secondary cp-mini no-shot" onclick="window._cpDefPhase=${p.n};cpEdit('cp_tasks')" title="Add an activity to this phase">＋</button>${cpEditBtn('cp_phases', p.id, 'Edit phase name / due date')}</div>
         <div style="overflow-x:auto;border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;">
@@ -2927,7 +2932,7 @@ const CP_RENDER = {
 
   risks(){
     const lv = { Low:1, Medium:2, High:3 };
-    return cpHead('Risk Register', 'Open risks and approvals. A risk that <b>delays a phase</b> moves that phase\'s date on the Overview timeline, with a link back here.', cpAddBtn('cp_risks','Risk')) + `
+    return cpHead('Risk Register', 'Open risks and approvals. A risk that <b>delays a phase</b> moves that phase\'s date on the Overview timeline, with a link back here - and it stays linked after the risk is closed (clear its date to remove the delay).', cpAddBtn('cp_risks','Risk')) + `
       <div class="card" style="overflow-x:auto;"><table class="cp-table"><tr><th>ID</th><th>Risk</th><th>Likelihood · Impact</th><th>Owner</th><th>Delays</th><th>Status</th><th class="no-shot"></th></tr>
         ${[...CP_RISKS].sort((a,b)=>String(a.id).localeCompare(String(b.id))).map(r=>{ const sc = (lv[r.likelihood]||2) * (lv[r.impact]||2);
           return `<tr id="cp-row-${escapeHtml(r.id)}"><td><b>${escapeHtml(r.id)}</b><span class="sub">${escapeHtml(r.category||'')}</span></td>
