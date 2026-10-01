@@ -1477,6 +1477,15 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .cv-pilot div{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;}
 .cv-pilot b{display:block;font-size:24px;color:var(--navy2);}
 .cv-pilot span{font-size:11.5px;color:var(--muted);}
+/* Report Email - executive summary */
+.re-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.re-chk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer;}
+.re-subject{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:13px;max-width:820px;}
+.re-subject span{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+.re-subject b{flex:1;font-weight:600;}
+.re-paper{background:#fff;color:#1F2937;border:1px solid var(--border);border-radius:12px;padding:30px 34px;max-width:820px;box-shadow:var(--shadow);}
+.re-tools{display:inline-flex;align-items:center;gap:6px;vertical-align:middle;margin-inline-start:6px;letter-spacing:0;font-weight:500;}
+.re-edited{font-size:10px;font-weight:800;background:#FBF0DE;color:#9A5B00;border-radius:99px;padding:1px 8px;text-transform:none;}
 .cp-wrap{display:block !important;}
 .cp-nav{display:none !important;}
 .tabbtn .tb-caret{margin-left:auto;font-size:10px;opacity:.75;padding:4px 5px;border-radius:5px;transition:transform .15s;flex-shrink:0;}
@@ -1912,7 +1921,7 @@ details.cv-acc[open] > summary::before{content:'▾';}
     <!-- REPORT EMAIL -->
     <div class="view" id="view-email">
       <h2 class="view-title">Report Email</h2>
-      <p class="view-sub">Encrypted report (AES-GCM) - unlocked with a password, exportable as a Word file.</p>
+      <p class="view-sub">A short executive summary for the weekly email - built from the same numbers as the Client View. Copy it into Outlook or export it as Word.</p>
       <div id="emailLockedArea"></div>
       <div id="emailUnlockedArea" style="display:none;"></div>
     </div>
@@ -1956,8 +1965,9 @@ details.cv-acc[open] > summary::before{content:'▾';}
         <select id="f_workstream"></select>
       </div>
       <div class="form-field">
-        <label>Stage Name * <span class="hint">(fills itself from the Epic)</span></label>
-        <select id="f_stage"></select>
+        <label>Milestone <span class="hint">(comes from the Epic)</span></label>
+        <input type="text" id="f_milestone" readonly tabindex="-1" placeholder="Choose the Epic" style="background:var(--surface2);color:var(--muted);">
+        <select id="f_stage" style="display:none;"></select>
       </div>
       <div class="form-field">
         <label>Task Status *</label>
@@ -2036,8 +2046,8 @@ details.cv-acc[open] > summary::before{content:'▾';}
       <div class="form-field" style="display:none;">
         <select id="i_workType"></select>
       </div>
-      <div class="form-field">
-        <label>Stage Name *</label>
+      <div class="form-field" style="display:none;">
+        <label>Stage Name</label>
         <select id="i_stage"></select>
       </div>
       <div class="form-field">
@@ -2655,6 +2665,12 @@ function taskPctFromStatus(status){ return status===TASK_DONE_STATUS ? 100 : 0; 
 function normKey(v){ return String(v||'').trim().replace(/\s+/g,' ').toLowerCase(); }
 function tasksOfEpic(epic){ const k=normKey(epic.name); return TASKS_DATA.filter(t=>normKey(t.workstream)===k); }
 function epicsOfMilestone(ms){ const k=normKey(ms.name||ms); return MOC_DATA.filter(e=>normKey(e.initiative)===k); }
+/* "Stage" is gone from the screens (Oct 2026): Task -> Epic -> Milestone. The old `stage` field stays in the data, hidden and unused. */
+function epicOfTask(t){ const k = normKey(t.workstream); return k ? (MOC_DATA.find(e=>normKey(e.name)===k) || null) : null; }
+function taskMilestone(t){ const e = epicOfTask(t); return e ? (e.initiative || '') : ''; }
+function mapePhaseOf(ms){ const m = String(ms||'').match(/(Monitor|Analyze|Plan|Execute)\s*$/i); return m ? m[1][0].toUpperCase() + m[1].slice(1).toLowerCase() : ''; }   // "AI Strategy - Plan" -> "Plan"
+function epicPhase(e){ return mapePhaseOf(e && e.initiative); }
+function epicFilterOptions(){ const ms = taskFilterState.milestone; return MOC_DATA.filter(e=>!ms.size || ms.has(e.initiative)).map(e=>e.name).sort((a,b)=>a.localeCompare(b)); }
 function sameDay(a,b){ const x=new Date(a), y=new Date(b); return x.getFullYear()===y.getFullYear() && x.getMonth()===y.getMonth() && x.getDate()===y.getDate(); }
 /* ======================= ✨ COPILOT ROLLOUT (workspace) =======================
    The standalone "Copilot Rollout Tracker" (07_Copilot, Supabase) rebuilt inside the dashboard:
@@ -3087,7 +3103,10 @@ function cpValuePage(){
   const resp = s => s.responses != null && s.responses !== '' ? +s.responses : U.filter(u=>u[doneKey[s.id]]==='Completed').length;
   const hours = id => { const v = CP_SV_TASKS.map((t,i)=>cpSvNum(id, 7+i*2)); return v.every(x=>x==null) ? null : v.reduce((a,b)=>a + (b||0), 0); };
   const latest = n => cpSvNum('post', n) != null ? cpSvNum('post', n) : cpSvNum('mid', n);
-  const hb = hours('pre'), hl = hours('post') != null ? hours('post') : hours('mid'), saved = hb != null && hl != null ? hb - hl : null;
+  // compare like with like: only tasks that have BOTH a "before" and a later average count towards the saving
+  const both = CP_SV_TASKS.map((t,i)=>7+i*2).filter(n=>cpSvNum('pre', n) != null && latest(n) != null);
+  const hb = both.length ? both.reduce((a,n)=>a + cpSvNum('pre', n), 0) : hours('pre'), hl = both.length ? both.reduce((a,n)=>a + latest(n), 0) : null, saved = hl != null ? hb - hl : null;
+  const partial = both.length && both.length < CP_SV_TASKS.length ? ` <span style="color:var(--amber);text-transform:none;letter-spacing:0;">· based on ${both.length} of ${CP_SV_TASKS.length} tasks so far</span>` : '';
   const f = v => v==null ? '<span style="color:var(--muted);">-</span>' : (+v.toFixed(1));
   const chg = (n, lowerBetter) => { const a = cpSvNum('pre', n), b = latest(n); if(a==null || b==null || a===0) return '<td class="r" style="color:var(--muted);">-</td>';
     const x = (b-a)*100/Math.abs(a), good = lowerBetter ? x < 0 : x > 0; return `<td class="r" style="font-weight:800;color:${x===0 ? 'var(--muted)' : good ? 'var(--green)' : 'var(--red)'};">${x>0?'+':''}${Math.round(x)}%</td>`; };
@@ -3095,7 +3114,7 @@ function cpValuePage(){
   const open = cpSvOpen && cpSv(cpSvOpen);
   const answered = s => CP_SV_Q.filter(q=>q.t!=='id' && cpSvHas(s, q)).length, totalQ = CP_SV_Q.filter(q=>q.t!=='id').length;
   return cpHead('Surveys &amp; Value', 'Did Copilot make a difference? The same 24-question survey is answered before, in the middle and at the end of the pilot. Numbers are the <b>average of the answers</b>.') + `
-    <div class="card" style="margin-bottom:16px;"><h3 class="cv-cap">Hours per week on the ${CP_SV_TASKS.length} measured tasks (per person, average)</h3>
+    <div class="card" style="margin-bottom:16px;"><h3 class="cv-cap">Hours per week on the ${CP_SV_TASKS.length} measured tasks (per person, average)${partial}</h3>
       <div class="fact-cards four compact" style="margin:0;">${cpFact(hb==null ? '-' : (+hb.toFixed(1)) + ' h','Before the pilot','')}${cpFact(hl==null ? '-' : (+hl.toFixed(1)) + ' h','Latest','mid / end survey')}
         ${cpFact(saved==null ? '-' : (saved>0?'−':saved<0?'+':'') + Math.abs(+saved.toFixed(1)) + ' h','Change per person / week','', saved==null ? '#1F4E6B' : saved>=0 ? '#00845A' : '#C0392B')}
         ${cpFact(saved==null || !U.length ? '-' : Math.round(saved * U.length) + ' h','Saved per week','all ' + U.length + ' pilot users', '#00845A')}</div></div>
@@ -3196,7 +3215,7 @@ function cpPayload(){
 
 function recomputeRollups(){
   if(window.CURRENT_USER && window.CURRENT_USER.role === 'client') return;   // client: numbers come pre-computed from clientview
-  TASKS_DATA.forEach(t=>{ t.pct = taskPctFromStatus(t.status); });
+  TASKS_DATA.forEach(t=>{ t.pct = taskPctFromStatus(t.status); t.milestone = taskMilestone(t); });   // milestone: shown / sorted / filtered, never stored
   const today = daysFromToday(0);
   MOC_DATA.forEach(ep=>{
     const ts = tasksOfEpic(ep);
@@ -3331,7 +3350,7 @@ function computeTeamProgress(){
   const rows = [];
   TEAM_PROGRESS_STAGES.forEach(stage=>{
     TEAM_LEADS.filter(l=>l!=='BA').forEach(assignee=>{
-      const ts = TASKS_DATA.filter(t=>t.stage===stage && t.assignee===assignee);
+      const ts = TASKS_DATA.filter(t=>mapePhaseOf(taskMilestone(t))===stage && t.assignee===assignee);
       let wsCount = ts.length;
       if(assignee===TEAM_PROGRESS_PM && wsCount>0) wsCount += 1;
       const avgPct = ts.length ? Math.round(ts.reduce((a,t)=>a+t.pct,0)/ts.length) : 0;
@@ -3428,12 +3447,12 @@ function mapeTaskStatus(task, week){
 function mapePhaseTasks(phaseKey){ return MAPE_TASKS.filter(t=>t.phase===phaseKey); }
 function mapePhaseActiveCount(phaseKey, week){
   // "Active" = epics in this MAPE phase that have real progress (pct > 0)
-  const wsInPhase = MOC_DATA.filter(ws=>ws.stage===phaseKey);
+  const wsInPhase = MOC_DATA.filter(ws=>epicPhase(ws)===phaseKey);
   return wsInPhase.filter(ws=>ws.pct>0).length;
 }
 // Total tasks in phase from MOC_DATAn epics (used in strip label)
 function mapePhaseTaskCount(phaseKey){
-  return MOC_DATA.filter(ws=>ws.stage===phaseKey).length;
+  return MOC_DATA.filter(ws=>epicPhase(ws)===phaseKey).length;
 }
 
 /* =====================================================================
@@ -3657,7 +3676,7 @@ _wsDiv.innerHTML = `
     <p class="view-sub">Full list of all epics - filter, sort, and click any row for details.</p>
     <div class="filters" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
       <select id="wsInitFilter"></select>
-      <select id="wsStageFilter"></select>
+      <select id="wsStageFilter" style="display:none;"></select>
       <select id="wsAssigneeFilter"></select>
       <select id="wsRiskFilter"></select>
       <select id="wsPctFilter"></select>
@@ -4133,7 +4152,7 @@ function renderStageDonut(){
   const stageColors = {};
   FRAMEWORK_STAGES.forEach((s,i)=>{ stageColors[s] = STAGE_COLOR_CYCLE[i % STAGE_COLOR_CYCLE.length]; });
   const segments = FRAMEWORK_STAGES.map(s=>({
-    label:s, value: MOC_DATA.filter(i=>i.stage===s).length, color: stageColors[s]
+    label:s, value: MOC_DATA.filter(i=>epicPhase(i)===s).length, color: stageColors[s]
   }));
   $('#stageDonutChart').innerHTML = `<div class="donut-row">
     ${donutChartSVG(segments)}
@@ -4264,7 +4283,7 @@ function buildMapePhaseDetailHTML(phaseKey){
   if(!phase) return '<div class="popup-header"><h3>Phase not found</h3><button class="modal-close-x" onclick="closeDetailModal()">✕</button></div>';
 
   // Epics from real data
-  const wsInPhase = MOC_DATA.filter(function(ws){ return ws.stage===phaseKey; });
+  const wsInPhase = MOC_DATA.filter(function(ws){ return epicPhase(ws)===phaseKey; });
   var wsRowsHTML = '';
   if(!wsInPhase.length){
     wsRowsHTML = '<p style="color:var(--muted);font-size:13px;">No epics assigned yet.</p>';
@@ -4477,7 +4496,7 @@ function renderWorkstreamsTable(){
   const cols = [
     {key:'initiative', label:'Milestone'},
     {key:'name', label:'Epic'}, {key:'pillar', label:'Pillar'},
-    {key:'stage', label:'Stage Name'}, {key:'lead', label:'Assignee'}, {key:'risk', label:'Risk'},
+    {key:'lead', label:'Assignee'}, {key:'risk', label:'Risk'},
     {key:'pct', label:'Epic Progress'}, {key:null, label:'Trend'}, {key:null, label:'Last Update'}, {key:null, label:'Next Step'}
   ];
   $('#wsTable').innerHTML = `
@@ -4491,7 +4510,6 @@ function renderWorkstreamsTable(){
         <td><b>${i.name}</b>${i.notes?`<div style="font-size:11px;color:var(--muted);">${i.notes}</div>`:''}</td>
         <td style="font-size:12px;" title="${pillarLabel}">${i.pillar||'-'}</td>
         
-        <td><span class="badge stage">${i.stage}</span></td>
         <td>${i.lead}</td>
         <td>${badge(i.risk)}</td>
         <td>${progressBar(i.pct)} <span style="font-size:11px;color:var(--muted);">${i.pct}%</span><div style="font-size:10px;color:var(--muted);white-space:nowrap;" title="Average of linked tasks (Completed = 100%) · 0% if no tasks">${i.taskCount?`${i.doneCount}/${i.taskCount} tasks done`:'no tasks yet'}</div></td>
@@ -4700,7 +4718,7 @@ function renderTimelineMape(){
   $('#timelineMapeBody').innerHTML = `
     <h3 style="margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600;letter-spacing:.04em;">MAPE DELIVERY PHASES</h3>
     ${PHASES.map(phase=>{
-      const items = MOC_DATA.filter(i=>i.stage===phase);
+      const items = MOC_DATA.filter(i=>epicPhase(i)===phase);
       const active = items.filter(i=>TASKS_DATA.some(t=>t.workstream===i.name));
       const pct = items.length ? avg(items.map(i=>i.pct)) : 0;
       const activePct = active.length ? avg(active.map(i=>i.pct)) : 0;
@@ -4748,7 +4766,7 @@ function renderTimeline(){
           const idx = MOC_DATA.indexOf(i);
           return `
           <div class="tl-row" data-idx="${idx}">
-            <div class="tl-row-label">${i.name}<span class="tl-stage">${i.stage}</span></div>
+            <div class="tl-row-label">${i.name}</div>
             <div class="tl-bar-track">
               <div class="tl-bar-fill" style="width:${Math.max(i.pct,8)}%;background:${color};">
                 <span>${i.pct}%</span>
@@ -4807,12 +4825,12 @@ function renderTimelinePillars(){
           ${wsInPillar.map(i=>{
             const idx = MOC_DATA.indexOf(i);
             const STAGE_COL={Monitor:'var(--navy2)',Analyze:'var(--green)',Plan:'var(--amber)',Execute:'var(--pink)'};
-            const sc = STAGE_COL[i.stage]||'var(--muted)';
+            const sc = STAGE_COL[epicPhase(i)]||'var(--muted)';
             return `
             <div class="tl-row" data-idx="${idx}" style="opacity:.85;">
               <div class="tl-row-label" style="width:200px;font-size:12px;">
                 ${i.name}
-                <span class="tl-stage" style="color:${sc};">${i.stage}</span>
+                <span class="tl-stage" style="color:${sc};">${epicPhase(i) || escapeHtml(i.initiative||'')}</span>
               </div>
               <div class="tl-bar-track">
                 <div class="tl-bar-fill" style="width:${Math.max(i.pct,i.pct>0?2:0)}%;background:${color};opacity:.7;">
@@ -4869,200 +4887,243 @@ function renderRisk(){
 /* =====================================================================
    RENDER: Report Email (AES-GCM lock)
    ===================================================================== */
-function buildReportText(){
-  const todayStr = fmtDate(new Date());
-  const currentWeek = getCurrentMapeWeek();
-  const totalInit = MOC_DATA.length;
-  const activeScopePct = activeScopeProgress();
-  const engagementPct = engagementCompletionProgress();
-  const onTrackCount = MOC_DATA.filter(i=>i.risk==='On Track').length;
-  const RISK_STRIP_COLORS = {"On Track":"var(--green)","At Risk":"var(--amber)","Delayed":"var(--red)","Blocked":"var(--pink)"};
+/* =====================================================================
+   REPORT EMAIL - executive summary (replaces the long 51-epic report).
+   Same source as the Client View (buildClientPayload): the numbers always match, milestones hidden
+   from the client stay out, no people and no internal notes.
+   Everything is generated; any section can be reworded with ✏️ (kept for the current week only,
+   in settings/clientPage → reportEmail). English + Arabic. Copy for Outlook, or export as Word.
+   ===================================================================== */
+const RE_KEY = 'reportEmail';
+const RE_SECTIONS = { intro:['Greeting','التحية'], week:['This week','هذا الأسبوع'], milestones:['Progress by milestone','التقدم حسب الـMilestone'],
+  attention:['Needs attention','يحتاج إلى متابعة'], next:['Coming up','القادم'], closing:['Closing','الخاتمة'] };
+function reWeekId(){ return (window.LAST_SNAPSHOT && window.LAST_SNAPSHOT.weekId) || 'first'; }   // edits belong to the week that follows this close
+function reOverrides(){ const o = cps(RE_KEY); return o && o.forWeek === reWeekId() ? o : { forWeek: reWeekId() }; }   // forWeek = which week these edits belong to
+function rePref(k, d){ try{ return localStorage.getItem('re_' + k) || d; }catch(e){ return d; } }
+function reSetPref(k, v){ try{ localStorage.setItem('re_' + k, v); }catch(e){} reShow(); }
 
-  // ---- LEAD-IN + EXECUTIVE SUMMARY (narrative) ----
-  const atRiskCount = MOC_DATA.filter(i=>i.risk==='At Risk').length;
-  const delayedCount = MOC_DATA.filter(i=>i.risk==='Delayed').length;
-  const blockedCount = MOC_DATA.filter(i=>i.risk==='Blocked').length;
-  const riskBits = [];
-  if(atRiskCount) riskBits.push(`${atRiskCount} At Risk`);
-  if(delayedCount) riskBits.push(`${delayedCount} Delayed`);
-  if(blockedCount) riskBits.push(`${blockedCount} Blocked`);
-  const riskSummary = riskBits.length ? riskBits.join(', ') : 'no epics currently flagged';
-  const topMover = MOC_DATA.filter(i=>weeklyDelta(i)!==0).sort((a,b)=>Math.abs(weeklyDelta(b))-Math.abs(weeklyDelta(a)))[0];
-  const topMoverLine = topMover
-    ? `The biggest mover this week was <b>${topMover.name}</b>, which ${weeklyDelta(topMover)>0?'advanced':'dropped'} from ${getPctDaysAgo(topMover,7)}% to <b>${topMover.pct}%</b> (${weeklyDelta(topMover)>0?'+':''}${weeklyDelta(topMover)}%).`
-    : 'No epic moved this week.';
+function reModel(){
+  const P = buildClientPayload(), ms = P.milestones || [], eps = P.epics || [], base = P.baseline, T = P.tasks || {}, CPL = P.copilot || null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const D = x => x ? new Date(x) : null;
+  const fe = x => new Date(x).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  const fa = x => new Date(x).toLocaleDateString('ar-EG-u-nu-latn', { day:'numeric', month:'long', year:'numeric' });
+  const b = s => `<b>${escapeHtml(s)}</b>`;
+  const avg = a => a.length ? a.reduce((x,y)=>x+y,0) / a.length : 0;
+  const prevMs = m => { const x = base && base.milestones ? (base.milestones[m.id] || base.milestones[m.name]) : null; return x && typeof x.pct==='number' ? x.pct : null; };
+  const prevEp = e => base && base.epics && typeof base.epics[e.id]==='number' ? base.epics[e.id] : null;
+  const overall = Math.round(avg(ms.map(m=>m.pct||0)));
+  const prevOverall = base && ms.length && ms.every(m=>prevMs(m) != null) ? Math.round(avg(ms.map(prevMs))) : null;
+  const doneMs = ms.filter(m=>m.pct >= 100).length;
+  const tasksWeek = T.completedSinceClose == null ? null : T.completedSinceClose;
+  const isCop = m => CPL && CPL.fromWorkspace && /copilot|copliot/i.test(m.name);
+  const overdue = m => m.pct < 100 && m.targetDate && D(m.targetDate) < today;
+  const M = { nums:[], subject:{}, date:{ en: fe(today), ar: fa(today) } };
+  const add = (sec, en, ar) => { (M[sec] = M[sec] || { en:[], ar:[] }); M[sec].en.push(en); M[sec].ar.push(ar); };
 
-  const leadIn = `
-    <p class="lead-line">Dear Team,</p>
-    <p class="lead-line">Please find the updated Executive Progress Report for <b>${todayStr}</b>.</p>
-    <h2 class="report-h2">EXECUTIVE SUMMARY</h2>
-    <ul class="report-ul">
-      <li>Active scope progress is <b style="color:var(--pink);">${activeScopePct}%</b> across the <b>${MOC_DATA.filter(i=>TASKS_DATA.some(t=>t.workstream===i.name)).length}</b> epics currently underway, with <b style="color:var(--green);">${onTrackCount} of ${totalInit}</b> On Track. Engagement completion (all AI Strategy Assessment epics, including scope not yet started) stands at <b>${engagementPct}%</b>.</li>
-      <li>${topMoverLine}</li>
-      <li>Risk profile: <b>${riskSummary}</b> (see Reporting Epic table below for details).</li>
-      <li>MAPE delivery is currently in <b>Week ${currentWeek} of ${MAPE_TOTAL_WEEKS}</b> (see MAPE section below).</li>
-    </ul>
-  `;
+  // ---- the big numbers ----
+  const dOv = prevOverall == null ? null : overall - prevOverall;
+  M.nums = [
+    { n: overall + '%', color:'#00845A', en:['Overall progress', dOv == null ? 'across ' + ms.length + ' milestones' : (dOv > 0 ? '+' + dOv + '% since last week' : dOv < 0 ? dOv + '% since last week' : 'no change since last week')],
+      ar:['نسبة الإنجاز الكلية', dOv == null ? 'على مستوى ' + ms.length + ' Milestones' : (dOv > 0 ? '+' + dOv + '% عن الأسبوع الماضي' : dOv < 0 ? dOv + '% عن الأسبوع الماضي' : 'دون تغيير عن الأسبوع الماضي')] },
+    { n: doneMs + ' / ' + ms.length, color:'#1B2A4A', en:['Milestones completed', (ms.length - doneMs) + ' in progress or upcoming'], ar:['Milestones مكتملة', (ms.length - doneMs) + ' قيد التنفيذ أو قادمة'] },
+    { n: tasksWeek == null ? ((T.byStatus || {})['Completed'] || 0) : tasksWeek, color:'#C0266A',
+      en: tasksWeek == null ? ['Tasks completed', 'of ' + (T.total || 0) + ' in total'] : ['Tasks completed this week', 'since the last weekly update'],
+      ar: tasksWeek == null ? ['مهام مكتملة', 'من أصل ' + (T.total || 0)] : ['مهام أُنجزت هذا الأسبوع', 'منذ التحديث الأسبوعي السابق'] } ];
 
-  // ---- ZONE A: epics table only (banner / KPI cards / risk strips removed -
-  //      this tab is text-only so it pastes cleanly into an email) ----
-  const zoneA = `
-    <h2 class="report-h2">REPORTING EPIC - ALL ${totalInit} EPICS</h2>
-    <table class="report-table">
-      <thead>
-        <tr><th>Milestone</th><th>Epic</th><th>% Complete</th><th>Stage Name</th><th>Risk</th></tr>
-      </thead>
-      <tbody>
-        ${MOC_DATA.map(i=>`<tr><td>${i.initiative||'-'}</td><td><b>${i.name}</b></td><td><b>${i.pct}%</b></td><td>${i.stage}</td><td>${i.risk}</td></tr>`).join('')}
-      </tbody>
-    </table>
-  `;
+  // ---- greeting / closing ----
+  add('intro', 'Dear Team,', 'السادة الكرام،');
+  add('intro', `Please find below the weekly progress summary for the Ministry of Culture AI Strategy engagement, as of ${fe(today)}.`, `يرجى الاطلاع على ملخص التقدم الأسبوعي لمشروع استراتيجية الذكاء الاصطناعي في وزارة الثقافة حتى تاريخ ${fa(today)}.`);
+  add('closing', 'Full details are available on the project dashboard. Please reach out for any questions.', 'التفاصيل الكاملة متاحة على لوحة متابعة المشروع. لا تترددوا بالتواصل معنا لأي استفسار.');
+  add('closing', 'Best regards,', 'مع خالص التحية،');
 
-  // ---- NARRATIVE: per-milestone prose (auto-generated from real weekly deltas) ----
-  const deptsInUse = INITIATIVES.filter(m => MOC_DATA.some(i=>normKey(i.initiative)===normKey(m)));   // grouped by Milestone
-  const narrativeSections = deptsInUse.map(dep=>{
-    const items = MOC_DATA.filter(i=>normKey(i.initiative)===normKey(dep));
-    const lines = items.map(i=>{
-      const d = weeklyDelta(i);
-      const prev = getPctDaysAgo(i,7);
-      const riskColor = i.risk==='On Track'?'var(--green)':i.risk==='At Risk'?'var(--amber)':i.risk==='Delayed'||i.risk==='Blocked'?'var(--red)':'var(--muted)';
-      if(d !== 0){
-        const verb = d>0 ? 'advanced' : 'dropped';
-        const sign = d>0 ? '+' : '';
-        return `<li><b>${i.name}</b> ${verb} from <b>${prev}%</b> to <b style="color:${riskColor};">${i.pct}%</b> (${sign}${d}%), now at <b>${i.stage}</b>. ${i.next ? 'Next: '+i.next+'.' : ''}</li>`;
-      }
-      return `<li><b>${i.name}</b> remains at <b style="color:${riskColor};">${i.pct}%</b> (${i.stage}, ${i.risk}) - unchanged this week.${i.notes ? ' '+i.notes+'.' : ''}</li>`;
-    }).join('');
-    return `<h3 class="report-h3">${dep}</h3><ul class="report-ul">${lines}</ul>`;
-  }).join('');
-  const narrativeZone = `
-    <h2 class="report-h2">REPORTING EPIC - NARRATIVE</h2>
-    ${narrativeSections}
-  `;
+  // ---- this week ----
+  const movers = eps.map(e=>({ e, p: prevEp(e) })).filter(x=>x.p != null && x.e.pct > x.p).sort((a,b2)=>(b2.e.pct - b2.p) - (a.e.pct - a.p));
+  const newlyDone = ms.filter(m=>m.pct >= 100 && prevMs(m) != null && prevMs(m) < 100);
+  newlyDone.forEach(m=> add('week', `${b(m.name)} is now complete.`, `اكتملت مرحلة ${b(m.name)}.`));
+  if(tasksWeek) add('week', `<b>${tasksWeek}</b> task${tasksWeek===1?'':'s'} completed since the last weekly update.`, `تم إنجاز <b>${tasksWeek}</b> مهمة منذ التحديث الأسبوعي السابق.`);
+  movers.slice(0, 3).forEach(x=> add('week', `${b(x.e.name)} moved from ${x.p}% to <b>${x.e.pct}%</b>.`, `${b(x.e.name)}: من ${x.p}% إلى <b>${x.e.pct}%</b>.`));
+  if(movers.length > 3) add('week', `${movers.length - 3} more epic${movers.length - 3===1?'':'s'} progressed.`, `تقدّم ${movers.length - 3} Epics أخرى.`);
+  if(!M.week) base ? add('week', 'No change in progress this week.', 'لا يوجد تغيير في نسب الإنجاز هذا الأسبوع.')
+                   : add('week', 'This is the first weekly summary - week-on-week comparison starts from the next one.', 'هذا أول ملخص أسبوعي، وتبدأ المقارنة الأسبوعية من الملخص القادم.');
 
-  // ---- ZONE B: MAPE phase status as text (banner + cards removed) ----
-  const mapeLines = MAPE_PHASES.filter(p=>!p.notActive).map(phase=>{
-    const activeCount = mapePhaseActiveCount(phase.key, currentWeek);
-    const total = mapePhaseTasks(phase.key).length;
-    const gateNote = phase.gateWeek == null ? '' :
-      currentWeek > phase.gateWeek ? ' - sign-off gate passed' :
-      currentWeek === phase.gateWeek ? ' - sign-off gate due this week' : ` - sign-off gate due Week ${phase.gateWeek}`;
-    return `<li><b>${phase.name}</b> (${phase.subtitle}) - <b>${activeCount} of ${total}</b> tasks active${gateNote}.</li>`;
-  }).join('');
-  const zoneB = `
-    <h2 class="report-h2">MAPE DELIVERY - WEEK ${currentWeek} OF ${MAPE_TOTAL_WEEKS}</h2>
-    <ul class="report-ul">${mapeLines}</ul>
-  `;
+  // ---- one line per milestone ----
+  ms.forEach(m=>{
+    const pv = prevMs(m), dl = pv == null ? 0 : m.pct - pv;
+    const up = dl > 0 ? [` (+${dl}% this week)`, ` (+${dl}% هذا الأسبوع)`] : ['', ''];
+    let en, ar;
+    if(isCop(m)){
+      const ph = (CPL.phases || []), cur = ph.find(p=>p.status !== 'Completed');
+      if(!cur){ en = 'Complete - all phases delivered.'; ar = 'مكتمل - تم تسليم جميع المراحل.'; }
+      else {
+        const when = cur.expected ? [`, now expected ${fe(cur.expected)} (was ${cur.by ? fe(cur.by) : '-'})`, `، والموعد المتوقع الآن ${fa(cur.expected)} (كان ${cur.by ? fa(cur.by) : '-'})`] : cur.by ? [`, due ${fe(cur.by)}`, `، الموعد ${fa(cur.by)}`] : ['', ''];
+        en = `<b>${m.pct}%</b>${up[0]} - phase ${cur.n} of ${ph.length} (${escapeHtml(cur.name)}) in progress${when[0]}.`;
+        ar = `<b>${m.pct}%</b>${up[1]} - المرحلة ${cur.n} من ${ph.length} (${escapeHtml(cur.name)}) قيد التنفيذ${when[1]}.`; }
+    } else if(m.pct >= 100){ en = '<b>100%</b> - complete.'; ar = '<b>100%</b> - مكتمل.'; }
+    else if(overdue(m)){ en = `<b>${m.pct}%</b>${up[0]} - past its target date (${fe(m.targetDate)}).`;
+      ar = `<b>${m.pct}%</b>${up[1]} - تجاوز الموعد المستهدف (${fa(m.targetDate)}).`; }
+    else if(!m.pct && !(m.startedCount > 0)){ const st = m.startDate && D(m.startDate) > today;
+      en = `Not started${st ? ' - starts ' + fe(m.startDate) : ''}${m.targetDate ? ', target ' + fe(m.targetDate) : ''}.`;
+      ar = `لم يبدأ بعد${st ? ' - يبدأ في ' + fa(m.startDate) : ''}${m.targetDate ? '، الموعد المستهدف ' + fa(m.targetDate) : ''}.`; }
+    else { en = `<b>${m.pct}%</b>${up[0]} - in progress${m.targetDate ? ', target ' + fe(m.targetDate) : ''}.`;
+      ar = `<b>${m.pct}%</b>${up[1]} - قيد التنفيذ${m.targetDate ? '، الموعد المستهدف ' + fa(m.targetDate) : ''}.`; }
+    add('milestones', `${b(m.name)}: ${en}`, `${b(m.name)}: ${ar}`);
+  });
 
-  // ---- ZONE C: team completion + weekly highlights as text (cards removed) ----
-  const teamLines = TEAM_LEADS.map(name=>{
-    const tasks = TASKS_DATA.filter(t=>t.assignee===name);
-    if(!tasks.length) return '';
-    const done = tasks.filter(t=>t.status==='Completed').length;
-    const avgPct = avg(tasks.map(t=>t.pct));
-    return `<li><b>${name}</b> - ${done} of ${tasks.length} tasks completed (${avgPct}% average progress).</li>`;
-  }).join('');
+  // ---- needs attention (max 3) ----
+  const att = [];
+  ((CPL && CPL.fromWorkspace && CPL.phases) || []).filter(p=>p.expected && p.expectedOpen !== false && p.status !== 'Completed').forEach(p=> att.push([
+    `<b>Copilot - ${escapeHtml(p.name)}</b> is delayed: now expected ${fe(p.expected)}${p.by ? ' (was ' + fe(p.by) + ')' : ''}.`, `<b>Copilot - ${escapeHtml(p.name)}</b> متأخرة: الموعد المتوقع الآن ${fa(p.expected)}${p.by ? ' (كان ' + fa(p.by) + ')' : ''}.` ]));
+  eps.filter(e=>e.risk && e.risk !== 'On Track' && e.pct < 100).forEach(e=> att.push([ `${b(e.name)} is flagged <b>${escapeHtml(e.risk)}</b> (${e.pct}%).`, `${b(e.name)} مصنّف <b>${escapeHtml(e.risk)}</b> (${e.pct}%).` ]));
+  ms.filter(m=>overdue(m) && !isCop(m)).sort((a,c)=>D(a.targetDate) - D(c.targetDate)).forEach(m=> att.push([
+    `${b(m.name)} is past its target date (${fe(m.targetDate)}) at ${m.pct}%.`, `${b(m.name)} تجاوز الموعد المستهدف (${fa(m.targetDate)}) عند ${m.pct}%.` ]));
+  att.slice(0, 3).forEach(x=> add('attention', x[0], x[1]));
+  if(att.length > 3) add('attention', `${att.length - 3} more item${att.length - 3===1?'':'s'} on the dashboard.`, `${att.length - 3} بنود أخرى على لوحة المتابعة.`);
+  if(!att.length) add('attention', 'Nothing needs attention - everything is on track.', 'لا يوجد ما يستدعي المتابعة - كل شيء يسير وفق الخطة.');
 
-  const movers = MOC_DATA.filter(i=>weeklyDelta(i)!==0).sort((a,b)=>Math.abs(weeklyDelta(b))-Math.abs(weeklyDelta(a))).slice(0,5);
-  const improved  = MOC_DATA.filter(i=>weeklyDelta(i)>0).length;
-  const noChange  = MOC_DATA.filter(i=>weeklyDelta(i)===0).length;
-  const regressed = MOC_DATA.filter(i=>weeklyDelta(i)<0).length;
-  const highlightLines = movers.map(i=>{
-    const d = weeklyDelta(i);
-    const prev = getPctDaysAgo(i,7);
-    const sign = d>0?'+':'';
-    return `<li><b>${i.name}</b> moved from ${prev}% to <b>${i.pct}%</b> (${sign}${d}%).</li>`;
-  }).join('') || '<li>No movement recorded this week.</li>';
+  // ---- coming up (next 14 days, max 3) ----
+  const soon = x => x && D(x) >= today && (D(x) - today) / 864e5 <= 14, nx = [];
+  ms.filter(m=>m.pct < 100 && !isCop(m) && soon(m.targetDate)).forEach(m=> nx.push([ D(m.targetDate), `${b(m.name)} - target date ${fe(m.targetDate)} (${m.pct}% today).`, `${b(m.name)} - الموعد المستهدف ${fa(m.targetDate)} (${m.pct}% اليوم).` ]));
+  ms.filter(m=>!m.pct && m.startDate && soon(m.startDate)).forEach(m=> nx.push([ D(m.startDate), `${b(m.name)} starts on ${fe(m.startDate)}.`, `تبدأ مرحلة ${b(m.name)} في ${fa(m.startDate)}.` ]));
+  ((CPL && CPL.fromWorkspace && CPL.phases) || []).filter(p=>p.status !== 'Completed' && soon(p.expected || p.by)).forEach(p=> nx.push([ D(p.expected || p.by),
+    `<b>Copilot - ${escapeHtml(p.name)}</b> due ${fe(p.expected || p.by)}.`, `<b>Copilot - ${escapeHtml(p.name)}</b> الموعد ${fa(p.expected || p.by)}.` ]));
+  nx.sort((a,c)=>a[0] - c[0]).slice(0, 3).forEach(x=> add('next', x[1], x[2]));
+  if(!nx.length){ const f = ms.filter(m=>m.pct < 100 && m.targetDate && D(m.targetDate) >= today).sort((a,c)=>D(a.targetDate) - D(c.targetDate))[0];
+    f ? add('next', `No target dates in the next two weeks. Next: ${b(f.name)} on ${fe(f.targetDate)}.`, `لا توجد مواعيد مستهدفة خلال الأسبوعين القادمين. التالي: ${b(f.name)} في ${fa(f.targetDate)}.`)
+      : add('next', 'No upcoming target dates.', 'لا توجد مواعيد مستهدفة قادمة.'); }
 
-  const zoneC = `
-    <h2 class="report-h2">TEAM COMPLETION THIS WEEK</h2>
-    <ul class="report-ul">${teamLines}</ul>
-    <h2 class="report-h2">HIGHLIGHTS FROM THIS WEEK</h2>
-    <p class="lead-line"><b>${improved}</b> improved &nbsp;·&nbsp; <b>${noChange}</b> no change &nbsp;·&nbsp; <b>${regressed}</b> regressed.</p>
-    <ul class="report-ul">${highlightLines}</ul>
-  `;
-
-  // ---- FINAL COMMENTS (editable - requires human judgment, not auto-generated) ----
-  const finalComments = `
-    <h2 class="report-h2">Final Comments</h2>
-    <div class="editable-label">Execution Outlook <button class="ai-draft-btn" onclick="aiDraftField(this,'execution','en')">✨ AI Draft</button></div>
-    <div class="editable-field editable-field-en" contenteditable="true" data-placeholder="Type your execution outlook commentary here before sending..."></div>
-    <div class="editable-label">Risk &amp; Accountability <button class="ai-draft-btn" onclick="aiDraftField(this,'risk','en')">✨ AI Draft</button></div>
-    <div class="editable-field editable-field-en" contenteditable="true" data-placeholder="Type risk &amp; accountability commentary here before sending..."></div>
-    <div class="editable-label">Next Week Targets <button class="ai-draft-btn" onclick="aiDraftField(this,'nextweek','en')">✨ AI Draft</button></div>
-    <div class="editable-field editable-field-en" contenteditable="true" data-placeholder="Type next week's targets here before sending..."></div>
-  `;
-
-  // ---- ARABIC MIRROR (matches the reference format: full EN report first,
-  // then a complete RTL Arabic version of the narrative below a divider) ----
-  const todayStrAr = fmtDateAr(new Date());
-  const riskBitsAr = [];
-  if(atRiskCount) riskBitsAr.push(`${atRiskCount} في خطر`);
-  if(delayedCount) riskBitsAr.push(`${delayedCount} متأخر`);
-  if(blockedCount) riskBitsAr.push(`${blockedCount} معطّل`);
-  const riskSummaryAr = riskBitsAr.length ? riskBitsAr.join('، ') : 'لا توجد مبادرات مصنّفة حالياً';
-  const topMoverLineAr = topMover
-    ? `أكبر تحرّك هذا الأسبوع كان في <b>${topMover.name}</b>، حيث ${weeklyDelta(topMover)>0?'تقدّمت':'تراجعت'} من ${getPctDaysAgo(topMover,7)}% إلى <b>${topMover.pct}%</b> (${weeklyDelta(topMover)>0?'+':''}${weeklyDelta(topMover)}%).`
-    : 'لم تتحرك أي مبادرة هذا الأسبوع.';
-
-  const narrativeSectionsAr = deptsInUse.map(dep=>{
-    const items = MOC_DATA.filter(i=>normKey(i.initiative)===normKey(dep));
-    const lines = items.map(i=>{
-      const d = weeklyDelta(i);
-      const prev = getPctDaysAgo(i,7);
-      const riskColor = i.risk==='On Track'?'var(--green)':i.risk==='At Risk'?'var(--amber)':i.risk==='Delayed'||i.risk==='Blocked'?'var(--red)':'var(--muted)';
-      const stageAr = STAGES_AR[i.stage] || i.stage;
-      const riskAr = RISK_AR[i.risk] || i.risk;
-      if(d !== 0){
-        const verb = d>0 ? 'تقدّمت' : 'تراجعت';
-        const sign = d>0 ? '+' : '';
-        return `<li><b>${i.name}</b> ${verb} من <b>${prev}%</b> إلى <b style="color:${riskColor};">${i.pct}%</b> (${sign}${d}%)، وهي الآن في مرحلة <b>${stageAr}</b>.${i.next ? ' الخطوة القادمة: '+i.next+'.' : ''}</li>`;
-      }
-      return `<li><b>${i.name}</b> بقيت عند <b style="color:${riskColor};">${i.pct}%</b> (${stageAr}، ${riskAr}) - دون تغيير هذا الأسبوع.${i.notes ? ' '+i.notes+'.' : ''}</li>`;
-    }).join('');
-    return `<h3 class="report-h3">${dep}</h3><ul class="report-ul">${lines}</ul>`;
-  }).join('');
-
-  const arabicMirror = `
-    <hr class="report-divider">
-    <div dir="rtl">
-      <h2 class="report-h2">التقرير الأسبوعي - <b>${todayStrAr}</b></h2>
-      <p class="lead-line">يرجى الاطلاع على تقرير التقدم التنفيذي المحدّث بتاريخ <b>${todayStrAr}</b>.</p>
-
-      <h3 class="report-h3">الملخص التنفيذي</h3>
-      <ul class="report-ul">
-        <li>تبلغ نسبة إنجاز النطاق النشط <b style="color:var(--pink);">${activeScopePct}%</b> عبر الـEpics الجارية حالياً، مع <b style="color:var(--green);">${onTrackCount} من ${totalInit}</b> على المسار الصحيح. أما نسبة إنجاز الالتزام الكامل (كل مسارات تقييم استراتيجية الذكاء الاصطناعي، بما فيها ما لم يبدأ بعد) فتبلغ <b>${engagementPct}%</b>.</li>
-        <li>${topMoverLineAr}</li>
-        <li>ملف المخاطر: <b>${riskSummaryAr}</b> (التفاصيل ضمن جدول تقرير Reporting Epic أعلاه).</li>
-        <li>يمر تنفيذ إطار MAPE حالياً بـ<b>الأسبوع ${currentWeek} من ${MAPE_TOTAL_WEEKS}</b>.</li>
-      </ul>
-
-      <h3 class="report-h3">تقرير الـEpics حسب الـMilestone</h3>
-      ${narrativeSectionsAr}
-
-      <h2 class="report-h2">الملاحظات الختامية</h2>
-      <div class="editable-label" style="text-align:right;">نظرة على التنفيذ <button class="ai-draft-btn" onclick="aiDraftField(this,'execution','ar')">✨ AI Draft</button></div>
-      <div class="editable-field editable-field-ar" dir="rtl" contenteditable="true" data-placeholder="اكتب هنا ملاحظاتك عن سير التنفيذ قبل الإرسال..."></div>
-      <div class="editable-label" style="text-align:right;">المخاطر والمساءلة <button class="ai-draft-btn" onclick="aiDraftField(this,'risk','ar')">✨ AI Draft</button></div>
-      <div class="editable-field editable-field-ar" dir="rtl" contenteditable="true" data-placeholder="اكتب هنا ملاحظاتك عن المخاطر والمساءلة قبل الإرسال..."></div>
-      <div class="editable-label" style="text-align:right;">أهداف الأسبوع القادم <button class="ai-draft-btn" onclick="aiDraftField(this,'nextweek','ar')">✨ AI Draft</button></div>
-      <div class="editable-field editable-field-ar" dir="rtl" contenteditable="true" data-placeholder="اكتب هنا أهداف الأسبوع القادم قبل الإرسال..."></div>
-
-      <p class="lead-line" style="margin-top:14px;">لا تترددوا بالتواصل معنا في حال وجود أي استفسارات أو الحاجة لمزيد من التفاصيل.</p>
-    </div>
-  `;
-
-  /* Report Email is text-only by design - no screenshot buttons in this tab.
-     All generated narrative, tables and editable fields are unchanged. */
-  return `
-    <div id="repZoneA">${leadIn}${zoneA}</div>
-    <div id="repZoneD">${narrativeZone}</div>
-    <div id="repZoneB">${zoneB}</div>
-    <div id="repZoneC">${zoneC}</div>
-    <div id="repZoneE">${finalComments}</div>
-    <div id="repZoneF">${arabicMirror}</div>
-  `;
+  M.subject = { en: `MoC AI Strategy - Weekly Progress Summary - ${fe(today)} (${overall}% overall)`, ar: `استراتيجية الذكاء الاصطناعي - وزارة الثقافة - ملخص التقدم الأسبوعي - ${fa(today)}` };
+  M.chart = ms.map(m=>({ name:m.name, pct:m.pct||0, late: overdue(m) }));
+  // ---- hand edits for this week win over the generated text ----
+  const O = reOverrides(); M.edited = {};
+  Object.keys(RE_SECTIONS).forEach(s=>{ if(O[s] && Array.isArray(O[s].en)){ M.edited[s] = true; M[s] = { en: O[s].en.map(escapeHtml), ar: (O[s].ar && O[s].ar.length ? O[s].ar : O[s].en).map(escapeHtml) }; } });
+  return M;
 }
+
+/* milestone progress as a picture (drawn on a canvas - no screenshot library), so it survives Outlook and Word */
+function reChartPNG(M){
+  const rows = M.chart, W = 1280, rowH = 54, top = 70, H = top + rows.length * rowH + 24, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'); g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#5F7085'; g.font = 'bold 20px Arial'; g.textBaseline = 'middle'; g.fillText('MILESTONE PROGRESS', 28, 36);
+  const bx = 470, bw = 680;
+  rows.forEach((r, i)=>{ const y = top + i * rowH + rowH / 2, col = r.pct >= 100 ? '#00845A' : '#1B2A4A';   // green = complete, navy = in progress (delays are said in words, not in red)
+    g.fillStyle = '#172033'; g.font = '22px Arial'; let nm = r.name; while(g.measureText(nm).width > 420 && nm.length > 4) nm = nm.slice(0, -2); g.fillText(nm === r.name ? nm : nm + '…', 28, y);
+    const rr = (x, w, fill) => { g.fillStyle = fill; g.beginPath(); const h = 26, yy = y - h/2, rad = 13; g.moveTo(x + rad, yy); g.arcTo(x + w, yy, x + w, yy + h, Math.min(rad, w/2)); g.arcTo(x + w, yy + h, x, yy + h, Math.min(rad, w/2)); g.arcTo(x, yy + h, x, yy, Math.min(rad, w/2)); g.arcTo(x, yy, x + w, yy, Math.min(rad, w/2)); g.closePath(); g.fill(); };
+    rr(bx, bw, '#EEF1F5'); if(r.pct > 0) rr(bx, Math.max(26, bw * Math.min(100, r.pct) / 100), col);
+    g.fillStyle = col; g.font = 'bold 22px Arial'; g.fillText(r.pct + '%', bx + bw + 18, y); });
+  return c.toDataURL('image/png');
+}
+
+/* the email itself: inline styles + a table for the numbers, so Outlook and Word keep the look */
+function reHTML(lang, M, o){
+  o = o || {}; const rtl = lang === 'ar', al = rtl ? 'right' : 'left', S = (s, i) => RE_SECTIONS[s][i];
+  const ed = s => o.edit ? ` <span class="re-tools"><button class="btn secondary cp-mini" onclick="reEdit('${s}')" title="Reword this part">✏️</button>${M.edited[s] ? `<span class="re-edited">edited</span>` : ''}</span>` : '';
+  const head = s => `<p style="font-size:10pt;font-weight:bold;letter-spacing:1px;color:#C0266A;margin:18px 0 4px;text-align:${al};">${rtl ? S(s,1) : S(s,0).toUpperCase()}${ed(s)}</p>`;
+  const list = s => `<ul style="margin:0 0 6px;padding-${rtl ? 'right' : 'left'}:22px;padding-${rtl ? 'left' : 'right'}:0;">${M[s][lang].map(x=>`<li style="margin-bottom:5px;">${x}</li>`).join('')}</ul>`;
+  const paras = s => M[s][lang].map((x, i)=>`<p style="margin:${i ? '4px' : '0'} 0 0;text-align:${al};">${x}${!i ? ed(s) : ''}</p>`).join('');
+  const nums = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;border-spacing:8px 0;margin:14px -8px 6px;" dir="${rtl ? 'rtl' : 'ltr'}"><tr>${M.nums.map(n=>`
+    <td align="center" valign="top" width="190" style="background:#F4F6F9;border:1px solid #D8E2EC;padding:12px 10px;text-align:center;">
+      <div style="font-size:26pt;font-weight:bold;line-height:1.1;color:${n.color};">${n.n}</div>
+      <div style="font-size:9pt;font-weight:bold;color:#1B2A4A;margin-top:4px;">${rtl ? n.ar[0] : n.en[0].toUpperCase()}</div>
+      <div style="font-size:9pt;color:#667085;">${rtl ? n.ar[1] : n.en[1]}</div></td>`).join('')}</tr></table>`;
+  return `<div dir="${rtl ? 'rtl' : 'ltr'}" style="font-family:Calibri,'Segoe UI',Arial,Tahoma,sans-serif;font-size:11pt;color:#1F2937;line-height:1.5;text-align:${al};">
+    ${paras('intro')}${nums}
+    ${head('week')}${list('week')}
+    ${head('milestones')}${o.chart ? `<p style="margin:6px 0 8px;"><img src="${o.chart}" width="620" alt="Milestone progress" style="width:620px;max-width:100%;height:auto;border:1px solid #D8E2EC;"></p>` : ''}${list('milestones')}
+    ${head('attention')}${list('attention')}
+    ${head('next')}${list('next')}
+    <div style="margin-top:16px;">${paras('closing')}</div></div>`;
+}
+function reBody(M, o){
+  const lang = rePref('lang', 'both'), chart = rePref('chart', '1') === '1' ? (o.chartSrc || reChartPNG(M)) : null;
+  const sep = `<hr style="border:none;border-top:1px solid #D8E2EC;margin:24px 0;">`;
+  const en = () => reHTML('en', M, { edit:o.edit, chart }), ar = () => reHTML('ar', M, { edit:o.edit, chart: lang === 'both' ? null : chart });
+  return lang === 'en' ? en() : lang === 'ar' ? ar() : en() + sep + ar();
+}
+
+/* the lock stays as it was: Unlock still runs encrypt → decrypt before showing the report */
+function buildReportText(){ return 'executive-summary:' + reWeekId(); }
+function showUnlockedReport(){ reShow(); }
+function reShow(){
+  const area = document.getElementById('emailUnlockedArea'); if(!area) return;
+  document.getElementById('emailLockedArea').style.display = 'none'; area.style.display = 'block';
+  const M = reModel(), lang = rePref('lang', 'both'), chartOn = rePref('chart', '1') === '1', anyEdit = Object.keys(M.edited).length;
+  const subj = lang === 'ar' ? M.subject.ar : M.subject.en;
+  area.innerHTML = `
+    <div class="re-bar">
+      <button class="btn primary" onclick="reCopy()" title="Copy the email, then paste it in Outlook">📋 Copy email</button>
+      <button class="btn green" onclick="reWord()">📥 Export as Word</button>
+      <button class="btn secondary" onclick="reCopyChart()" title="Copy only the chart, as a picture">📷 Copy chart</button>
+      <span class="view-toggle">${[['both','Both'],['en','English'],['ar','العربية']].map(([k,l])=>`<button class="${lang===k?'active':''}" onclick="reSetPref('lang','${k}')">${l}</button>`).join('')}</span>
+      <label class="re-chk"><input type="checkbox" ${chartOn ? 'checked' : ''} onchange="reSetPref('chart', this.checked ? '1' : '0')"> Chart picture</label>
+      <span style="flex:1"></span>
+      ${anyEdit ? `<button class="btn secondary" onclick="reResetAll()" title="Drop this week's hand edits">↺ Back to automatic</button>` : ''}
+      <button class="btn secondary" onclick="reShow()" title="Rebuild from the latest data">↻ Refresh</button>
+      <button class="btn secondary" onclick="renderEmailLocked()">🔒 Re-lock</button>
+    </div>
+    <div class="re-subject"><span>Subject</span><b dir="auto" id="reSubject">${escapeHtml(subj)}</b><button class="btn secondary cp-mini" onclick="reCopySubject()">📋</button></div>
+    <div class="re-paper" id="reportBody">${reBody(M, { edit:true })}</div>
+    <p class="note" style="margin-top:10px;">Built from the same numbers as the Client View. ✏️ rewords one part for this week only (${escapeHtml(reWeekId()==='first' ? 'until the first Close Week' : 'after ' + reWeekId())}); next week it is generated again.</p>`;
+}
+window.reShow = reShow; window.reSetPref = reSetPref;
+
+/* ✏️ reword one part (one bullet / paragraph per line, English and Arabic) */
+window.reEdit = function(sec){
+  const M = reModel(), strip = h => { const d = document.createElement('div'); d.innerHTML = h; return d.textContent; };
+  const en = M[sec].en.map(strip).join('\n'), ar = M[sec].ar.map(strip).join('\n');
+  openDetailModal(`${popupHeaderHTML('Reword: ' + RE_SECTIONS[sec][0], 'One line = one bullet. Kept for this week only - numbers typed here do NOT update by themselves.')}
+    <div class="popup-body"><div class="form-field" style="margin-bottom:12px;"><label>English</label><textarea id="reEn" rows="7" spellcheck="true">${escapeHtml(en)}</textarea></div>
+      <div class="form-field"><label>العربية</label><textarea id="reAr" rows="7" dir="rtl">${escapeHtml(ar)}</textarea></div>
+      <div class="modal-actions">${M.edited[sec] ? `<button class="btn secondary" style="margin-inline-end:auto;" onclick="reSave('${sec}', true)">↺ Back to automatic</button>` : ''}
+        <button class="btn secondary" onclick="closeDetailModal()">Cancel</button><button class="btn primary" onclick="reSave('${sec}')">Save</button></div></div>`);
+};
+function reStore(o, label){
+  window.CLIENT_SETTINGS = { ...(window.CLIENT_SETTINGS || {}), [RE_KEY]: o };   // show it straight away
+  try{ saveCP(RE_KEY, o, label); }catch(e){ console.error(e); }
+  closeDetailModal(); reShow();
+}
+window.reSave = function(sec, reset){
+  const o = { ...reOverrides() };
+  if(reset) delete o[sec];
+  else { const L = id => document.getElementById(id).value.split('\n').map(x=>x.trim()).filter(Boolean); const en = L('reEn'), ar = L('reAr');
+    if(!en.length){ showInfoToast('Write at least one line, or use "Back to automatic".'); return; } o[sec] = { en, ar }; }
+  reStore(o, 'Report email - ' + RE_SECTIONS[sec][0]); showInfoToast(reset ? 'Back to automatic' : '✓ Saved for this week');
+};
+window.reResetAll = function(){ reStore({ forWeek: reWeekId() }, 'Report email - back to automatic'); showInfoToast('All parts are automatic again'); };
+
+/* copy / export */
+function rePlain(){ const d = document.createElement('div'); d.innerHTML = reBody(reModel(), {}).replace(/<\/(p|li|div|tr)>/g, '\n').replace(/<li[^>]*>/g, '• '); return d.textContent.replace(/[ \t]+\n/g, '\n').replace(/\n[ \t]+/g, '\n').replace(/\n{3,}/g, '\n\n').trim(); }
+window.reCopy = async function(){
+  const html = reBody(reModel(), {}), ok = () => showInfoToast('📋 Email copied - paste it in Outlook (Ctrl+V)');
+  try{ await navigator.clipboard.write([ new ClipboardItem({ 'text/html': new Blob([html], { type:'text/html' }), 'text/plain': new Blob([rePlain()], { type:'text/plain' }) }) ]); ok(); }
+  catch(e){ const box = document.createElement('div'); box.contentEditable = 'true'; box.style.cssText = 'position:fixed;left:-9999px;top:0;background:#fff;'; box.innerHTML = html; document.body.appendChild(box);
+    const r = document.createRange(); r.selectNodeContents(box); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    try{ document.execCommand('copy'); ok(); }catch(e2){ showInfoToast('⛔ Could not copy - use Export as Word'); } s.removeAllRanges(); box.remove(); }
+};
+window.reCopySubject = function(){ const t = document.getElementById('reSubject').textContent;
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(()=>showInfoToast('📋 Subject copied')).catch(()=>prompt('Copy:', t)); };
+window.reCopyChart = async function(){
+  try{ const blob = await (await fetch(reChartPNG(reModel()))).blob(); await navigator.clipboard.write([ new ClipboardItem({ 'image/png': blob }) ]); showInfoToast('📷 Chart copied - paste it anywhere'); }
+  catch(e){ showInfoToast('⛔ This browser cannot copy pictures - use Export as Word'); }
+};
+/* Word: a .doc (MHTML) so the chart picture travels inside the file */
+function reWordFile(){
+  const M = reModel(), png = reChartPNG(M), b64 = s => { const u = unescape(encodeURIComponent(s)); let out = ''; for(let i = 0; i < u.length; i += 57) out += btoa(u.slice(i, i + 57)) + '\r\n'; return out; };
+  const wrap = s => s.replace(/(.{76})/g, '$1\r\n');
+  const body = reBody(M, { chartSrc:'chart.png' });
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>MOC Weekly Summary</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
+<style>@page{size:8.5in 11in;margin:1in;} body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1F2937;}</style></head>
+<body><p style="font-size:9pt;color:#667085;margin:0 0 10px;">Subject: ${escapeHtml(rePref('lang','both')==='ar' ? M.subject.ar : M.subject.en)}</p>${body}</body></html>`;
+  const B = '----=_NextPart_MOC_REPORT';
+  return ['MIME-Version: 1.0', `Content-Type: multipart/related; boundary="${B}"; type="text/html"`, '', `--${B}`, 'Content-Location: file:///C:/report.htm', 'Content-Type: text/html; charset="utf-8"', 'Content-Transfer-Encoding: base64', '', b64(html),
+    `--${B}`, 'Content-Location: file:///C:/chart.png', 'Content-Type: image/png', 'Content-Transfer-Encoding: base64', '', wrap(png.split(',')[1]), '', `--${B}--`, ''].join('\r\n');
+}
+window.reWord = function(){
+  const a = document.createElement('a'), url = URL.createObjectURL(new Blob([reWordFile()], { type:'application/msword' }));
+  a.href = url; a.download = `MOC_Weekly_Summary_${new Date().toISOString().slice(0,10)}.doc`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 3000);
+  showInfoToast('📥 Word file downloaded');
+};
 
 async function encryptReport(text, password){
   const enc = new TextEncoder();
@@ -5109,7 +5170,7 @@ function renderEmailLocked(){
         keyMaterial, {name:'AES-GCM', length:256}, false, ['decrypt']
       );
       const decrypted = await decryptReport(cipher, iv, key);
-      showUnlockedReport(decrypted);
+      showUnlockedReport();
     }catch(e){
       $('#unlockError').textContent = 'Incorrect password, please try again.';
     }
@@ -5126,203 +5187,6 @@ function getThemeHexColors(){
     amber: grab('--amber','#E88B00'), red: grab('--red','#C0392B'),
     bg: '#F4F6F9', border: '#D8E2EC', muted: '#66748F'
   };
-}
-
-/* Word export deliberately does NOT rebuild the visual zones (banner,
-   KPI cards, tables, MAPE cards) - Word's renderer can't reproduce them
-   well, and pasting a real screenshot (via the in-tab 📷 buttons) looks
-   far better anyway. Instead each visual zone becomes a dashed-border
-   placeholder telling the person exactly which screenshot goes there.
-   Narrative text (Executive Summary, per-department write-up, Final
-   Comments) stays as real, styled, editable Word text. */
-function buildReportWordHTML(){
-  const c = getThemeHexColors();
-  const todayStr = fmtDate(new Date());
-  const currentWeek = getCurrentMapeWeek();
-  const totalInit = MOC_DATA.length;
-  const activeScopePct = activeScopeProgress();
-  const engagementPct = engagementCompletionProgress();
-  const onTrackCount = MOC_DATA.filter(i=>i.risk==='On Track').length;
-
-  const atRiskCount = MOC_DATA.filter(i=>i.risk==='At Risk').length;
-  const delayedCount = MOC_DATA.filter(i=>i.risk==='Delayed').length;
-  const blockedCount = MOC_DATA.filter(i=>i.risk==='Blocked').length;
-  const riskBits = [];
-  if(atRiskCount) riskBits.push(`${atRiskCount} At Risk`);
-  if(delayedCount) riskBits.push(`${delayedCount} Delayed`);
-  if(blockedCount) riskBits.push(`${blockedCount} Blocked`);
-  const riskSummary = riskBits.length ? riskBits.join(', ') : 'No active risks';
-  const topMover = MOC_DATA.filter(i=>weeklyDelta(i)!==0).sort((a,b)=>Math.abs(weeklyDelta(b))-Math.abs(weeklyDelta(a)))[0];
-  const topMoverLine = topMover
-    ? `The biggest mover this week was <b>${topMover.name}</b>, which ${weeklyDelta(topMover)>0?'advanced':'dropped'} from <b style="color:${c.green};">${getPctDaysAgo(topMover,7)}% to ${topMover.pct}%</b> (${weeklyDelta(topMover)>0?'+':''}${weeklyDelta(topMover)}%).`
-    : 'No epic moved this week.';
-
-  // Word export is text-only - screenshot placeholders replaced by real content.
-  // Word does not render CSS grid/flex or CSS variables, so tables + literal hex are used.
-  const wordTable = () => `
-    <h2 class="report-h2">REPORTING EPIC - ALL ${totalInit} EPICS</h2>
-    <table cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;font-size:10pt;margin:8px 0 16px;">
-      <tr style="background:${c.bg};">
-        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Milestone</th>
-        
-        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Epic</th>
-        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">% Complete</th>
-        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Stage Name</th>
-        <th style="border:1px solid ${c.border};text-align:left;color:${c.navy};font-size:9pt;">Risk</th>
-      </tr>
-      ${MOC_DATA.map(i=>`<tr>
-        <td style="border:1px solid ${c.border};">${i.initiative||'-'}</td>
-        
-        <td style="border:1px solid ${c.border};"><b>${i.name}</b></td>
-        <td style="border:1px solid ${c.border};"><b>${i.pct}%</b></td>
-        <td style="border:1px solid ${c.border};">${i.stage}</td>
-        <td style="border:1px solid ${c.border};color:${riskWordColor(i.risk)};">${i.risk}</td>
-      </tr>`).join('')}
-    </table>`;
-
-  const wordMape = () => {
-    const lines = MAPE_PHASES.filter(p=>!p.notActive).map(phase=>{
-      const activeCount = mapePhaseActiveCount(phase.key, currentWeek);
-      const total = mapePhaseTasks(phase.key).length;
-      const gateNote = phase.gateWeek == null ? '' :
-        currentWeek > phase.gateWeek ? ' - sign-off gate passed' :
-        currentWeek === phase.gateWeek ? ' - sign-off gate due this week' : ` - sign-off gate due Week ${phase.gateWeek}`;
-      return `<li><b>${phase.name}</b> (${phase.subtitle}) - <b>${activeCount} of ${total}</b> tasks active${gateNote}.</li>`;
-    }).join('');
-    return `<h2 class="report-h2">MAPE DELIVERY - WEEK ${currentWeek} OF ${MAPE_TOTAL_WEEKS}</h2><ul class="report-ul">${lines}</ul>`;
-  };
-
-  const wordTeamHighlights = () => {
-    const teamLines = TEAM_LEADS.map(name=>{
-      const tasks = TASKS_DATA.filter(t=>t.assignee===name);
-      if(!tasks.length) return '';
-      const done = tasks.filter(t=>t.status==='Completed').length;
-      return `<li><b>${name}</b> - ${done} of ${tasks.length} tasks completed (${avg(tasks.map(t=>t.pct))}% average progress).</li>`;
-    }).join('');
-    const movers = MOC_DATA.filter(i=>weeklyDelta(i)!==0).sort((a,b)=>Math.abs(weeklyDelta(b))-Math.abs(weeklyDelta(a))).slice(0,5);
-    const improved  = MOC_DATA.filter(i=>weeklyDelta(i)>0).length;
-    const noChange  = MOC_DATA.filter(i=>weeklyDelta(i)===0).length;
-    const regressed = MOC_DATA.filter(i=>weeklyDelta(i)<0).length;
-    const moverLines = movers.map(i=>{
-      const d = weeklyDelta(i), sign = d>0?'+':'';
-      return `<li><b>${i.name}</b> moved from ${getPctDaysAgo(i,7)}% to <b>${i.pct}%</b> (${sign}${d}%).</li>`;
-    }).join('') || '<li>No movement recorded this week.</li>';
-    return `<h2 class="report-h2">TEAM COMPLETION THIS WEEK</h2><ul class="report-ul">${teamLines}</ul>`
-         + `<h2 class="report-h2">HIGHLIGHTS FROM THIS WEEK</h2>`
-         + `<p class="lead-line"><b>${improved}</b> improved &nbsp;&middot;&nbsp; <b>${noChange}</b> no change &nbsp;&middot;&nbsp; <b>${regressed}</b> regressed.</p>`
-         + `<ul class="report-ul">${moverLines}</ul>`;
-  };
-
-  const getEditableText = (idx, cls) => {
-    const fields = document.querySelectorAll('#reportBody .' + cls);
-    const t = fields[idx] ? fields[idx].innerText.trim() : '';
-    return t || '[...]';
-  };
-
-  const riskWordColor = (risk) => risk==='On Track'?c.green:risk==='At Risk'?c.amber:c.red;
-
-  // ---- Per-department narrative (English) - bold names, green % always,
-  // risk-status words colored only when the word itself is mentioned ----
-  const deptsInUse = INITIATIVES.filter(m => MOC_DATA.some(i=>normKey(i.initiative)===normKey(m)));   // grouped by Milestone
-  const narrativeHtml = deptsInUse.map(dep=>{
-    const items = MOC_DATA.filter(i=>normKey(i.initiative)===normKey(dep));
-    const lines = items.map(i=>{
-      const d = weeklyDelta(i);
-      const prev = getPctDaysAgo(i,7);
-      if(d !== 0){
-        const verb = d>0 ? 'advanced' : 'dropped';
-        const sign = d>0 ? '+' : '';
-        return `<li><b>${i.name}</b> ${verb} from <b style="color:${c.green};">${prev}% to ${i.pct}%</b> (${sign}${d}%), now at <b>${i.stage}</b> - risk status <b style="color:${riskWordColor(i.risk)};">${i.risk}</b>.${i.next?' Next: '+i.next+'.':''}</li>`;
-      }
-      return `<li><b>${i.name}</b> remains at <b style="color:${c.green};">${i.pct}%</b> (${i.stage}) - risk status <b style="color:${riskWordColor(i.risk)};">${i.risk}</b>, unchanged this week.${i.notes?' '+i.notes+'.':''}</li>`;
-    }).join('');
-    return `<h3 class="report-h3">${dep}</h3><ul class="report-ul">${lines}</ul>`;
-  }).join('');
-
-  const finalCommentsHtml = `
-    <h2 class="report-h2">Final Comments</h2>
-    <ul class="report-ul">
-      <li><u>Execution Outlook:</u> ${getEditableText(0,'editable-field-en')}</li>
-      <li><u>Risk &amp; Accountability:</u> ${getEditableText(1,'editable-field-en')}</li>
-    </ul>
-    <p style="margin:6px 0 4px;"><u>Next Week Targets:</u></p>
-    <ul class="report-ul">
-      <li>${getEditableText(2,'editable-field-en')}</li>
-    </ul>
-    <p class="lead-line" style="margin-top:14px;">Please feel free to reach out should you have any questions or require further details. We would be happy to walk you through the update at your convenience.</p>
-  `;
-
-  // ---- Arabic mirror ----
-  const todayStrAr = fmtDateAr(new Date());
-  const riskBitsAr = [];
-  if(atRiskCount) riskBitsAr.push(`${atRiskCount} في خطر`);
-  if(delayedCount) riskBitsAr.push(`${delayedCount} متأخر`);
-  if(blockedCount) riskBitsAr.push(`${blockedCount} معطّل`);
-  const riskSummaryAr = riskBitsAr.length ? riskBitsAr.join('، ') : 'لا توجد مبادرات مصنّفة حالياً';
-  const topMoverLineAr = topMover
-    ? `أكبر تحرّك هذا الأسبوع كان في <b>${topMover.name}</b>، حيث ${weeklyDelta(topMover)>0?'تقدّمت':'تراجعت'} من <b style="color:${c.green};">${getPctDaysAgo(topMover,7)}% إلى ${topMover.pct}%</b> (${weeklyDelta(topMover)>0?'+':''}${weeklyDelta(topMover)}%).`
-    : 'لم تتحرك أي مبادرة هذا الأسبوع.';
-  const riskWordAr = (risk) => ({'On Track':'على المسار','At Risk':'في خطر','Delayed':'متأخر','Blocked':'معطّل'}[risk]||risk);
-  const narrativeHtmlAr = deptsInUse.map(dep=>{
-    const items = MOC_DATA.filter(i=>normKey(i.initiative)===normKey(dep));
-    const lines = items.map(i=>{
-      const d = weeklyDelta(i);
-      const prev = getPctDaysAgo(i,7);
-      const stageAr = STAGES_AR[i.stage] || i.stage;
-      if(d !== 0){
-        const verb = d>0 ? 'تقدّمت' : 'تراجعت';
-        const sign = d>0 ? '+' : '';
-        return `<li>${i.name} ${verb} من <b style="color:${c.green};">${prev}% إلى ${i.pct}%</b> (${sign}${d}%)، وهي الآن في مرحلة <b>${stageAr}</b> - حالة المخاطر <b style="color:${riskWordColor(i.risk)};">${riskWordAr(i.risk)}</b>.${i.next?' الخطوة القادمة: '+i.next+'.':''}</li>`;
-      }
-      return `<li>${i.name} بقيت عند <b style="color:${c.green};">${i.pct}%</b> (${stageAr}) - حالة المخاطر <b style="color:${riskWordColor(i.risk)};">${riskWordAr(i.risk)}</b>، دون تغيير هذا الأسبوع.${i.notes?' '+i.notes+'.':''}</li>`;
-    }).join('');
-    return `<h3 class="report-h3" style="text-align:right;">${dep}</h3><ul class="report-ul" style="margin-right:22px;margin-left:0;">${lines}</ul>`;
-  }).join('');
-
-  const arabicHtml = `
-    <hr style="margin:28px 0;border:none;border-top:2px solid ${c.border};">
-    <div dir="rtl" style="text-align:right;">
-      <h2 class="report-h2" style="text-align:right;border-bottom:2px solid ${c.border};">التقرير الأسبوعي - <b>${todayStrAr}</b></h2>
-      <p class="lead-line">يرجى الاطلاع على تقرير التقدم التنفيذي المحدّث بتاريخ <b>${todayStrAr}</b>.</p>
-      <h3 class="report-h3" style="text-align:right;">الملخص التنفيذي</h3>
-      <ul class="report-ul" style="margin-right:22px;margin-left:0;">
-        <li>تبلغ نسبة إنجاز النطاق النشط <b style="color:${c.green};">${activeScopePct}%</b> عبر الـEpics الجارية حالياً، مع <b style="color:${c.green};">${onTrackCount} من ${totalInit}</b> على المسار الصحيح. أما نسبة إنجاز الالتزام الكامل فتبلغ <b>${engagementPct}%</b>.</li>
-        <li>${topMoverLineAr}</li>
-        <li>ملف المخاطر: <b>${riskSummaryAr}</b> (التفاصيل ضمن تقرير الـEpics حسب الـMilestone أدناه).</li>
-      </ul>
-      <h3 class="report-h3" style="text-align:right;">تقرير الـEpics حسب الـMilestone</h3>
-      ${narrativeHtmlAr}
-      <h3 class="report-h3" style="text-align:right;">الملاحظات الختامية</h3>
-      <ul class="report-ul" style="margin-right:22px;margin-left:0;">
-        <li><u>نظرة على التنفيذ:</u> ${getEditableText(0,'editable-field-ar')}</li>
-        <li><u>المخاطر والمساءلة:</u> ${getEditableText(1,'editable-field-ar')}</li>
-      </ul>
-      <h3 class="report-h3" style="text-align:right;">أهداف الأسبوع القادم</h3>
-      <ul class="report-ul" style="margin-right:22px;margin-left:0;">
-        <li>${getEditableText(2,'editable-field-ar')}</li>
-      </ul>
-      <p class="lead-line">لا تترددوا بالتواصل معنا في حال وجود أي استفسارات أو الحاجة لمزيد من التفاصيل.</p>
-    </div>
-  `;
-
-  return `
-    <p class="lead-line">Dear Team,</p>
-    <p class="lead-line">Please find the updated Executive Progress Report for <b>${todayStr}</b>.</p>
-    <h2 class="report-h2">EXECUTIVE SUMMARY</h2>
-    <ul class="report-ul">
-      <li>Active scope progress is <b style="color:${c.green};">${activeScopePct}%</b> across the epics currently underway, with <b style="color:${c.green};">${onTrackCount} of ${totalInit}</b> On Track. Engagement completion stands at <b>${engagementPct}%</b>.</li>
-      <li>${topMoverLine}</li>
-      <li>Risk profile: <b>${riskSummary}</b> (see Reporting Epic - Narrative below for details).</li>
-      <li>MAPE delivery is currently in <b>Week ${currentWeek} of ${MAPE_TOTAL_WEEKS}</b>.</li>
-    </ul>
-    ${wordTable()}
-    ${wordMape()}
-    ${wordTeamHighlights()}
-    <h2 class="report-h2">REPORTING EPIC - NARRATIVE</h2>
-    ${narrativeHtml}
-    ${finalCommentsHtml}
-    ${arabicHtml}
-  `;
 }
 
 window.captureZone = function(elOrId){
@@ -5401,54 +5265,6 @@ window.captureModalFull = function(){
   });
 };
 
-function showUnlockedReport(html){
-  $('#emailLockedArea').style.display='none';
-  $('#emailUnlockedArea').style.display='block';
-  $('#emailUnlockedArea').innerHTML = `
-    <div class="lang-toggle">
-      <button class="btn green" id="exportWord">📥 Export as Word</button>
-      <button class="btn secondary" id="relock">🔒 Re-lock</button>
-    </div>
-    <div class="report-body" id="reportBody">${html}</div>
-  `;
-  $('#relock').onclick = renderEmailLocked;
-  $('#exportWord').onclick = ()=>{
-    const bodyHtml = buildReportWordHTML();
-    const today = fmtDate(new Date());
-    const fullHtml = `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-<head>
-<meta charset="utf-8">
-<title>MOC Weekly Report</title>
-<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
-<style>
-  @page { size: 8.5in 11in; margin: 1in 1in 1in 1in; }
-  body { font-family: Calibri, Arial, "Segoe UI", Tahoma, sans-serif; font-size: 11pt; color: #1f2937; line-height: 1.5; }
-  h1,h2,h3 { color: #1B2A4A; }
-  .report-h2 { font-size: 15pt; font-weight: 700; border-bottom: 2px solid #D8E2EC; padding-bottom: 6px; margin: 22px 0 10px; }
-  .report-h3 { font-size: 12.5pt; font-weight: 700; margin: 16px 0 6px; }
-  .report-ul { margin: 0 0 10px 0; padding-left: 22px; }
-  .report-ul li { margin-bottom: 8px; }
-  .lead-line { margin: 4px 0; }
-  [dir="rtl"] { text-align: right; }
-  [dir="rtl"] .report-ul { padding-left: 0; padding-right: 22px; }
-</style>
-</head>
-<body>
-<h1 style="color:#1B2A4A;border-bottom:3px solid #1B2A4A;padding-bottom:8px;">Ministry of Culture Dashboard - Weekly Progress Report</h1>
-<p style="color:#637080;font-size:10pt;margin-top:0;">Generated ${today}</p>
-${bodyHtml}
-</body>
-</html>`;
-    const blob = new Blob(['\ufeff' + fullHtml], {type:'application/msword'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `MOC_Weekly_Report_${new Date().toISOString().slice(0,10)}.doc`;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 3000);
-  };
-}
-
 /* =====================================================================
    RENDER: Team Lens
    ===================================================================== */
@@ -5461,10 +5277,10 @@ function renderTeamLens(){
   el.innerHTML = `<button class="zone-shot-btn" onclick="captureZone(this.nextElementSibling)">📷 Copy as Image</button>
   <div class="shot-target">
     <h2 class="view-title">Team Lens</h2>
-    <p class="view-sub">Who is working on which stage, then one card per team member - click a card for the full breakdown.</p>
+    <p class="view-sub">Who is working on which milestone, then one card per team member - click a card for the full breakdown.</p>
     <div class="card" style="overflow-x:auto;margin-bottom:18px;">
-      <h3 style="margin:0 0 4px;font-size:14px;">Team Progress by Stage</h3>
-      <p class="note" style="margin:0 0 10px;">Each box = <b>how many tasks</b> the person has in that stage, and <b>how much of them is done</b> (Completed = 100%, anything else = 0%). Same rule as the Excel "Team Progress" sheet.</p>
+      <h3 style="margin:0 0 4px;font-size:14px;">Team Progress by Milestone</h3>
+      <p class="note" style="margin:0 0 10px;">Each box = <b>how many tasks</b> the person has in that milestone, and <b>how much of them is done</b> (Completed = 100%, anything else = 0%). Same rule as the Excel "Team Progress" sheet.</p>
       <table class="tp-matrix" id="tpMatrix"></table>
     </div>
     <div id="teamGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;"></div>
@@ -5478,14 +5294,14 @@ function renderTeamLens(){
     const cellOf = (n, p, plus) => n ? `<td><span class="tp-n">${n} <small>task${n===1?'':'s'}</small>${plus ? '<span class="tp-plus" title="Includes the manual +1 (same as the Excel sheet)">+1</span>' : ''}</span><span class="tp-p" style="color:${pctCol(p)}">${p}% done</span></td>` : `<td class="tp-zero">-</td>`;
     const rowsHTML = people.map(p=>{
       const mine = TASKS_DATA.filter(t=>t.assignee===p);
-      const other = mine.filter(t=>!TEAM_PROGRESS_STAGES.includes(t.stage));
+      const other = mine.filter(t=>!TEAM_PROGRESS_STAGES.includes(mapePhaseOf(taskMilestone(t))));
       const avgOf = ts => ts.length ? Math.round(ts.reduce((a,t)=>a+t.pct,0)/ts.length) : 0;
       return `<tr><td><b>${escapeHtml(p)}</b>${teamRole(p) ? `<div style="font-size:10.5px;color:var(--muted);">${escapeHtml(teamRole(p))}</div>` : ''}</td>
         ${TEAM_PROGRESS_STAGES.map(st=>{ const r = tp.find(x=>x.stage===st && x.assignee===p) || {wsCount:0, avgPct:0}; return cellOf(r.wsCount, r.avgPct, p===TEAM_PROGRESS_PM && r.wsCount>0); }).join('')}
         ${cellOf(other.length, avgOf(other))}
         ${cellOf(mine.length, avgOf(mine))}</tr>`;
     }).join('');
-    el.querySelector('#tpMatrix').innerHTML = `<tr><th>Person</th>${TEAM_PROGRESS_STAGES.map(st=>`<th>${st}</th>`).join('')}<th>Other stages</th><th>Total</th></tr>${rowsHTML}`;
+    el.querySelector('#tpMatrix').innerHTML = `<tr><th>Person</th>${TEAM_PROGRESS_STAGES.map(st=>`<th title="AI Strategy - ${st}">${st}</th>`).join('')}<th>Other milestones</th><th>Total</th></tr>${rowsHTML}`;
   }
   el.querySelector('#teamGrid').innerHTML = TEAM_LEADS.filter(lead=>lead!=='BA' && teamActive(lead)).map((lead,i)=>{
     const owned   = MOC_DATA.filter(ws=>ws.lead===lead);
@@ -5559,7 +5375,7 @@ function renderTeamLens(){
         </div>
       </div>` : ''}
       <!-- Stage focus -->
-      ${stageHTML ? `<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:4px;">STAGE FOCUS</div>${stageHTML}` : ''}
+      ${stageHTML ? `<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:4px;">MILESTONE FOCUS</div>${stageHTML}` : ''}
     </div>`;
   }).join('');
 
@@ -5588,7 +5404,8 @@ let taskSortKey = null;
 let taskSortDir = 1; // 1 = asc, -1 = desc
 const taskFilterState = {
   department: new Set(),
-  stage: new Set(),
+  milestone: new Set(),
+  epic: new Set(),
   status: new Set(),
   risk: new Set(),
   priority: new Set(),
@@ -5599,7 +5416,8 @@ const taskFilterState = {
 };
 const FILTER_DIMENSIONS = [
   { key:'department', label:'Department',      options: DEPARTMENTS },
-  { key:'stage',      label:'Stage Name', options: FRAMEWORK_STAGES },
+  { key:'milestone',  label:'Milestone',       options: INITIATIVES },
+  { key:'epic',       label:'Epic',            options: ()=>epicFilterOptions(), dynamic:true },   // only the epics of the chosen milestones
   { key:'status',     label:'Task Status',     options: TASK_STATUSES },
   { key:'risk',       label:'Risk',            options: RISK_LEVELS },
   { key:'priority',   label:'Priority',        options: PRIORITIES },
@@ -5611,7 +5429,8 @@ function getFilteredTasks(){
   return TASKS_DATA.filter(t=>{
     if(currentTaskScope()==='mine' && !isMineTask(t)) return false;
     if(taskFilterState.department.size && !taskFilterState.department.has(t.department)) return false;
-    if(taskFilterState.stage.size && !taskFilterState.stage.has(t.stage)) return false;
+    if(taskFilterState.milestone.size && !taskFilterState.milestone.has(taskMilestone(t))) return false;
+    if(taskFilterState.epic.size && !taskFilterState.epic.has(t.workstream)) return false;
     if(taskFilterState.status.size && !taskFilterState.status.has(t.status)) return false;
     if(taskFilterState.risk.size && !taskFilterState.risk.has(t.risk)) return false;
     if(taskFilterState.priority.size && !taskFilterState.priority.has(t.priority)) return false;
@@ -5637,7 +5456,7 @@ function renderTasks(){
       <button class="btn" id="addTaskBtn" data-can="addTask">+ Add Task</button>
       <div class="view-toggle" id="taskScopeToggle"><button data-scope="mine">👤 My Tasks</button><button data-scope="all">👥 All Tasks</button></div>
       <button class="btn secondary" data-can="deleteTask" onclick="openTrash()" title="Deleted tasks">🗑️ Deleted</button>
-      <button class="btn missing-btn" id="missingBtn" title="Show only tasks with empty fields (Purpose, Epic, Department, Stage, Assignee, Due Date)"></button>
+      <button class="btn missing-btn" id="missingBtn" title="Show only tasks with empty fields (Purpose, Epic, Department, Assignee, Due Date)"></button>
       <input type="text" id="taskSearchInput" placeholder="Search by title or notes...">
       <div id="msContainer" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
       <div class="view-toggle" style="margin-inline-start:auto;">
@@ -5671,7 +5490,8 @@ function renderTasks(){
     wrap.appendChild(btn);
     const panel = document.createElement('div');
     panel.className = 'ms-panel';
-    dim.options.forEach(opt=>{
+    dim._btn = btn;
+    const fillPanel = ()=>{ panel.innerHTML = ''; (typeof dim.options === 'function' ? dim.options() : dim.options).forEach(opt=>{
       const optRow = document.createElement('label');
       optRow.className = 'ms-option';
       optRow.innerHTML = `<input type="checkbox" value="${escapeHtml(opt)}"> <span>${escapeHtml(opt)}</span>`;
@@ -5680,16 +5500,21 @@ function renderTasks(){
       cb.onchange = ()=>{
         if(cb.checked) taskFilterState[dim.key].add(opt);
         else taskFilterState[dim.key].delete(opt);
+        if(dim.key === 'milestone' && taskFilterState.milestone.size){   // an epic outside the chosen milestones cannot stay selected
+          [...taskFilterState.epic].forEach(n=>{ const e = MOC_DATA.find(x=>x.name===n); if(!e || !taskFilterState.milestone.has(e.initiative)) taskFilterState.epic.delete(n); });
+          const ed = FILTER_DIMENSIONS.find(d=>d.key==='epic'); if(ed && ed._btn) updateMsButtonLabel(ed._btn, ed);
+        }
         updateMsButtonLabel(btn, dim);
         renderTaskContentAndPills();
       };
       panel.appendChild(optRow);
-    });
+    }); };
+    fillPanel();
     btn.onclick = (e)=>{
       e.stopPropagation();
       const willOpen = !panel.classList.contains('open');
       closeAllMsPanels(null);
-      if(willOpen) panel.classList.add('open');
+      if(willOpen){ if(dim.dynamic) fillPanel(); panel.classList.add('open'); }
     };
     updateMsButtonLabel(btn, dim);
     wrap.appendChild(panel);
@@ -5726,7 +5551,7 @@ function renderTasks(){
 
   function updateMsButtonLabel(btn, dim){
     const n = taskFilterState[dim.key].size;
-    btn.innerHTML = n ? `${dim.label} <span class="count">${n}</span>` : `All ${dim.label}s`;
+    btn.innerHTML = n ? `${dim.label} <span class="count">${n}</span>` : `All ${dim.label.replace(/y$/,'ie').replace(/s$/,'se')}s`;
   }
 
   renderTaskContentAndPills();
@@ -5766,7 +5591,7 @@ function renderTasks(){
         if(cb) cb.checked = false;
         const btn = wrap.querySelector('.ms-btn');
         const n = taskFilterState[dimKey].size;
-        btn.innerHTML = n ? `${dim.label} <span class="count">${n}</span>` : `All ${dim.label}s`;
+        btn.innerHTML = n ? `${dim.label} <span class="count">${n}</span>` : `All ${dim.label.replace(/y$/,'ie').replace(/s$/,'se')}s`;
         renderTaskContentAndPills();
       };
     });
@@ -5796,7 +5621,7 @@ function renderTasks(){
         {key:'workstream', label:'Epic'},
         {key:'session',    label:'Purpose'},
         {key:'department', label:'Department'},
-        {key:'stage',    label:'Stage Name'},
+        {key:'milestone', label:'Milestone'},
         {key:'assignee', label:'Assignee'},
         {key:'due',      label:'Due Date'},
         {key:'status',   label:'Task Status'},
@@ -5821,7 +5646,7 @@ function renderTasks(){
             <td style="font-size:12px;">${isBlank(t.workstream) ? naPill('workstream') : t.workstream}</td>
             <td style="font-size:12px;color:var(--muted);">${isBlank(t.session) ? naPill('session') : t.session}</td>
             <td style="font-size:12px;">${isBlank(t.department) ? naPill('department') : t.department}</td>
-            <td>${isBlank(t.stage) ? naPill('stage') : `<span class="badge stage">${t.stage}</span>`}</td>
+            <td style="font-size:12px;">${t.milestone ? escapeHtml(t.milestone) : '<span style="color:var(--muted);">-</span>'}</td>
             <td>${isBlank(t.assignee) ? naPill('assignee') : t.assignee}</td>
             <td style="font-size:12px;white-space:nowrap;">${isBlank(t.due) ? naPill('due') : fmtDate(new Date(t.due))}</td>
             <td>${t.status}</td>
@@ -6219,7 +6044,7 @@ function setPurpose(v){
   $('#f_session_other').value = (!v || known) ? '' : v;
   $('#f_session_other').style.display = $('#f_session').value === PURPOSE_OTHER ? '' : 'none';
 }
-const TASK_REQUIRED = [['session','Purpose'],['workstream','Epic'],['department','Department'],['stage','Stage'],['assignee','Assignee'],['due','Due Date']];
+const TASK_REQUIRED = [['session','Purpose'],['workstream','Epic'],['department','Department'],['assignee','Assignee'],['due','Due Date']];
 function isBlank(v){ return v===undefined || v===null || (typeof v==='string' && ['', '-', '\u2014'].includes(v.trim())) || (v instanceof Date && isNaN(v)); }
 function taskMissing(t){ return TASK_REQUIRED.filter(([k])=>isBlank(t[k])).map(([,label])=>label); }
 function naPill(f){ return `<span class="na-pill"${f ? ` data-f="${f}"` : ''} title="Empty - needs filling">N/A</span>`; }
@@ -6284,7 +6109,9 @@ function openTaskModal(taskToEdit){
   $('#f_workstream').onchange = ()=>{
     const ep = MOC_DATA.find(e=>e.name === $('#f_workstream').value);
     if(ep && FRAMEWORK_STAGES.includes(ep.stage)) $('#f_stage').value = ep.stage;
+    $('#f_milestone').value = ep ? (ep.initiative || '') : '';
   };
+  $('#f_milestone').value = '';
 
   if(taskToEdit){
     editingTaskId = taskToEdit.id;
@@ -6301,6 +6128,7 @@ function openTaskModal(taskToEdit){
       if(!titleTouched && $('#f_title').value) $('#f_title').value = autoTitle(); }
     $('#f_workstream').value = isBlank(taskToEdit.workstream) ? '' : taskToEdit.workstream;
     $('#f_stage').value = taskToEdit.stage;
+    $('#f_milestone').value = taskMilestone(taskToEdit);
     $('#f_status').value = taskToEdit.status;
     $('#f_risk').value = taskToEdit.risk;
     $('#f_priority').value = taskToEdit.priority;
@@ -6342,7 +6170,7 @@ $('#saveTaskBtn').onclick = ()=>{
   document.querySelectorAll('#taskModalOverlay .form-field.invalid').forEach(f=>f.classList.remove('invalid'));
   const blank = id => id === 'f_session' ? !purposeVal() : !$('#'+id).value.trim();
   if(!editingTaskId){
-    const hard = [['f_title','Title'],['f_department','Department'],['f_workstream','Epic'],['f_stage','Stage'],['f_assignee','Assignee']].filter(([id])=>blank(id));
+    const hard = [['f_title','Title'],['f_department','Department'],['f_workstream','Epic'],['f_assignee','Assignee']].filter(([id])=>blank(id));
     if(hard.length){
       hard.forEach(([id])=>$('#'+id).closest('.form-field').classList.add('invalid'));
       $('#'+hard[0][0]).focus();
@@ -6487,7 +6315,7 @@ $('#saveInitBtn').onclick = ()=>{
       MOC_DATA[idx] = {
         ...existing, name,
         initiative: $('#i_workstreamGroup').value, pillar: $('#i_pillar').value || null,
-        department: $('#i_department').value, workType: $('#i_workType').value, stage: $('#i_stage').value,
+        department: $('#i_department').value, workType: $('#i_workType').value, stage: mapePhaseOf($('#i_workstreamGroup').value) || $('#i_stage').value,
         lead: $('#i_lead').value, risk: $('#i_risk').value, pct,
         past: $('#i_past').value.trim(), next: $('#i_next').value.trim(),
         notes: $('#i_notes').value.trim(), history
@@ -6497,7 +6325,7 @@ $('#saveInitBtn').onclick = ()=>{
   } else {
     MOC_DATA.push({
       name, initiative: $('#i_workstreamGroup').value, pillar: $('#i_pillar').value || null,
-      department: $('#i_department').value, workType: $('#i_workType').value, stage: $('#i_stage').value,
+      department: $('#i_department').value, workType: $('#i_workType').value, stage: mapePhaseOf($('#i_workstreamGroup').value) || $('#i_stage').value,
       id: 'EP-'+String(MOC_DATA.reduce((mx,e)=>Math.max(mx, parseInt(String(e.id||'').replace(/\D/g,''),10)||0),0)+1).padStart(2,'0'),
       lead: $('#i_lead').value, risk: $('#i_risk').value, pct: 0,
       history: [{date: daysFromToday(-7), pct}, {date: daysFromToday(0), pct}],
@@ -7736,7 +7564,7 @@ window.askConfirm = function(o){
 const H_COLL = { tasks:'Task', epics:'Epic', milestones:'Milestone', risks:'Risk', mapetasks:'MAPE task', users:'Access', settings:'Client page',
   cp_phases:'Copilot phase', cp_tasks:'Copilot activity', cp_risks:'Copilot risk', cp_raci:'Copilot RACI', cp_channels:'Copilot channel',
   cp_users:'Pilot user', cp_prompts:'Copilot prompt', cp_meetings:'Copilot meeting', cp_support:'Copilot support log', cp_metrics:'Copilot measure', cp_surveys:'Copilot survey' };
-const H_FIELD = { title:'Title', session:'Purpose', description:'Description', workstream:'Epic', department:'Department', stage:'Stage',
+const H_FIELD = { title:'Title', session:'Purpose', description:'Description', workstream:'Epic', department:'Department', stage:'Stage (old field)',
   assignee:'Assignee', status:'Status', risk:'Risk', priority:'Priority', start:'Start Date', due:'Due Date', tags:'Tags', link:'Link',
   notes:'Notes', completedAt:'Completed on', name:'Name', initiative:'Milestone', pillar:'Pillar', lead:'Assignee', past:'Last Accomplishment',
   next:'Next Step', targetDate:'Target date', order:'Order', category:'Category', impact:'Impact', score:'Score', owner:'Owner',
@@ -8275,7 +8103,6 @@ function exportAllDataToExcel(){
     Milestone: i.initiative||'',
     Pillar: i.pillar||'',
     'Epic Name': i.name,
-    'Stage Name': i.stage,
     Assignee: i.lead,
     Risk: i.risk,
     'Epic Progress % (auto)': i.pct,
@@ -8304,7 +8131,7 @@ function exportAllDataToExcel(){
   // Tasks
   const taskRows = TASKS_DATA.map(t=>({
     'Task ID': t.id, Title: t.title, Purpose: t.session||'', Description: t.description||'', 'Related Epic': t.workstream, Department: t.department,
-    Assignee: t.assignee, 'Task Status': t.status, Risk: t.risk, Priority: t.priority, 'Stage Name': t.stage,
+    Assignee: t.assignee, 'Task Status': t.status, Risk: t.risk, Priority: t.priority, Milestone: taskMilestone(t),
     Tags: (Array.isArray(t.tags)?t.tags.join(', '):String(t.tags||'')), 'Task Progress %': t.pct, 'Due Date': fmtDate(t.due), Notes: t.notes
   }));
   const taskSheet = XLSX.utils.json_to_sheet(taskRows);
@@ -8354,7 +8181,7 @@ function exportAllDataToExcel(){
   for(let i=0;i<maxLen;i++){
     listsRows.push({
       Departments: DEPARTMENTS[i]||'', Initiatives: INITIATIVES[i]||'', Pillars: pillarLabels[i]||'',
-      'Stage Names': FRAMEWORK_STAGES[i]||'', 'Work Types': WORK_TYPES[i]||'', 'Risk Levels': RISK_LEVELS[i]||'',
+      'Work Types': WORK_TYPES[i]||'', 'Risk Levels': RISK_LEVELS[i]||'',
       Priorities: PRIORITIES[i]||'', 'Task Statuses': TASK_STATUSES[i]||'', 'Risk Categories': RISK_CATEGORIES[i]||'',
       'Impact Levels': IMPACT_LEVELS[i]||'', 'Register Statuses': REGISTER_STATUSES[i]||''
     });
@@ -8447,7 +8274,7 @@ $('#importFileInput').addEventListener('change', (e)=>{
           fillSelectChoose('#i_department', DEPARTMENTS);
         }
         if(typeof FILTER_DIMENSIONS !== 'undefined'){
-          const dimMap = {department:DEPARTMENTS,stage:FRAMEWORK_STAGES,status:TASK_STATUSES,priority:PRIORITIES,assignee:TEAM_LEADS};
+          const dimMap = {department:DEPARTMENTS,milestone:INITIATIVES,status:TASK_STATUSES,priority:PRIORITIES,assignee:TEAM_LEADS};
           FILTER_DIMENSIONS.forEach(d=>{ if(dimMap[d.key]) d.options=dimMap[d.key]; });
         }
       }
