@@ -1489,7 +1489,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .re-two .re-paper{max-width:none;margin:0;padding:26px 26px;}
 @media(max-width:1250px){.re-two{grid-template-columns:1fr;}.re-two .re-paper{max-width:860px;margin:0 auto;width:100%;}}
 .re-tools{display:inline-flex;align-items:center;gap:6px;vertical-align:middle;margin-inline-start:6px;letter-spacing:0;font-weight:500;}
-.re-empty{font-size:12px;color:var(--muted);font-style:italic;border:1px dashed var(--border);border-radius:8px;padding:8px 10px;margin:14px 0 4px;}
+.re-warn{font-size:10.5px;font-weight:700;background:#FDECEA;color:#C0392B;border:1px solid #F1C4BE;border-radius:99px;padding:1px 9px;cursor:pointer;letter-spacing:0;text-transform:none;}
+.re-empty{font-size:12px;color:var(--muted);font-style:italic;border:1px dashed var(--border);border-radius:8px;padding:8px 10px;margin:4px 0 4px;}
 .re-edited{font-size:10px;font-weight:800;background:#FBF0DE;color:#9A5B00;border-radius:99px;padding:1px 8px;text-transform:none;}
 .cp-wrap{display:block !important;}
 .cp-nav{display:none !important;}
@@ -4901,7 +4902,7 @@ function renderRisk(){
    ===================================================================== */
 const RE_KEY = 'reportEmail';
 const RE_SECTIONS = { intro:['Greeting','التحية'], week:['Key accomplishments','أبرز الإنجازات'], milestones:['Progress by milestone','التقدم حسب الـMilestone'],
-  attention:['Needs attention','يحتاج إلى متابعة'], asks:['Decisions / support needed','قرارات ودعم مطلوب'], plan:["Next week's plan",'خطة الأسبوع القادم'],
+  deliv:['Deliverables','المخرجات'], attention:['Needs attention','يحتاج إلى متابعة'], asks:['Decisions / support needed','قرارات ودعم مطلوب'], plan:["Next week's plan",'خطة الأسبوع القادم'],
   next:['Key dates','مواعيد مهمة'], closing:['Closing','الخاتمة'] };
 function reWeekId(){ return (window.LAST_SNAPSHOT && window.LAST_SNAPSHOT.weekId) || 'first'; }   // edits belong to the week that follows this close
 function reOverrides(){ const o = cps(RE_KEY); return o && o.forWeek === reWeekId() ? o : { forWeek: reWeekId() }; }   // forWeek = which week these edits belong to
@@ -4995,6 +4996,14 @@ function reModel(){
     add('milestones', `${b(m.name)}: ${en}`, `${bA(m.name)}: ${ar}`);
   });
 
+  // ---- deliverables in two lines: what is delivered, what is in progress (same list as the Client View) ----
+  { const dv = (P.deliverables || []).filter(d=>d && d.name), dn = dv.filter(d=>d.pct >= 100), ip = dv.filter(d=>d.pct > 0 && d.pct < 100).sort((a,c)=>c.pct - a.pct), up = dv.filter(d=>!d.pct);
+    const names = (a, f) => a.slice(0, 5).map(f).join(' · ') + (a.length > 5 ? ` · +${a.length - 5} more` : '');
+    M.deliv = { en:[], ar:[] };
+    if(dn.length) add('deliv', `<b>Delivered (${dn.length} of ${dv.length}):</b> ${names(dn, d=>escapeHtml(d.name))}.`, `<b>تم التسليم (${dn.length} من ${dv.length}):</b> ${L(names(dn, d=>escapeHtml(d.name)))}.`);
+    if(ip.length) add('deliv', `<b>In progress:</b> ${names(ip, d=>escapeHtml(d.name) + ' (' + d.pct + '%)')}.`, `<b>قيد التنفيذ:</b> ${L(names(ip, d=>escapeHtml(d.name) + ' (' + d.pct + '%)'))}.`);
+    if(up.length) add('deliv', `<b>Upcoming:</b> ${names(up, d=>escapeHtml(d.name))}.`, `<b>قادمة:</b> ${L(names(up, d=>escapeHtml(d.name)))}.`); }
+
   // ---- needs attention (max 3) ----
   const att = [];
   ((CPL && CPL.fromWorkspace && CPL.phases) || []).filter(p=>p.expected && p.expectedOpen !== false && p.status !== 'Completed').forEach(p=> att.push([
@@ -5020,8 +5029,9 @@ function reModel(){
   M.subject = { en: `MoC AI Strategy - Weekly Progress Summary - ${fe(today)} (${overall}% overall)`, ar: `استراتيجية الذكاء الاصطناعي - وزارة الثقافة - ملخص التقدم الأسبوعي - ${fa(today)}` };
   M.chart = ms.map(m=>({ name:m.name, pct:m.pct||0, late: overdue(m) }));
   // ---- hand edits for this week win over the generated text ----
-  const O = reOverrides(); M.edited = {};
-  Object.keys(RE_SECTIONS).forEach(s=>{ if(O[s] && Array.isArray(O[s].en)){ M.edited[s] = true; M[s] = { en: O[s].en.map(escapeHtml), ar: (O[s].ar && O[s].ar.length ? O[s].ar : O[s].en).map(escapeHtml) }; } });
+  const O = reOverrides(); M.edited = {}; M.warn = {};   // warn: the Arabic of an edited part is missing or was not updated (screen only)
+  Object.keys(RE_SECTIONS).forEach(s=>{ if(O[s] && Array.isArray(O[s].en)){ M.edited[s] = true; M[s] = { en: O[s].en.map(escapeHtml), ar: (O[s].ar && O[s].ar.length ? O[s].ar : O[s].en).map(escapeHtml) };
+    if(!(O[s].ar && O[s].ar.length)) M.warn[s] = 'missing'; else if(O[s].arStale) M.warn[s] = 'stale'; } });
   return M;
 }
 
@@ -5042,7 +5052,7 @@ function reChartPNG(M){
 /* the email itself: inline styles + a table for the numbers, so Outlook and Word keep the look */
 function reHTML(lang, M, o){
   o = o || {}; const rtl = lang === 'ar', al = rtl ? 'right' : 'left', S = (s, i) => RE_SECTIONS[s][i];
-  const ed = s => o.edit ? ` <span class="re-tools"><button class="btn secondary cp-mini" onclick="reEdit('${s}')" title="Reword this part">✏️</button>${M.edited[s] ? `<span class="re-edited">edited</span>` : ''}</span>` : '';
+  const ed = s => o.edit ? ` <span class="re-tools"><button class="btn secondary cp-mini" onclick="reEdit('${s}')" title="Reword this part">✏️</button>${M.edited[s] ? `<span class="re-edited">edited</span>` : ''}${rtl && M.warn[s] ? `<span class="re-warn" onclick="reEdit('${s}')" title="Open ✏️ and write the Arabic">${M.warn[s] === 'missing' ? '⚠ لا يوجد نص عربي - يظهر النص الإنجليزي' : '⚠ الإنجليزي تعدّل والعربي لم يتغيّر - راجعه'}</span>` : ''}</span>` : '';
   const head = s => `<p${rtl ? ' dir="rtl"' : ''} style="font-size:10pt;font-weight:bold;letter-spacing:${rtl ? '0' : '1px'};color:#C0266A;margin:18px 0 4px;text-align:${al};">${rtl ? S(s,1) : S(s,0).toUpperCase()}${ed(s)}</p>`;
   const dirA = rtl ? ' dir="rtl"' : '', dirS = rtl ? 'direction:rtl;text-align:right;' : '';   // said on every paragraph: Word does not inherit it reliably
   const list = s => `<ul${dirA} style="margin:0 0 6px;padding-${rtl ? 'right' : 'left'}:22px;padding-${rtl ? 'left' : 'right'}:0;${dirS}">${M[s][lang].map(x=>`<li${dirA} style="margin-bottom:5px;${dirS}">${x}</li>`).join('')}</ul>`;
@@ -5056,8 +5066,9 @@ function reHTML(lang, M, o){
     ${paras('intro')}${nums}
     ${head('week')}${list('week')}
     ${head('milestones')}${o.chart ? `<p style="margin:6px 0 8px;"><img src="${o.chart}" width="600" height="${Math.round(600 * (70 + M.chart.length * 54 + 24) / 1280)}" alt="Milestone progress" style="width:600px;max-width:100%;height:auto;border:1px solid #D8E2EC;"></p>` : ''}${!o.chart || M.edited.milestones ? list('milestones') : ''}
+    ${M.deliv && M.deliv.en.length ? head('deliv') + list('deliv') : ''}
     ${head('attention')}${list('attention')}
-    ${M.asks.en.length ? head('asks') + list('asks') : o.edit && !rtl ? `<p class="re-empty">${RE_SECTIONS.asks[0]} - nothing written, so this part is left out of the email. <button class="btn secondary cp-mini" onclick="reEdit('asks')">✏️ Add</button></p>` : ''}
+    ${M.asks.en.length ? head('asks') + list('asks') : o.edit ? head('asks') + `<p class="re-empty"${rtl ? ' dir="rtl"' : ''}>${rtl ? 'لا يوجد نص، لذلك لن يظهر هذا القسم في الإيميل. اضغط ✏️ للإضافة.' : 'Nothing written, so this part is left out of the email. Press ✏️ to add.'}</p>` : ''}
     ${head('plan')}${list('plan')}
     ${head('next')}${list('next')}
     <div style="margin-top:16px;">${paras('closing')}</div></div>`;
@@ -5090,7 +5101,7 @@ function reShow(){
       <button class="btn secondary" onclick="renderEmailLocked()">🔒 Re-lock</button>
     </div>
     <div class="re-subject"><span>Subject</span><b dir="auto" id="reSubject">${escapeHtml(subj)}</b><button class="btn secondary cp-mini" onclick="reCopySubject()">📋</button></div>
-    ${lang === 'both' ? `<div class="re-two" id="reportBody"><div class="re-paper">${reHTML('en', M, { edit:true, chart: chartOn ? reChartPNG(M) : null })}</div><div class="re-paper">${reHTML('ar', M, { edit:true, chart: chartOn ? reChartPNG(M) : null })}</div></div>`
+    ${lang === 'both' ? `<div class="re-two" id="reportBody"><div class="re-paper">${reHTML('en', M, { edit:true, chart: chartOn ? reChartPNG(M) : null })}</div><div class="re-paper">${reHTML('ar', M, { edit:true, chart: null })}</div></div>`   /* one chart only, as in the email that is sent */
       : `<div class="re-paper" id="reportBody">${reBody(M, { edit:true })}</div>`}
     <p class="note" style="margin-top:10px;">Built from the same numbers as the Client View. ✏️ rewords one part for this week only (${escapeHtml(reWeekId()==='first' ? 'until the first Close Week' : 'after ' + reWeekId())}); next week it is generated again.</p>`;
 }
@@ -5099,7 +5110,8 @@ window.reShow = reShow; window.reSetPref = reSetPref;
 /* ✏️ reword one part (one bullet / paragraph per line, English and Arabic) */
 window.reEdit = function(sec){
   const M = reModel(), strip = h => { const d = document.createElement('div'); d.innerHTML = h; return d.textContent; };
-  const en = M[sec].en.map(strip).join('\n'), ar = M[sec].ar.map(strip).join('\n');
+  const en = M[sec].en.map(strip).join('\n'), ar = M.warn[sec] === 'missing' ? '' : M[sec].ar.map(strip).join('\n');
+  window._reInit = { sec, en, ar };   // to notice "English changed, Arabic left as it was\"
   openDetailModal(`${popupHeaderHTML('Reword: ' + RE_SECTIONS[sec][0], 'One line = one bullet. Kept for this week only - numbers typed here do NOT update by themselves.')}
     <div class="popup-body"><div class="form-field" style="margin-bottom:12px;"><label>English</label><textarea id="reEn" rows="7" spellcheck="true">${escapeHtml(en)}</textarea></div>
       <div class="form-field"><label>العربية</label><textarea id="reAr" rows="7" dir="rtl">${escapeHtml(ar)}</textarea></div>
@@ -5116,8 +5128,12 @@ window.reSave = function(sec, reset){
   if(reset) delete o[sec];
   else { const L = id => document.getElementById(id).value.split('\n').map(x=>x.trim()).filter(Boolean); const en = L('reEn'), ar = L('reAr');
     if(!en.length && sec !== 'asks'){ showInfoToast('Write at least one line, or use "Back to automatic".'); return; }
-    if(en.length) o[sec] = { en, ar }; else delete o[sec]; }   // "Decisions / support needed" may be left empty = not in the email
-  reStore(o, 'Report email - ' + RE_SECTIONS[sec][0]); showInfoToast(reset ? 'Back to automatic' : '✓ Saved for this week');
+    const I = window._reInit && window._reInit.sec === sec ? window._reInit : null, norm = a => a.join('\n').trim();
+    const enChanged = !I || norm(en) !== I.en.trim(), arChanged = !I || norm(ar) !== I.ar.trim();
+    if(en.length){ o[sec] = { en, ar }; if(ar.length && enChanged && !arChanged) o[sec].arStale = true;
+      window._reWarn = !ar.length ? 'The Arabic is empty - the Arabic email will show the English text.' : o[sec].arStale ? 'You changed the English but not the Arabic - please check the Arabic.' : ''; }
+    else delete o[sec]; }   // "Decisions / support needed" may be left empty = not in the email
+  reStore(o, 'Report email - ' + RE_SECTIONS[sec][0]); showInfoToast(reset ? 'Back to automatic' : window._reWarn ? '✓ Saved · ⚠ ' + window._reWarn : '✓ Saved for this week'); window._reWarn = '';
 };
 window.reResetAll = function(){ reStore({ forWeek: reWeekId() }, 'Report email - back to automatic'); showInfoToast('All parts are automatic again'); };
 
