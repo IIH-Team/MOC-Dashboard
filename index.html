@@ -1,4 +1,4 @@
-<!-- MOC Dashboard | v8 SHARED (no login screen, changes ARE saved to Firebase) | from v8 DRAFT | Last updated: 2026-09-29 (copy-button fix) - login + roles + live Firestore -->
+<!-- MOC Dashboard | v8 SHARED (no login screen, changes ARE saved to Firebase) | from v8 DRAFT | Last updated: 2026-10-03 (TERMS: Milestone shown as Workstream) - login + roles + live Firestore -->
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
@@ -2161,6 +2161,47 @@ details.cv-acc[open] > summary::before{content:'▾';}
 
 <!-- ADD/EDIT MAPE TASK MODAL -->
 <script>
+/* =====================================================================
+   TERMINOLOGY - the ONE place to rename what the dashboard calls things.
+   Applies to: every screen and tab, the Report Email (screen, Copy, Word)
+   and the PowerPoint export. Does NOT touch: data, Firestore, Excel
+   sheet / column names (Import & Export keep working as before).
+   To undo: set the value back to 'Milestone'.
+   ===================================================================== */
+const TERMS = { Milestone: 'Workstream' };
+function termText(s){
+  if(s == null) return s; s = String(s);
+  Object.keys(TERMS).forEach(from=>{
+    const to = TERMS[from]; if(!to || to === from) return;
+    s = s.replace(new RegExp(from, 'gi'), m => m === m.toUpperCase() ? to.toUpperCase()
+      : m[0] === m[0].toUpperCase() ? to[0].toUpperCase() + to.slice(1) : to.toLowerCase());
+  });
+  return s;
+}
+/* screen: rewrite visible text + tooltips as the page renders (never code, inputs or typed text) */
+(function(){
+  if(!Object.keys(TERMS).some(k=>TERMS[k] && TERMS[k] !== k)) return;
+  const RX = new RegExp(Object.keys(TERMS).join('|'), 'i'), ATTRS = ['title','placeholder','alt','aria-label'];
+  const skip = el => !el || el.closest('script,style,textarea,code,[contenteditable="true"],[data-no-term]');
+  const fixText = n => { if(RX.test(n.nodeValue) && !skip(n.parentElement)){ const v = termText(n.nodeValue); if(v !== n.nodeValue) n.nodeValue = v; } };
+  const fixEl = el => { if(skip(el)) return; ATTRS.forEach(a=>{ const v = el.getAttribute && el.getAttribute(a); if(v && RX.test(v)) el.setAttribute(a, termText(v)); }); };
+  const walk = root => {
+    if(root.nodeType === 3){ fixText(root); return; }
+    if(root.nodeType !== 1) return;
+    fixEl(root);
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+    let n; while((n = w.nextNode())){ n.nodeType === 3 ? fixText(n) : fixEl(n); }
+  };
+  const start = ()=>{
+    walk(document.body); if(RX.test(document.title)) document.title = termText(document.title);
+    new MutationObserver(list=>list.forEach(m=>{
+      if(m.type === 'characterData') fixText(m.target);
+      else if(m.type === 'attributes') fixEl(m.target);
+      else m.addedNodes.forEach(walk);
+    })).observe(document.body, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:ATTRS });
+  };
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
+})();
 /* =====================================================================
    CENTRAL CONFIG - single source of truth for all expandable value lists.
    Edit only here when team names arrive or Stage Name values change.
@@ -4921,6 +4962,7 @@ const RE_KEY = 'reportEmail';
 const RE_SECTIONS = { intro:['Greeting','التحية'], week:['Key accomplishments','أبرز الإنجازات'], milestones:['Progress by milestone','التقدم حسب الـMilestone'],
   deliv:['Deliverables','المخرجات'], attention:['Needs attention','يحتاج إلى متابعة'], asks:['Decisions / support needed','قرارات ودعم مطلوب'], plan:["Next week's plan",'خطة الأسبوع القادم'],
   next:['Key dates','مواعيد مهمة'], closing:['Closing','الخاتمة'] };
+Object.keys(RE_SECTIONS).forEach(k=>{ RE_SECTIONS[k] = RE_SECTIONS[k].map(termText); });   // headings follow TERMS
 function reWeekId(){ return (window.LAST_SNAPSHOT && window.LAST_SNAPSHOT.weekId) || 'first'; }   // edits belong to the week that follows this close
 function reOverrides(){ const o = cps(RE_KEY); return o && o.forWeek === reWeekId() ? o : { forWeek: reWeekId() }; }   // forWeek = which week these edits belong to
 function rePref(k, d){ try{ return localStorage.getItem('re_' + k) || d; }catch(e){ return d; } }
@@ -5049,6 +5091,10 @@ function reModel(){
   const O = reOverrides(); M.edited = {}; M.warn = {};   // warn: the Arabic of an edited part is missing or was not updated (screen only)
   Object.keys(RE_SECTIONS).forEach(s=>{ if(O[s] && Array.isArray(O[s].en)){ M.edited[s] = true; M[s] = { en: O[s].en.map(escapeHtml), ar: (O[s].ar && O[s].ar.length ? O[s].ar : O[s].en).map(escapeHtml) };
     if(!(O[s].ar && O[s].ar.length)) M.warn[s] = 'missing'; else if(O[s].arStale) M.warn[s] = 'stale'; } });
+  // wording follows TERMS (email on screen, Copy and Word all read from M)
+  Object.keys(RE_SECTIONS).forEach(s=>{ if(M[s] && M[s].en){ M[s].en = M[s].en.map(termText); M[s].ar = M[s].ar.map(termText); } });
+  M.nums.forEach(n=>{ n.en = n.en.map(termText); n.ar = n.ar.map(termText); });
+  M.subject = { en: termText(M.subject.en), ar: termText(M.subject.ar) };
   return M;
 }
 
@@ -5056,7 +5102,7 @@ function reModel(){
 function reChartPNG(M){
   const rows = M.chart, W = 1280, rowH = 54, top = 70, H = top + rows.length * rowH + 24, c = document.createElement('canvas'); c.width = W; c.height = H;
   const g = c.getContext('2d'); g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, W, H);
-  g.fillStyle = '#5F7085'; g.font = 'bold 20px Arial'; g.textBaseline = 'middle'; g.fillText('MILESTONE PROGRESS', 28, 36);
+  g.fillStyle = '#5F7085'; g.font = 'bold 20px Arial'; g.textBaseline = 'middle'; g.fillText(termText('MILESTONE PROGRESS'), 28, 36);
   const bx = 470, bw = 680;
   rows.forEach((r, i)=>{ const y = top + i * rowH + rowH / 2, col = r.pct >= 100 ? '#00845A' : '#1B2A4A';   // green = complete, navy = in progress (delays are said in words, not in red)
     g.fillStyle = '#172033'; g.font = '22px Arial'; let nm = r.name; while(g.measureText(nm).width > 420 && nm.length > 4) nm = nm.slice(0, -2); g.fillText(nm === r.name ? nm : nm + '…', 28, y);
@@ -5082,7 +5128,7 @@ function reHTML(lang, M, o){
   return `<div dir="${rtl ? 'rtl' : 'ltr'}" style="font-family:Calibri,'Segoe UI',Arial,Tahoma,sans-serif;font-size:11pt;color:#1F2937;line-height:1.5;text-align:${al};">
     ${paras('intro')}${nums}
     ${head('week')}${list('week')}
-    ${head('milestones')}${o.chart ? `<p style="margin:6px 0 8px;"><img src="${o.chart}" width="600" height="${Math.round(600 * (70 + M.chart.length * 54 + 24) / 1280)}" alt="Milestone progress" style="width:600px;max-width:100%;height:auto;border:1px solid #D8E2EC;"></p>` : ''}${!o.chart || M.edited.milestones ? list('milestones') : ''}
+    ${head('milestones')}${o.chart ? `<p style="margin:6px 0 8px;"><img src="${o.chart}" width="600" height="${Math.round(600 * (70 + M.chart.length * 54 + 24) / 1280)}" alt="${termText('Milestone progress')}" style="width:600px;max-width:100%;height:auto;border:1px solid #D8E2EC;"></p>` : ''}${!o.chart || M.edited.milestones ? list('milestones') : ''}
     ${M.deliv && M.deliv.en.length ? head('deliv') + list('deliv') : ''}
     ${head('attention')}${list('attention')}
     ${M.asks.en.length ? head('asks') + list('asks') : o.edit ? head('asks') + `<p class="re-empty"${rtl ? ' dir="rtl"' : ''}>${rtl ? 'لا يوجد نص، لذلك لن يظهر هذا القسم في الإيميل. اضغط ✏️ للإضافة.' : 'Nothing written, so this part is left out of the email. Press ✏️ to add.'}</p>` : ''}
@@ -6954,7 +7000,7 @@ window.saveMilestonesFromModal = function(){
   }
   const removed = MILESTONES_DATA.filter(m=>!next.some(n=>n.id && n.id===m.id));
   const orphaned = removed.reduce((a,m)=>a + epicsOfMilestone(m).length, 0);
-  if(orphaned && !confirm(`${orphaned} epic(s) belong to the milestone(s) you removed and will no longer roll up anywhere. Continue?`)) return;
+  if(orphaned && !confirm(termText(`${orphaned} epic(s) belong to the milestone(s) you removed and will no longer roll up anywhere. Continue?`))) return;
   MILESTONES_DATA.splice(0, MILESTONES_DATA.length, ...next);
   INITIATIVES.splice(0, INITIATIVES.length, ...MILESTONES_DATA.map(m=>m.name));
   closeDetailModal();
@@ -7818,7 +7864,7 @@ window.downloadClientPptx = async function(mode){
   const now = new Date(), MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()];
   const dateLong = now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
   let page = 0;
-  const T = (sl, text, x, y, w, h, o={}) => sl.addText(String(text), { x, y, w, h, fontFace:FONT, fontSize:12, color:NAVY, margin:0, valign:'middle', ...o });
+  const T = (sl, text, x, y, w, h, o={}) => sl.addText(termText(String(text)), { x, y, w, h, fontFace:FONT, fontSize:12, color:NAVY, margin:0, valign:'middle', ...o });
   const R = (sl, x, y, w, h, fill, o={}) => sl.addShape(o.round ? pptx.ShapeType.roundRect : pptx.ShapeType.rect, { x, y, w, h, fill:{ color:fill }, line:{ color: o.line || fill, width: o.line ? 0.75 : 0 }, rectRadius: o.round ? (o.r || 0.08) : undefined });
   const BAR = (sl, x, y, w, h, pct, color, bg) => { R(sl, x, y, w, h, bg || 'E6EBF1', { round:true, r:h/2 }); if(pct > 0) R(sl, x, y, Math.max(h, w*Math.min(pct,100)/100), h, color, { round:true, r:h/2 }); };
   const CARDBOX = (sl, x, y, w, h, fill) => R(sl, x, y, w, h, fill || CARD, { round:true, line:LINE, r:0.1 });
