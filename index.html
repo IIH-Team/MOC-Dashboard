@@ -10,7 +10,7 @@
 <!-- Firebase SDK - v8: login gate + roles + live Firestore sync -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch,
+import { getFirestore, initializeFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch,
          runTransaction, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification,
          sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
@@ -25,7 +25,7 @@ const firebaseConfig = {
   measurementId: "G-71M9XWH253"
 };
 const app  = initializeApp(firebaseConfig);
-const db   = getFirestore(app);
+const db   = initializeFirestore(app, { experimentalForceLongPolling: true });   // plain requests instead of a streaming channel: the stream took 10 s+ to open on the office network
 const auth = getAuth(app);
 
 /* =====================================================================
@@ -120,6 +120,8 @@ function startSession(user){
   gateShow('gateLoading', 'Checking your access…');
   const email = user.email.toLowerCase();
   userUnsub = onSnapshot(doc(db,'users',email), snap=>{
+    // slow connection: Firestore first answers "nothing here" from its empty local cache - that is NOT "no access", keep waiting for the server
+    if(!snap.exists() && snap.metadata.fromCache){ gateShow('gateLoading', 'Checking your access… (slow connection, still trying)'); return; }
     if(!snap.exists() || snap.data().active !== true){
       unsubs.forEach(u=>{ try{u();}catch(e){} }); unsubs = [];
       window.CURRENT_USER = null;
@@ -303,6 +305,7 @@ function onListenError(c, err){
   markReady(c);
 }
 function applySnapshot(c, snap){
+  if(snap.metadata.fromCache && snap.empty && !READY.has(c)) return;   // slow connection: an empty answer from the local cache is not the data - wait for the server
   if(syncTimer){ clearTimeout(syncTimer); syncTimer = null; flushSync(); }  // push pending local edits first
   const live = [], trash = [];
   SERVER[c] = new Map();
@@ -1215,7 +1218,8 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .port-split i{display:block;height:100%;}
 .port-legend{display:flex;gap:14px;justify-content:center;font-size:11.5px;color:var(--muted);}
 .port-legend b{display:inline-block;width:9px;height:9px;border-radius:2px;margin-inline-end:5px;vertical-align:middle;}
-.pm-row{display:grid;grid-template-columns:150px 1fr 74px;gap:10px;align-items:center;padding:5px 4px;border-radius:6px;cursor:pointer;font-size:12.5px;}
+.cv-note{font-size:11.5px;color:var(--muted);margin:10px 2px 0;line-height:1.5;}
+.pm-row{display:grid;grid-template-columns:150px 1fr 150px;gap:10px;align-items:center;padding:5px 4px;border-radius:6px;cursor:pointer;font-size:12.5px;}
 .pm-row:hover{background:var(--surface2);}
 .pm-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--navy2);font-weight:600;}
 .pm-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--border);}
@@ -4587,7 +4591,7 @@ function renderRisk(){
    in settings/clientPage → reportEmail). English + Arabic. Copy for Outlook, or export as Word.
    ===================================================================== */
 const RE_KEY = 'reportEmail';
-const RE_SECTIONS = { intro:['Greeting','التحية'], week:['Key accomplishments','أبرز الإنجازات'], milestones:['Progress by milestone','التقدم حسب الـMilestone'],
+const RE_SECTIONS = { intro:['Greeting','التحية'], week:['Key accomplishments','أبرز الإنجازات'], milestones:['Key milestones','الـMilestones الرئيسية'],
   deliv:['Deliverables','المخرجات'], attention:['Needs attention','يحتاج إلى متابعة'], asks:['Decisions / support needed','قرارات ودعم مطلوب'], plan:["Next week's plan",'خطة الأسبوع القادم'],
   next:['Key dates','مواعيد مهمة'], closing:['Closing','الخاتمة'] };
 Object.keys(RE_SECTIONS).forEach(k=>{ RE_SECTIONS[k] = RE_SECTIONS[k].map(termText); });   // headings follow TERMS
@@ -4685,7 +4689,7 @@ function reModel(){
 
   // ---- deliverables in two lines: what is delivered, what is in progress (same list as the Client View) ----
   { const dv = (P.deliverables || []).filter(d=>d && d.name), dn = dv.filter(d=>d.pct >= 100), ip = dv.filter(d=>d.pct > 0 && d.pct < 100).sort((a,c)=>c.pct - a.pct), up = dv.filter(d=>!d.pct);
-    const names = (a, f) => a.slice(0, 5).map(f).join(' · ') + (a.length > 5 ? ` · +${a.length - 5} more` : '');
+    const names = (a, f) => a.map(f).join(' · ');   // all of them - the reader should not have to open the dashboard
     M.deliv = { en:[], ar:[] };
     if(dn.length) add('deliv', `<b>Delivered (${dn.length} of ${dv.length}):</b> ${names(dn, d=>escapeHtml(d.name))}.`, `<b>تم التسليم (${dn.length} من ${dv.length}):</b> ${L(names(dn, d=>escapeHtml(d.name)))}.`);
     if(ip.length) add('deliv', `<b>In progress:</b> ${names(ip, d=>escapeHtml(d.name) + ' (' + d.pct + '%)')}.`, `<b>قيد التنفيذ:</b> ${L(names(ip, d=>escapeHtml(d.name) + ' (' + d.pct + '%)'))}.`);
@@ -4693,13 +4697,16 @@ function reModel(){
 
   // ---- needs attention (max 3) ----
   const att = [];
+  { const blk = {}; TASKS_DATA.forEach(t=>{ if(t.status === 'Blocked'){ const k = t.workstream || '-'; (blk[k] = blk[k] || []).push(t.title || t.id); } });   // real blockers first
+    Object.keys(blk).forEach(k=>{ if(!eps.some(x=>normKey(x.name) === normKey(k))) return;   // epic of a milestone hidden from the client
+      const n = blk[k].length, txt = escapeHtml(blk[k].join('; '));
+      att.push([`${b(k)}: ${n} blocked task${n===1?'':'s'} - ${txt}.`, `${bA(k)}: ${n} مهام متوقفة - ${L(txt)}.`]); }); }
   ((CPL && CPL.fromWorkspace && CPL.phases) || []).filter(p=>p.expected && p.expectedOpen !== false && p.status !== 'Completed').forEach(p=> att.push([
     `<b>Copilot - ${escapeHtml(p.name)}</b> is delayed: now expected ${fe(p.expected)}${p.by ? ' (was ' + fe(p.by) + ')' : ''}.`, `<b>${L('Copilot - ' + escapeHtml(p.name))}</b> متأخرة: الموعد المتوقع الآن ${fa(p.expected)}${p.by ? ' (كان ' + fa(p.by) + ')' : ''}.` ]));
   eps.filter(e=>e.risk && e.risk !== 'On Track' && e.pct < 100).forEach(e=> att.push([ `${b(e.name)} is flagged <b>${escapeHtml(e.risk)}</b> (${e.pct}%).`, `${bA(e.name)} مصنّف <b>${L(escapeHtml(e.risk))}</b> (${L(e.pct + '%')}).` ]));
   ms.filter(m=>overdue(m) && !isCop(m)).sort((a,c)=>D(a.targetDate) - D(c.targetDate)).forEach(m=> att.push([
     `${b(m.name)} is past its target date (${fe(m.targetDate)}) at ${m.pct}%.`, `${bA(m.name)} تجاوز الموعد المستهدف (${fa(m.targetDate)}) عند ${L(m.pct + '%')}.` ]));
-  att.slice(0, 3).forEach(x=> add('attention', x[0], x[1]));
-  if(att.length > 3) add('attention', `${att.length - 3} more item${att.length - 3===1?'':'s'} on the dashboard.`, `${att.length - 3} بنود أخرى على لوحة المتابعة.`);
+  att.forEach(x=> add('attention', x[0], x[1]));   // all of them
   if(!att.length) add('attention', 'Nothing needs attention - everything is on track.', 'لا يوجد ما يستدعي المتابعة - كل شيء يسير وفق الخطة.');
 
   // ---- coming up (next 14 days, max 3) ----
@@ -4755,8 +4762,8 @@ function reHTML(lang, M, o){
       <div style="font-size:9pt;color:#667085;">${rtl ? n.ar[1] : n.en[1]}</div></td>`).join('')}</tr></table>`;
   return `<div dir="${rtl ? 'rtl' : 'ltr'}" style="font-family:Calibri,'Segoe UI',Arial,Tahoma,sans-serif;font-size:11pt;color:#1F2937;line-height:1.5;text-align:${al};">
     ${paras('intro')}${nums}
+    ${head('milestones')}${o.chart ? `<p style="margin:6px 0 8px;"><img src="${o.chart.src}" width="600" height="${o.chart.h}" alt="${termText('Milestone progress')}" style="width:600px;max-width:100%;height:auto;border:1px solid #D8E2EC;"></p>` : ''}${!o.chart || M.edited.milestones ? list('milestones') : ''}
     ${head('week')}${list('week')}
-    ${head('milestones')}${o.chart ? `<p style="margin:6px 0 8px;"><img src="${o.chart}" width="600" height="${Math.round(600 * (70 + M.chart.length * 54 + 24) / 1280)}" alt="${termText('Milestone progress')}" style="width:600px;max-width:100%;height:auto;border:1px solid #D8E2EC;"></p>` : ''}${!o.chart || M.edited.milestones ? list('milestones') : ''}
     ${M.deliv && M.deliv.en.length ? head('deliv') + list('deliv') : ''}
     ${head('attention')}${list('attention')}
     ${M.asks.en.length ? head('asks') + list('asks') : o.edit ? head('asks') + `<p class="re-empty"${rtl ? ' dir="rtl"' : ''}>${rtl ? 'لا يوجد نص، لذلك لن يظهر هذا القسم في الإيميل. اضغط ✏️ للإضافة.' : 'Nothing written, so this part is left out of the email. Press ✏️ to add.'}</p>` : ''}
@@ -4764,8 +4771,26 @@ function reHTML(lang, M, o){
     ${head('next')}${list('next')}
     <div style="margin-top:16px;">${paras('closing')}</div></div>`;
 }
+/* The "Key milestones" picture = the cards of the Client View, photographed (same look, same numbers).
+   Taking the photo takes a moment, so it is made once per set of numbers and kept; until it is ready - or if it cannot
+   be made - the plain bar chart is used. */
+let RE_CARDS = null, reShooting = false;
+function reCardsKey(M){ return JSON.stringify(M.chart) + (typeof cvFont === 'function' ? cvFont() : ''); }
+function rePic(M){ return RE_CARDS && RE_CARDS.url && RE_CARDS.key === reCardsKey(M) ? RE_CARDS : { url: reChartPNG(M), w: 1280, h: 70 + M.chart.length * 54 + 24 }; }
+async function reCardsShot(M){
+  const key = reCardsKey(M);
+  try{
+    if(typeof html2canvas !== 'function' || typeof slideShot !== 'function') return { key };
+    if(typeof renderClientView === 'function') renderClientView();
+    const cards = document.querySelector('#view-client section.cv-sec .cv-slide .ws-cards'); if(!cards) return { key };
+    const holder = document.createElement('div'); holder.appendChild(cards.cloneNode(true));
+    const cv = await slideShot(holder, null, 3.1);
+    return { key, url: cv.toDataURL('image/png'), w: cv.width, h: cv.height };
+  }catch(e){ console.warn('email cards picture', e); return { key }; }
+}
 function reBody(M, o){
-  const lang = rePref('lang', 'both'), chart = rePref('chart', '1') === '1' ? (o.chartSrc || reChartPNG(M)) : null;
+  const lang = rePref('lang', 'both'), pic = rePref('chart', '1') === '1' ? rePic(M) : null,
+        chart = pic ? { src: o.chartSrc || pic.url, h: Math.round(600 * pic.h / pic.w) } : null;
   const sep = `<hr style="border:none;border-top:1px solid #D8E2EC;margin:24px 0;">`;
   const en = () => reHTML('en', M, { edit:o.edit, chart }), ar = () => reHTML('ar', M, { edit:o.edit, chart: lang === 'both' ? null : chart });
   return lang === 'en' ? en() : lang === 'ar' ? ar() : en() + sep + ar();
@@ -4792,11 +4817,21 @@ function reShow(){
       <button class="btn secondary" onclick="renderEmailLocked()">🔒 Re-lock</button>
     </div>
     <div class="re-subject"><span>Subject</span><b dir="auto" id="reSubject">${escapeHtml(subj)}</b><button class="btn secondary cp-mini" onclick="reCopySubject()">📋</button></div>
-    ${lang === 'both' ? `<div class="re-two" id="reportBody"><div class="re-paper">${reHTML('en', M, { edit:true, chart: chartOn ? reChartPNG(M) : null })}</div><div class="re-paper">${reHTML('ar', M, { edit:true, chart: null })}</div></div>`   /* one chart only, as in the email that is sent */
+    ${lang === 'both' ? `<div class="re-two" id="reportBody"><div class="re-paper">${reHTML('en', M, { edit:true, chart: chartOn ? (p=>({ src:p.url, h: Math.round(600 * p.h / p.w) }))(rePic(M)) : null })}</div><div class="re-paper">${reHTML('ar', M, { edit:true, chart: null })}</div></div>`   /* one chart only, as in the email that is sent */
       : `<div class="re-paper" id="reportBody">${reBody(M, { edit:true })}</div>`}
     <p class="note" style="margin-top:10px;">Built from the same numbers as the Client View. ✏️ rewords one part for this week only (${escapeHtml(reWeekId()==='first' ? 'until the first Close Week' : 'after ' + reWeekId())}); next week it is generated again.</p>`;
+  reEnsureCards();
 }
 window.reShow = reShow; window.reSetPref = reSetPref;
+/* make the cards picture after the email is on screen, then show the email again with it */
+async function reEnsureCards(){
+  if(reShooting || rePref('chart', '1') !== '1') return;
+  const M = reModel(); if(RE_CARDS && RE_CARDS.key === reCardsKey(M)) return;
+  reShooting = true;
+  try{ if(typeof busyOverlay === 'function') busyOverlay(true, '🖼️ Preparing the picture for the email…'); RE_CARDS = await reCardsShot(M); }
+  finally{ if(typeof busyOverlay === 'function') busyOverlay(false); reShooting = false; }
+  const area = document.getElementById('emailUnlockedArea'); if(area && area.style.display !== 'none' && RE_CARDS && RE_CARDS.url) reShow();
+}
 
 /* ✏️ reword one part (one bullet / paragraph per line, English and Arabic) */
 window.reEdit = function(sec){
@@ -4840,12 +4875,12 @@ window.reCopy = async function(){
 window.reCopySubject = function(){ const t = document.getElementById('reSubject').textContent;
   (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(()=>showInfoToast('📋 Subject copied')).catch(()=>prompt('Copy:', t)); };
 window.reCopyChart = async function(){
-  try{ const blob = await (await fetch(reChartPNG(reModel()))).blob(); await navigator.clipboard.write([ new ClipboardItem({ 'image/png': blob }) ]); showInfoToast('📷 Chart copied - paste it anywhere'); }
+  try{ const blob = await (await fetch(rePic(reModel()).url)).blob(); await navigator.clipboard.write([ new ClipboardItem({ 'image/png': blob }) ]); showInfoToast('📷 Chart copied - paste it anywhere'); }
   catch(e){ showInfoToast('⛔ This browser cannot copy pictures - use Export as Word'); }
 };
 /* Word: a .doc (MHTML) so the chart picture travels inside the file */
 function reWordFile(){
-  const M = reModel(), png = reChartPNG(M), b64 = s => { const u = unescape(encodeURIComponent(s)); let out = ''; for(let i = 0; i < u.length; i += 57) out += btoa(u.slice(i, i + 57)) + '\r\n'; return out; };
+  const M = reModel(), png = rePic(M).url, b64 = s => { const u = unescape(encodeURIComponent(s)); let out = ''; for(let i = 0; i < u.length; i += 57) out += btoa(u.slice(i, i + 57)) + '\r\n'; return out; };
   const wrap = s => s.replace(/(.{76})/g, '$1\r\n');
   const body = reBody(M, { chartSrc:'chart.png' });
   const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>MOC Weekly Summary</title>
@@ -6980,6 +7015,7 @@ function renderClientView(){
             <div class="ws-sub">${m.startedCount!=null ? `${m.startedCount} of ${m.epicCount} epics started` : `${m.epicCount} epics`}${d ? ` · ${fmtD(m.startDate) ? fmtD(m.startDate)+' - ' : ''}${fmtD(m.targetDate)}` : ''}</div>
           </div>`; }).join('')}
       </div>
+      <p class="cv-note">How to read it: the % is the average progress of the epics that have <b>started</b> in that milestone (an epic's progress = its completed tasks). Epics that have not started are not counted until they start.</p>
     </div></section>
 
     <section class="cv-sec report-zone"><button class="zone-shot-btn" onclick="captureSlide(this.nextElementSibling)" title="Copy this section as an image for a slide">📷 Copy as Image</button><div class="cv-slide">
@@ -6999,7 +7035,7 @@ function renderClientView(){
           <div class="scope-box out"><div class="scope-h">Out of scope</div>${outS.map(d=>depBar(d, p=> p>=50 ? '#E88B00' : 'var(--red)')).join('') || '<p class="note">-</p>'}</div>
         </div>
         <div class="card">
-          <h3 class="cv-cap">Epics portfolio</h3>
+          <h3 class="cv-cap">Epics portfolio · ${eps.length} epics</h3>
           <div class="port-row">
             <div><div class="port-n" style="color:#00845A;">${epDone}</div><div class="port-l">Completed</div></div>
             <div><div class="port-n" style="color:#E88B00;">${epIn}</div><div class="port-l">In progress</div></div>
@@ -7009,15 +7045,16 @@ function renderClientView(){
             const seg = (n,c)=> n ? `<i style="width:${n*100/tot}%;background:${c};" title="${n}"></i>` : '';
             return `<div class="port-split">${seg(epDone,'#00845A')}${seg(epIn,'#E88B00')}${seg(epUp,'#C3CDD8')}</div>
             <div class="port-legend"><span><b style="background:#00845A;"></b>Completed</span><span><b style="background:#E88B00;"></b>In progress</span><span><b style="background:#C3CDD8;"></b>Upcoming</span></div>
-            <h3 class="cv-cap" style="margin:18px 0 8px;">Epics by milestone</h3>
+            <h3 class="cv-cap" style="margin:18px 0 8px;">Progress by milestone</h3>
             ${ms.map((m,i)=>{ const le = eps.filter(e=>normKey(e.milestone)===normKey(m.name)); const n = le.length || 1;
               const d = le.filter(e=>e.pct>=100).length, p = le.filter(e=>e.pct>0 && e.pct<100).length, u = le.filter(e=>!e.pct).length;
               const meta = WSM[normKey(m.name)] || { short:m.name };
               return `<div class="pm-row" onclick="openClientMilestone(${i})">
                 <div class="pm-name">${escapeHtml(meta.short)}</div>
-                <div class="pm-bar">${d ? `<i style="width:${d*100/n}%;background:#00845A;"></i>` : ''}${p ? `<i style="width:${p*100/n}%;background:#E88B00;"></i>` : ''}${u ? `<i style="width:${u*100/n}%;background:#C3CDD8;"></i>` : ''}</div>
-                <div class="pm-n"><b style="color:#00845A;">${d}</b> · <b style="color:#E88B00;">${p}</b> · <b style="color:#1F4E6B;">${u}</b></div>
-              </div>`; }).join('')}`; })()}
+                <div class="pm-bar"><i style="width:${m.pct}%;background:${m.pct >= 100 ? '#00845A' : '#1F4E6B'};"></i></div>
+                <div class="pm-n"><b>${m.pct}%</b> <span style="color:var(--muted);">· ${d}/${le.length} epics done</span></div>
+              </div>`; }).join('')}
+            <p class="cv-note">The bar and % are the same number as the card above. "Epics done" = epics that are 100% complete.</p>`; })()}
         </div>
       </div>
     </div></section>
@@ -7512,6 +7549,21 @@ window.downloadClientPptx = async function(mode){
     return sl;
   };
   const cap = (sl, text, x, y, w) => T(sl, text.toUpperCase(), x, y, w, 0.28, { fontSize:13, bold:true, color:GREY, charSpacing:2 });
+  /* Blockers & Required Actions: the same two parts as the weekly email (generated, or reworded there with the pencil) */
+  const blockersSlide = ()=>{
+    const RM = reModel(), plain = h => { const d = document.createElement('div'); d.innerHTML = h; return d.textContent.trim(); };
+    const sl = content('Blockers & Required Actions', 'What is holding work back, and what is needed to move it forward');
+    const box = (x, w, title, lines, emptyText, color) => {
+      CARDBOX(sl, x, 1.5, w, 5.35, 'FFFFFF'); R(sl, x, 1.5, w, 0.08, color);
+      cap(sl, title, x + 0.25, 1.72, w - 0.5);
+      const fs = lines.length > 9 ? 11 : lines.length > 6 ? 12.5 : 14;
+      sl.addText(lines.length ? lines.map(t=>({ text: termText(t), options:{ bullet:{ indent:14 }, breakLine:true, paraSpaceAfter:6 } }))
+                              : [{ text: emptyText, options:{ color:GREY, italic:true } }],
+        { x: x + 0.25, y: 2.15, w: w - 0.5, h: 4.55, fontFace:FONT, fontSize:fs, color:NAVY, valign:'top', margin:0 });
+    };
+    box(0.5, 6.05, 'Blockers & needs attention', RM.attention.en.map(plain), 'Nothing is blocked this week.', 'C0392B');
+    box(6.78, 6.05, 'Required actions', RM.asks.en.map(plain), 'No action is required from the client this week.', 'E88B00');
+  };
 
   // ---- 1. cover ----
   { const sl = pptx.addSlide(); sl.background = { color:'FFFFFF' };
@@ -7545,6 +7597,7 @@ window.downloadClientPptx = async function(mode){
         const r = cv.width / cv.height, br = SLIDE_BOX.w / SLIDE_BOX.h;
         const w = r > br ? SLIDE_BOX.w : SLIDE_BOX.h * r, h = r > br ? SLIDE_BOX.w / r : SLIDE_BOX.h;
         sl.addImage({ data: cv.toDataURL('image/png'), x: SLIDE_BOX.x + (SLIDE_BOX.w - w)/2, y: SLIDE_BOX.y + (SLIDE_BOX.h - h)/2, w, h });
+        if(sp.title === 'Where We Stand Today') blockersSlide();
       }
     } finally { busyOverlay(false); }
   } else {
@@ -7593,12 +7646,14 @@ window.downloadClientPptx = async function(mode){
     [[dn,'Completed',GREEN],[ip,'In progress',AMBER],[up,'Upcoming',TEAL]].forEach((f,i)=>{ const x = 7.82 + i*1.62;
       T(sl, f[0], x, 3.4, 1.5, 0.55, { fontSize:36, bold:true, color:f[2], align:'center' }); T(sl, f[1], x, 3.93, 1.5, 0.26, { fontSize:12, color:GREY, align:'center' }); });
     const tot = eps.length || 1; let bx = 7.82; [[dn,GREEN],[ip,AMBER],[up,LIGHT]].forEach(([n,c])=>{ if(n){ const bw = 4.81*n/tot; R(sl, bx, 4.3, bw, 0.14, c); bx += bw; } });
-    cap(sl, 'Epics by milestone', 7.82, 4.55, 4); let yy = 4.88; const WSM = (P.cfg && P.cfg.wsMeta) || {};
+    cap(sl, 'Progress by milestone', 7.82, 4.55, 4); let yy = 4.88; const WSM = (P.cfg && P.cfg.wsMeta) || {};
     ms.forEach(m=>{ const le = eps.filter(e=>normKey(e.milestone)===normKey(m.name)), n = le.length || 1;
       const d = le.filter(e=>e.pct>=100).length, p = le.filter(e=>e.pct>0 && e.pct<100).length, u = le.filter(e=>!e.pct).length;
       T(sl, (WSM[normKey(m.name)]||{}).short || m.name, 7.82, yy, 1.75, 0.22, { fontSize:10 });
-      let x = 9.62; [[d,GREEN],[p,AMBER],[u,LIGHT]].forEach(([k,c])=>{ if(k){ const w = 2.3*k/n; R(sl, x, yy+0.06, w, 0.11, c); x += w; } });
-      T(sl, `${d} · ${p} · ${u}`, 11.95, yy, 0.8, 0.22, { fontSize:9.5, color:GREY, align:'right' }); yy += 0.245; }); }
+      BAR(sl, 9.62, yy+0.06, 1.75, 0.11, m.pct, m.pct >= 100 ? GREEN : NAVY);
+      T(sl, `${m.pct}% · ${d}/${le.length} done`, 11.42, yy, 1.33, 0.22, { fontSize:9.5, color:GREY, align:'right' }); yy += 0.245; }); }
+
+  blockersSlide();
 
   // ---- 4. The Journey So Far (1/2): phases + opportunities ----
   { const ms = P.milestones || [], J = (P.cfg && P.cfg.journey) || cfgJourney();
