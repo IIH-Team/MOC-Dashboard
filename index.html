@@ -1218,6 +1218,17 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .port-split i{display:block;height:100%;}
 .port-legend{display:flex;gap:14px;justify-content:center;font-size:11.5px;color:var(--muted);}
 .port-legend b{display:inline-block;width:9px;height:9px;border-radius:2px;margin-inline-end:5px;vertical-align:middle;}
+.fact-cards.ba-kpis{grid-template-columns:repeat(3,minmax(0,1fr));}
+.ba-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:980px){.ba-grid{grid-template-columns:1fr;}}
+.ba-card{display:flex;gap:12px;align-items:flex-start;background:var(--surface2);border:1px solid var(--border);border-left:5px solid var(--bc);border-radius:12px;padding:12px 14px;margin-bottom:9px;}
+.ba-card:last-child{margin-bottom:0;}
+.ba-n{width:26px;height:26px;border-radius:50%;background:var(--bc);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12.5px;flex-shrink:0;}
+.ba-card b{font-size:14px;color:var(--navy);display:block;}
+.ba-card p{margin:3px 0 0;font-size:12.8px;color:var(--text);line-height:1.45;}
+.ba-ok{background:#E4F5EB;border:1px solid #B8E2C9;color:#1E7F4C;border-radius:12px;padding:14px;font-weight:700;font-size:13px;}
+.ba-ok.quiet{background:var(--surface2);border-color:var(--border);color:var(--muted);font-weight:600;}
+.cv-sakkal .ba-card b{font-size:17px;} .cv-sakkal .ba-card p{font-size:15px;}
 .cv-note{font-size:11.5px;color:var(--muted);margin:10px 2px 0;line-height:1.5;}
 .pm-row{display:grid;grid-template-columns:150px 1fr 150px;gap:10px;align-items:center;padding:5px 4px;border-radius:6px;cursor:pointer;font-size:12.5px;}
 .pm-row:hover{background:var(--surface2);}
@@ -4600,8 +4611,8 @@ function reOverrides(){ const o = cps(RE_KEY); return o && o.forWeek === reWeekI
 function rePref(k, d){ try{ return localStorage.getItem('re_' + k) || d; }catch(e){ return d; } }
 function reSetPref(k, v){ try{ localStorage.setItem('re_' + k, v); }catch(e){} reShow(); }
 
-function reModel(){
-  const P = buildClientPayload(), ms = P.milestones || [], eps = P.epics || [], base = P.baseline, T = P.tasks || {}, CPL = P.copilot || null;
+function reModel(Pin){
+  const P = Pin || buildClientPayload(), ms = P.milestones || [], eps = P.epics || [], base = P.baseline, T = P.tasks || {}, CPL = P.copilot || null;
   const today = new Date(); today.setHours(0,0,0,0);
   const D = x => x ? new Date(x) : null;
   const fe = x => new Date(x).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
@@ -4707,6 +4718,7 @@ function reModel(){
   ms.filter(m=>overdue(m) && !isCop(m)).sort((a,c)=>D(a.targetDate) - D(c.targetDate)).forEach(m=> att.push([
     `${b(m.name)} is past its target date (${fe(m.targetDate)}) at ${m.pct}%.`, `${bA(m.name)} تجاوز الموعد المستهدف (${fa(m.targetDate)}) عند ${L(m.pct + '%')}.` ]));
   att.forEach(x=> add('attention', x[0], x[1]));   // all of them
+  M.allClear = !att.length;
   if(!att.length) add('attention', 'Nothing needs attention - everything is on track.', 'لا يوجد ما يستدعي المتابعة - كل شيء يسير وفق الخطة.');
 
   // ---- coming up (next 14 days, max 3) ----
@@ -4726,6 +4738,7 @@ function reModel(){
   const O = reOverrides(); M.edited = {}; M.warn = {};   // warn: the Arabic of an edited part is missing or was not updated (screen only)
   Object.keys(RE_SECTIONS).forEach(s=>{ if(O[s] && Array.isArray(O[s].en)){ M.edited[s] = true; M[s] = { en: O[s].en.map(escapeHtml), ar: (O[s].ar && O[s].ar.length ? O[s].ar : O[s].en).map(escapeHtml) };
     if(!(O[s].ar && O[s].ar.length)) M.warn[s] = 'missing'; else if(O[s].arStale) M.warn[s] = 'stale'; } });
+  if(M.edited.attention) M.allClear = false;
   // wording follows TERMS (email on screen, Copy and Word all read from M)
   Object.keys(RE_SECTIONS).forEach(s=>{ if(M[s] && M[s].en){ M[s].en = M[s].en.map(termText); M[s].ar = M[s].ar.map(termText); } });
   M.nums.forEach(n=>{ n.en = n.en.map(termText); n.ar = n.ar.map(termText); });
@@ -4847,7 +4860,9 @@ window.reEdit = function(sec){
 function reStore(o, label){
   window.CLIENT_SETTINGS = { ...(window.CLIENT_SETTINGS || {}), [RE_KEY]: o };   // show it straight away
   try{ saveCP(RE_KEY, o, label); }catch(e){ console.error(e); }
-  closeDetailModal(); reShow();
+  closeDetailModal();
+  { const a = document.getElementById('emailUnlockedArea'); if(a && a.style.display !== 'none') reShow(); }   // only if the email is the open, unlocked view
+  if(typeof renderClientView === 'function') renderClientView();                                                // the Client View shows the same two lists
 }
 window.reSave = function(sec, reset){
   const o = { ...reOverrides() };
@@ -6907,7 +6922,7 @@ function buildClientPayload(){
   recomputeRollups();   // the Client View, the email and the PowerPoint must never be built from numbers that were not calculated yet
   const snap = window.LAST_SNAPSHOT;
   const iso = d => { if(!d) return null; const x = d instanceof Date ? d : new Date(d); return isNaN(x) ? null : x.toISOString(); };
-  return {
+  const out = {
     milestones: MILESTONES_DATA.filter(m=>!(cfgWsMeta()[normKey(m.name)]||{}).hidden).map(m=>({ id:m.id||'', name:m.name, startDate: iso(m.startDate), targetDate: iso(m.targetDate), pct: m.pct||0, epicCount: m.epicCount||0, startedCount: m.startedCount||0 })),
     epics: MOC_DATA.filter(e=>!(cfgWsMeta()[normKey(e.initiative)]||{}).hidden).map(e=>({ id:e.id||'', name:e.name, milestone:e.initiative||'', stage:e.stage||'', pct:e.pct||0, risk:e.risk||'On Track',
                                past:e.past||'', next:e.next||'', taskCount:e.taskCount||0, doneCount:e.doneCount||0 })),
@@ -6950,8 +6965,22 @@ function buildClientPayload(){
       return { weekId: sn.weekId||'', pct: v.length ? Math.round(v.reduce((a,b)=>a+b,0)/v.length) : 0 };
     })
   };
+  // Blockers & Required Actions = the weekly email's "Needs attention" + "Decisions / support needed" (generated, or reworded with the pencil)
+  try{ const M = reModel(out); out.notes = { attention: M.attention.en, asks: M.asks.en, clear: !!M.allClear }; }
+  catch(e){ console.warn('client notes', e); out.notes = { attention:[], asks:[], clear:true }; }
+  return out;
 }
 window.buildClientPayload = buildClientPayload;
+/* one line of the email ("<b>Name</b> is past its target date…") -> a card: title + what is wrong */
+function baItems(lines){
+  const strip = x => { const d = document.createElement('div'); d.innerHTML = x; return d.textContent.trim(); };
+  return (lines || []).map(h=>{
+    const m = String(h).match(/^<b>([\s\S]*?)<\/b>\s*:?\s*([\s\S]*)$/);
+    if(m) return { t: strip(m[1]), d: strip(m[2]).replace(/^(is|are)\s+/i, '').replace(/^./, c=>c.toUpperCase()) };
+    const p = strip(h), k = p.indexOf(':');
+    return k > 0 && k < 70 ? { t: p.slice(0, k).trim(), d: p.slice(k + 1).trim() } : { t:'', d:p };
+  });
+}
 function renderClientView(){
   const el = document.getElementById('view-client');
   if(!el) return;
@@ -7089,6 +7118,25 @@ function renderClientView(){
         ${(P.facts || OPPORTUNITY_FACTS).map(f=>`<div class="fact"><div class="fact-n" style="color:${f.color};">${escapeHtml(String(f.n))}</div><div class="fact-l">${escapeHtml(f.label)}</div><div class="fact-s">${escapeHtml(f.sub)}</div></div>`).join('')}
       </div></div>
     </div></section>
+
+    ${(()=>{ const N = P.notes || { attention:[], asks:[], clear:true }, A = N.clear ? [] : baItems(N.attention), Q = baItems(N.asks);
+      const late = ms.filter(m=>m.pct < 100 && m.targetDate && new Date(m.targetDate) < today).length;
+      const card = (x, i, c) => `<div class="ba-card" style="--bc:${c};"><span class="ba-n">${i+1}</span><div>${x.t ? `<b>${escapeHtml(x.t)}</b>` : ''}<p>${escapeHtml(x.d)}</p></div></div>`;
+      return `<section class="cv-sec report-zone"><button class="zone-shot-btn" onclick="captureSlide(this.nextElementSibling)" title="Copy this section as an image for a slide">📷 Copy as Image</button><div class="cv-slide">
+      <h2 class="view-title">Blockers &amp; Required Actions</h2>
+      <p class="view-sub">What is holding work back, and what is needed to move it forward<span class="no-shot">. Same text as the weekly email - ✏️ rewords it for this week.</span></p>
+      <div class="fact-cards ba-kpis">
+        <div class="fact"><div class="fact-n" style="color:${A.length ? '#C0392B' : '#00845A'};">${A.length}</div><div class="fact-l">Blockers &amp; delays</div><div class="fact-s">Items that need attention</div></div>
+        <div class="fact"><div class="fact-n" style="color:${Q.length ? '#E88B00' : '#00845A'};">${Q.length}</div><div class="fact-l">Required actions</div><div class="fact-s">Needed to move forward</div></div>
+        <div class="fact"><div class="fact-n" style="color:#00845A;">${ms.length - late}<span style="font-size:.5em;color:var(--muted);"> / ${ms.length}</span></div><div class="fact-l">Milestones on schedule</div><div class="fact-s">Complete or within their target date</div></div>
+      </div>
+      <div class="ba-grid">
+        <div class="card"><h3 class="cv-cap">Blockers &amp; needs attention ${editBtn("reEdit('attention')", 'Reword this list for this week (also changes the email and the PowerPoint)')}</h3>
+          ${A.length ? A.map((x,i)=>card(x, i, '#C0392B')).join('') : '<div class="ba-ok">✓ Nothing is blocked - everything is on track.</div>'}</div>
+        <div class="card"><h3 class="cv-cap">Required actions ${editBtn("reEdit('asks')", 'Write what is needed from the client this week (also goes to the email and the PowerPoint)')}</h3>
+          ${Q.length ? Q.map((x,i)=>card(x, i, '#E88B00')).join('') : '<div class="ba-ok quiet">No action is required from the client this week.</div>'}</div>
+      </div>
+    </div></section>`; })()}
 
     <section class="cv-sec report-zone"><button class="zone-shot-btn" onclick="captureSlide(this.nextElementSibling)" title="Copy this section as an image for a slide">📷 Copy as Image</button><div class="cv-slide">
       <h2 class="view-title">Microsoft Copilot Rollout ${CP.fromWorkspace ? (!isClient() ? `<button class="btn secondary no-shot" style="padding:3px 10px;font-size:11.5px;vertical-align:middle;" onclick="showTab('copilot')" title="These numbers come from the ✨ Copilot Rollout tab">✨ Open Copilot tab</button>` : '') : editBtn('editClientCopilot()','Target date, phases and their dates')}</h2>
@@ -7502,6 +7550,7 @@ async function slideShot(srcNode, parts, aspect){
   let lo = 820, hi = 1750;
   for(let k=0; k<16; k++){ const W = (lo+hi)/2; stage.style.width = W + 'px'; if(stage.scrollHeight / W > 1/aspect) lo = W; else hi = W; }
   stage.style.width = hi + 'px';
+  await new Promise(r=>setTimeout(r, 40));   // let the page finish rewording (TERMS: Milestone -> Workstream) before the photo
   try{
     return await html2canvas(stage, { backgroundColor:'#FFFFFF', scale: Math.max(1.5, 2600/hi), useCORS:true });
   } finally { stage.remove(); }
@@ -7550,20 +7599,30 @@ window.downloadClientPptx = async function(mode){
     return sl;
   };
   const cap = (sl, text, x, y, w) => T(sl, text.toUpperCase(), x, y, w, 0.28, { fontSize:13, bold:true, color:GREY, charSpacing:2 });
-  /* Blockers & Required Actions: the same two parts as the weekly email (generated, or reworded there with the pencil) */
+  /* Blockers & Required Actions (editable mode): KPI tiles + one card per item, same text as the Client View section */
   const blockersSlide = ()=>{
-    const RM = reModel(), plain = h => { const d = document.createElement('div'); d.innerHTML = h; return d.textContent.trim(); };
+    const N = P.notes || { attention:[], asks:[], clear:true }, A = N.clear ? [] : baItems(N.attention), Q = baItems(N.asks), ms = P.milestones || [];
+    const td = new Date(); td.setHours(0,0,0,0); const late = ms.filter(m=>m.pct < 100 && m.targetDate && new Date(m.targetDate) < td).length;
     const sl = content('Blockers & Required Actions', 'What is holding work back, and what is needed to move it forward');
-    const box = (x, w, title, lines, emptyText, color) => {
-      CARDBOX(sl, x, 1.5, w, 5.35, 'FFFFFF'); R(sl, x, 1.5, w, 0.08, color);
-      cap(sl, title, x + 0.25, 1.72, w - 0.5);
-      const fs = lines.length > 9 ? 11 : lines.length > 6 ? 12.5 : 14;
-      sl.addText(lines.length ? lines.map(t=>({ text: termText(t), options:{ bullet:{ indent:14 }, breakLine:true, paraSpaceAfter:6 } }))
-                              : [{ text: emptyText, options:{ color:GREY, italic:true } }],
-        { x: x + 0.25, y: 2.15, w: w - 0.5, h: 4.55, fontFace:FONT, fontSize:fs, color:NAVY, valign:'top', margin:0 });
+    const tw = (12.33 - 0.2*2) / 3;
+    [[A.length, 'BLOCKERS & DELAYS', 'Items that need attention', A.length ? RED : GREEN], [Q.length, 'REQUIRED ACTIONS', 'Needed to move forward', Q.length ? AMBER : GREEN],
+     [(ms.length - late) + ' / ' + ms.length, 'MILESTONES ON SCHEDULE', 'Complete or within their target date', GREEN]].forEach((f, i)=>{ const x = 0.5 + i*(tw + 0.2);
+      CARDBOX(sl, x, 1.5, tw, 1.3); T(sl, f[0], x, 1.56, tw, 0.62, { fontSize:36, bold:true, color:f[3], align:'center' });
+      T(sl, f[1], x, 2.2, tw, 0.26, { fontSize:12, bold:true, align:'center', charSpacing:1 }); T(sl, f[2], x, 2.46, tw, 0.24, { fontSize:10, color:GREY, align:'center' }); });
+    const col = (x, w, title, items, color, emptyText) => {
+      CARDBOX(sl, x, 3.0, w, 3.92, 'FFFFFF'); cap(sl, title, x + 0.2, 3.1, w - 0.4);
+      if(!items.length){ R(sl, x + 0.2, 3.5, w - 0.4, 0.62, 'F8FAFC', { round:true, line:LINE, r:0.08 }); T(sl, emptyText, x + 0.4, 3.5, w - 0.8, 0.62, { fontSize:13, color:GREY, italic:true }); return; }
+      const n = items.length, gap = 0.08, h = Math.min(0.8, (3.34 - gap*(n - 1)) / n), big = h >= 0.42, roomy = h >= 0.6;
+      items.forEach((it, i)=>{ const y = 3.48 + i*(h + gap);
+        R(sl, x + 0.2, y, w - 0.4, h, 'F8FAFC', { round:true, line:LINE, r:0.05 }); R(sl, x + 0.2, y, 0.07, h, color);
+        sl.addShape(pptx.ShapeType.ellipse, { x: x + 0.38, y: y + h/2 - 0.15, w:0.3, h:0.3, fill:{ color }, line:{ color } });
+        T(sl, i + 1, x + 0.38, y + h/2 - 0.15, 0.3, 0.3, { fontSize:10, bold:true, color:'FFFFFF', align:'center' });
+        if(it.t && big){ T(sl, it.t, x + 0.82, y + 0.02, w - 1.15, h*0.5, { fontSize: roomy ? 13 : 12, bold:true });
+                         T(sl, it.d, x + 0.82, y + h*0.5, w - 1.15, h*0.46, { fontSize: roomy ? 11 : 10.5, color:GREY, valign:'top' }); }
+        else T(sl, (it.t ? it.t + ' - ' : '') + it.d, x + 0.82, y, w - 1.15, h, { fontSize: big ? 12 : 10.5 }); });
     };
-    box(0.5, 6.05, 'Blockers & needs attention', RM.attention.en.map(plain), 'Nothing is blocked this week.', 'C0392B');
-    box(6.78, 6.05, 'Required actions', RM.asks.en.map(plain), 'No action is required from the client this week.', 'E88B00');
+    col(0.5, 6.065, 'Blockers & needs attention', A, RED, 'Nothing is blocked - everything is on track.');
+    col(6.765, 6.065, 'Required actions', Q, AMBER, 'No action is required from the client this week.');
   };
 
   // ---- 1. cover ----
@@ -7585,9 +7644,8 @@ window.downloadClientPptx = async function(mode){
       { i:0, title:'Key Milestones', parts:null }, { i:1, title:'Where We Stand Today', parts:null },
       { i:2, title:'The Journey So Far', parts:['phases','opp'] },
       { i:2, title:'Delivered to Date', parts:['deliv'], sub:'AI Strategy engagement · key deliverables and where each one stands' },
-      { i:3, title:'Microsoft Copilot Rollout', parts:null },
-      { i:4, title:'This Week', parts:['md1'], sub:'What is coming up, what needs attention, and what moved since the last weekly close' },
-      { i:4, title:'Epics by Milestone', parts:['md2'], sub:'How many epics each milestone has, and where they stand' } ];
+      { i:3, title:'Blockers & Required Actions', parts:null },
+      { i:4, title:'Microsoft Copilot Rollout', parts:null } ];   // Copilot is the last content slide
     busyOverlay(true, '📊 Building the PowerPoint…');
     try{
       for(const sp of specs){
@@ -7598,7 +7656,6 @@ window.downloadClientPptx = async function(mode){
         const r = cv.width / cv.height, br = SLIDE_BOX.w / SLIDE_BOX.h;
         const w = r > br ? SLIDE_BOX.w : SLIDE_BOX.h * r, h = r > br ? SLIDE_BOX.w / r : SLIDE_BOX.h;
         sl.addImage({ data: cv.toDataURL('image/png'), x: SLIDE_BOX.x + (SLIDE_BOX.w - w)/2, y: SLIDE_BOX.y + (SLIDE_BOX.h - h)/2, w, h });
-        if(sp.title === 'Where We Stand Today') blockersSlide();
       }
     } finally { busyOverlay(false); }
   } else {
@@ -7654,8 +7711,6 @@ window.downloadClientPptx = async function(mode){
       BAR(sl, 9.62, yy+0.06, 1.75, 0.11, m.pct, m.pct >= 100 ? GREEN : NAVY);
       T(sl, `${m.pct}% · ${d}/${le.length} done`, 11.42, yy, 1.33, 0.22, { fontSize:9.5, color:GREY, align:'right' }); yy += 0.245; }); }
 
-  blockersSlide();
-
   // ---- 4. The Journey So Far (1/2): phases + opportunities ----
   { const ms = P.milestones || [], J = (P.cfg && P.cfg.journey) || cfgJourney();
     const sl = content('The Journey So Far', 'AI Strategy engagement · Ministry of Culture · MAPE delivery framework');
@@ -7690,7 +7745,10 @@ window.downloadClientPptx = async function(mode){
       T(sl, d.name, x+1.05, y+0.12, w-1.2, 0.38, { fontSize:18, bold:true });
       T(sl, d.desc + (!done && d.pct!=null ? ' · in progress' : ''), x+1.05, y+0.5, w-1.2, h-0.6, { fontSize:12, color:GREY, valign:'top' }); }); }
 
-  // ---- 6. Microsoft Copilot Rollout ----
+  // ---- 6. Blockers & Required Actions ----
+  blockersSlide();
+
+  // ---- 7. Microsoft Copilot Rollout (last content slide) ----
   { const CP = P.copilot || { phases:[] }; const unit = CP.fromWorkspace ? 'activities' : 'tasks';
     const sl = content('Microsoft Copilot Rollout', `Target: ${new Date(CP.target || cfgCopilot().target).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})} · overall ${CP.pct||0}% (${CP.done||0} of ${CP.tasks||0} ${unit} done)`);
     cap(sl, `${CP.phases.length}-phase delivery roadmap`, 0.5, 1.5, 8);
@@ -7708,40 +7766,9 @@ window.downloadClientPptx = async function(mode){
       if(p.expected) sl.addText([{ text:(p.by ? dd(p.by) : ''), options:{ strike:'sngStrike', color:GREY, bold:false } }, { text:'  Expected: ' + dd(p.expected), options:{ color: p.expectedOpen === false ? '667085' : 'C0392B' } }], { x:9.3, y:y+0.45, w:3.35, h:0.28, fontFace:FONT, fontSize:11, bold:true, align:'right', margin:0, valign:'middle' });
       else if(p.by) T(sl, 'By: ' + dd(p.by), 10.3, y+0.45, 2.35, 0.28, { fontSize:11, bold:true, color:AMBER, align:'right' }); }); }
 
-  // ---- 7. More detail (1/2): coming up · needs attention · this week ----
-  { const ms = P.milestones || [], eps = P.epics || [], base = P.baseline, T0 = P.tasks || {};
-    const today = new Date(); today.setHours(0,0,0,0);
-    const upcoming = ms.filter(m=>m.pct<100 && m.targetDate && new Date(m.targetDate) >= today).sort((a,b)=>new Date(a.targetDate)-new Date(b.targetDate)).slice(0,5);
-    const overdue = ms.filter(m=>m.pct<100 && m.targetDate && new Date(m.targetDate) < today);
-    const attention = eps.filter(e=>e.risk && e.risk!=='On Track').slice(0,7);
-    const prevOf = e => base && typeof base.epics[e.id]==='number' ? base.epics[e.id] : e.pct;
-    const moved = eps.filter(e=>prevOf(e)!==e.pct).slice(0,6);
-    const sl = content('This Week', 'What is coming up, what needs attention, and what moved since the last weekly close');
-    CARDBOX(sl, 0.5, 1.5, 6.05, 2.75, 'FFFFFF'); cap(sl, 'Coming up', 0.7, 1.6, 4); let y = 1.98;
-    (upcoming.length ? upcoming : [null]).forEach(m=>{ if(!m){ T(sl, 'No upcoming target dates.', 0.7, y, 5.6, 0.3, { fontSize:12, color:GREY }); return; }
-      T(sl, m.name, 0.7, y, 3.6, 0.3, { fontSize:13 }); T(sl, new Date(m.targetDate).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' · ' + m.pct + '%', 4.3, y, 2.05, 0.3, { fontSize:12, bold:true, color:pctHex(m.pct), align:'right' }); y += 0.36; });
-    if(overdue.length) T(sl, `${overdue.length} milestone${overdue.length>1?'s are':' is'} past the target date and not complete yet.`, 0.7, 3.85, 5.6, 0.3, { fontSize:11, color:RED });
-    CARDBOX(sl, 6.78, 1.5, 6.05, 2.75, 'FFFFFF'); cap(sl, 'Needs attention', 6.98, 1.6, 4); y = 1.98;
-    if(!attention.length) T(sl, '✓ Nothing flagged - all epics are on track.', 6.98, y, 5.6, 0.3, { fontSize:13, color:GREEN });
-    attention.forEach(e=>{ T(sl, e.name, 6.98, y, 4.3, 0.3, { fontSize:12 }); T(sl, e.risk, 11.3, y, 1.35, 0.3, { fontSize:11, bold:true, color: e.risk==='At Risk' ? AMBER : RED, align:'right' }); y += 0.32; });
-    CARDBOX(sl, 0.5, 4.45, 12.33, 2.45, 'FFFFFF'); cap(sl, 'This week', 0.7, 4.55, 4);
-    T(sl, T0.completedSinceClose == null ? 'Weekly comparison starts after the first week is closed.' : `${T0.completedSinceClose} task${T0.completedSinceClose===1?'':'s'} completed and ${eps.filter(e=>prevOf(e)!==e.pct).length} epic(s) moved since the last weekly close.`, 0.7, 4.9, 11.9, 0.32, { fontSize:14 });
-    y = 5.3; moved.forEach(e=>{ const d = e.pct - prevOf(e); T(sl, `${e.name}  (${e.milestone})`, 0.7, y, 9.2, 0.26, { fontSize:11.5 });
-      T(sl, `${prevOf(e)}% → ${e.pct}%   ${d>0?'+':''}${d}%`, 9.9, y, 2.75, 0.26, { fontSize:11.5, bold:true, color: d>0 ? GREEN : RED, align:'right' }); y += 0.26; }); }
-
-  // ---- 8. More detail (2/2): epics by milestone ----
-  { const ms = P.milestones || [], eps = P.epics || [], WSM = (P.cfg && P.cfg.wsMeta) || {};
-    const sl = content('Epics by Milestone', 'How many epics each milestone has, and where they stand');
-    const hdr = ['Milestone','Epics','Completed','In progress','Upcoming','Progress'].map(t=>({ text:t, options:{ bold:true, color:GREY, fontSize:12, fill:{ color:CARD } } }));
-    const rows = ms.map(m=>{ const le = eps.filter(e=>normKey(e.milestone)===normKey(m.name));
-      return [ { text:(WSM[normKey(m.name)]||{}).short || m.name, options:{ bold:true } }, String(le.length), String(le.filter(e=>e.pct>=100).length),
-               String(le.filter(e=>e.pct>0 && e.pct<100).length), String(le.filter(e=>!e.pct).length), { text:m.pct + '%', options:{ bold:true, color:pctHex(m.pct) } } ]; });
-    sl.addTable([hdr, ...rows], { x:0.5, y:1.55, w:12.33, colW:[4.33,1.5,1.6,1.6,1.6,1.7], fontFace:FONT, fontSize:13, color:NAVY,
-      border:{ type:'solid', color:LINE, pt:0.75 }, rowH:0.5, align:'center', valign:'middle' }); }
-
   }   // end of editable slides
 
-  // ---- 9. Thank you ----
+  // ---- 8. Thank you ----
   { const sl = pptx.addSlide();
     sl.addImage({ data: REPORT_ASSETS.tyBg, x:-0.38, y:0, w:13.71, h:7.5 });
     sl.addShape(pptx.ShapeType.rect, { x:-0.38, y:0, w:13.71, h:7.5, fill:{ color:'000000', transparency:55 }, line:{ color:'000000', transparency:100 } });
