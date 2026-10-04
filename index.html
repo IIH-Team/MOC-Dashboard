@@ -6904,6 +6904,7 @@ function taskPhase(t){ const tg = (Array.isArray(t.tags) ? t.tags : String(t.tag
    Staff build it live; a Manager/Admin session publishes it to clientview/current, which is the only
    thing a client can read (see firestore.rules). */
 function buildClientPayload(){
+  recomputeRollups();   // the Client View, the email and the PowerPoint must never be built from numbers that were not calculated yet
   const snap = window.LAST_SNAPSHOT;
   const iso = d => { if(!d) return null; const x = d instanceof Date ? d : new Date(d); return isNaN(x) ? null : x.toISOString(); };
   return {
@@ -7820,6 +7821,7 @@ function renderGaps(){
 }
 
 function renderAllViews(){
+  recomputeRollups();   // first: Missing Info, Client View and Copilot are drawn before the tabs that used to trigger it, and showed 0% on the first load
   if(typeof renderGaps === 'function') renderGaps();
   if(typeof renderClientView === 'function') renderClientView();
   if(typeof renderCopilot === 'function') renderCopilot();
