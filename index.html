@@ -4647,6 +4647,10 @@ function reModel(Pin){
   add('closing', 'Full details are available on the project dashboard. Please reach out for any questions.', 'التفاصيل الكاملة متاحة على لوحة متابعة المشروع. لا تترددوا بالتواصل معنا لأي استفسار.');
   add('closing', 'Best regards,', 'مع خالص التحية،');
 
+  // an epic is always named with its workstream, so the reader knows which project it belongs to
+  const epWs = e => { const w = String(e.milestone || '').trim(), n = String(e.name || '').trim();
+    return w && normKey(w) !== normKey(n) && n.toLowerCase().indexOf(w.toLowerCase()) < 0 ? w : ''; };
+  const eb = e => b(e.name) + (epWs(e) ? ` (${escapeHtml(epWs(e))})` : ''), ebA = e => bA(e.name) + (epWs(e) ? ` (${L(escapeHtml(epWs(e)))})` : '');
   // ---- key accomplishments: what was actually done this week, in words (max 3) ----
   const movers = eps.map(e=>({ e, p: prevEp(e) })).filter(x=>x.p != null && x.e.pct > x.p).sort((a,b2)=>(b2.e.pct - b2.p) - (a.e.pct - a.p));
   const newlyDone = ms.filter(m=>m.pct >= 100 && prevMs(m) != null && prevMs(m) < 100);
@@ -4656,18 +4660,20 @@ function reModel(Pin){
   const acc = eps.map(e=>({ e, n: doneBy[normKey(e.name)] || 0, p: prevEp(e) })).filter(x=>x.n > 0 || (x.p != null && x.e.pct > x.p))
     .sort((a,c)=>(c.n - a.n) || ((c.e.pct - (c.p||0)) - (a.e.pct - (a.p||0))));
   acc.slice(0, 3).forEach(x=>{ const e = x.e, txt = String(e.past || '').trim().replace(/\.$/, ''), moved = x.p != null && e.pct > x.p;
-    const tail = e.pct >= 100 ? [' - now complete', ' - اكتمل'] : moved ? [` - now at <b>${e.pct}%</b> (was ${x.p}%)`, ` - الآن <b>${L(e.pct + '%')}</b> (كان ${L(x.p + '%')})`] : [` - at <b>${e.pct}%</b>`, ` - عند <b>${L(e.pct + '%')}</b>`];
-    const what = txt ? [escapeHtml(txt), L(escapeHtml(txt))] : x.n ? [`${x.n} task${x.n===1?'':'s'} completed`, `إنجاز ${x.n} مهمة`] : ['progressed', 'تقدّم'];
-    add('week', `${b(e.name)}: ${what[0]}${tail[0]}.`, `${bA(e.name)}: ${what[1]}${tail[1]}.`); });
-  if(acc.length > 3) add('week', `Progress on ${acc.length - 3} more epic${acc.length - 3===1?'':'s'}.`, `تقدّم في ${acc.length - 3} Epics أخرى.`);
+    const done = e.pct >= 100, nT = x.n ? [` (${x.n} task${x.n===1?'':'s'} closed)`, ` (إغلاق ${x.n} مهمة)`] : ['', ''];
+    const prog = moved ? [`progress now <b>${e.pct}%</b> (was ${x.p}%)`, `نسبة الإنجاز الآن <b>${L(e.pct + '%')}</b> (كانت ${L(x.p + '%')})`] : [`progress at <b>${e.pct}%</b>`, `نسبة الإنجاز <b>${L(e.pct + '%')}</b>`];
+    const line = txt ? (done ? [`${escapeHtml(txt)} - completed this week`, `${L(escapeHtml(txt))} - اكتمل هذا الأسبوع`] : [`${escapeHtml(txt)} - ${prog[0]}`, `${L(escapeHtml(txt))} - ${prog[1]}`])
+               : done ? [`completed this week${nT[0]}`, `اكتمل هذا الأسبوع${nT[1]}`]
+               : x.n ? [`${x.n} task${x.n===1?'':'s'} completed this week - ${prog[0]}`, `إنجاز ${x.n} مهمة هذا الأسبوع - ${prog[1]}`] : [prog[0], prog[1]];
+    add('week', `${eb(e)}: ${line[0]}.`, `${ebA(e)}: ${line[1]}.`); });
   if(!M.week) base ? add('week', 'No change in progress this week.', 'لا يوجد تغيير في نسب الإنجاز هذا الأسبوع.')
                    : add('week', 'This is the first weekly summary - week-on-week comparison starts from the next one.', 'هذا أول ملخص أسبوعي، وتبدأ المقارنة الأسبوعية من الملخص القادم.');
 
   // ---- next week's plan (max 3): the "Next Step" written on the epics in progress; then what is closest to done; then what starts ----
   const msOf = e => ms.find(m=>normKey(m.name) === normKey(e.milestone)), tgt = e => { const m = msOf(e); return m && m.targetDate ? D(m.targetDate).getTime() : 9e15; };
   const live = eps.filter(e=>e.pct > 0 && e.pct < 100), plan = [];
-  live.filter(e=>String(e.next || '').trim()).sort((a,c)=>tgt(a) - tgt(c)).forEach(e=>{ const t = escapeHtml(String(e.next).trim().replace(/\.$/, '')); plan.push([`${b(e.name)}: ${t}.`, `${bA(e.name)}: ${L(t)}.`]); });
-  live.filter(e=>!String(e.next || '').trim()).sort((a,c)=>c.pct - a.pct).forEach(e=> plan.push([`Complete ${b(e.name)} (now ${e.pct}%).`, `استكمال ${bA(e.name)} (الآن ${L(e.pct + '%')}).`]));
+  live.filter(e=>String(e.next || '').trim()).sort((a,c)=>tgt(a) - tgt(c)).forEach(e=>{ const t = escapeHtml(String(e.next).trim().replace(/\.$/, '')); plan.push([`${eb(e)}: ${t}.`, `${ebA(e)}: ${L(t)}.`]); });
+  live.filter(e=>!String(e.next || '').trim()).sort((a,c)=>c.pct - a.pct).forEach(e=> plan.push([`Complete ${eb(e)} (now ${e.pct}%).`, `استكمال ${ebA(e)} (الآن ${L(e.pct + '%')}).`]));
   ms.filter(m=>!m.pct && m.startDate && D(m.startDate) >= today && (D(m.startDate) - today) / 864e5 <= 10).forEach(m=> plan.unshift([`Start ${b(m.name)} (${fe(m.startDate)}).`, `بدء ${bA(m.name)} (${fa(m.startDate)}).`]));
   plan.slice(0, 3).forEach(x=> add('plan', x[0], x[1]));
   if(!plan.length) add('plan', 'No work is planned for next week.', 'لا يوجد عمل مخطط للأسبوع القادم.');
@@ -4714,7 +4720,7 @@ function reModel(Pin){
       att.push([`${b(k)}: ${n} blocked task${n===1?'':'s'} - ${txt}.`, `${bA(k)}: ${n} مهام متوقفة - ${L(txt)}.`]); }); }
   ((CPL && CPL.fromWorkspace && CPL.phases) || []).filter(p=>p.expected && p.expectedOpen !== false && p.status !== 'Completed').forEach(p=> att.push([
     `<b>Copilot - ${escapeHtml(p.name)}</b> is delayed: now expected ${fe(p.expected)}${p.by ? ' (was ' + fe(p.by) + ')' : ''}.`, `<b>${L('Copilot - ' + escapeHtml(p.name))}</b> متأخرة: الموعد المتوقع الآن ${fa(p.expected)}${p.by ? ' (كان ' + fa(p.by) + ')' : ''}.` ]));
-  eps.filter(e=>e.risk && e.risk !== 'On Track' && e.pct < 100).forEach(e=> att.push([ `${b(e.name)} is flagged <b>${escapeHtml(e.risk)}</b> (${e.pct}%).`, `${bA(e.name)} مصنّف <b>${L(escapeHtml(e.risk))}</b> (${L(e.pct + '%')}).` ]));
+  eps.filter(e=>e.risk && e.risk !== 'On Track' && e.pct < 100).forEach(e=> att.push([ `${eb(e)} is flagged <b>${escapeHtml(e.risk)}</b> (${e.pct}%).`, `${ebA(e)} مصنّف <b>${L(escapeHtml(e.risk))}</b> (${L(e.pct + '%')}).` ]));
   ms.filter(m=>overdue(m) && !isCop(m)).sort((a,c)=>D(a.targetDate) - D(c.targetDate)).forEach(m=> att.push([
     `${b(m.name)} is past its target date (${fe(m.targetDate)}) at ${m.pct}%.`, `${bA(m.name)} تجاوز الموعد المستهدف (${fa(m.targetDate)}) عند ${L(m.pct + '%')}.` ]));
   att.forEach(x=> add('attention', x[0], x[1]));   // all of them
@@ -4775,7 +4781,7 @@ function reHTML(lang, M, o){
       <div style="font-size:9pt;color:#667085;">${rtl ? n.ar[1] : n.en[1]}</div></td>`).join('')}</tr></table>`;
   return `<div dir="${rtl ? 'rtl' : 'ltr'}" style="font-family:Calibri,'Segoe UI',Arial,Tahoma,sans-serif;font-size:11pt;color:#1F2937;line-height:1.5;text-align:${al};">
     ${paras('intro')}${nums}
-    ${head('milestones')}${o.chart ? `<p style="margin:6px 0 8px;"><img src="${o.chart.src}" width="600" height="${o.chart.h}" alt="${termText('Milestone progress')}" style="width:600px;max-width:100%;height:auto;border:1px solid #D8E2EC;"></p>` : ''}${!o.chart || M.edited.milestones ? list('milestones') : ''}
+    ${o.picAbove && !M.edited.milestones ? '' : head('milestones')}${o.picAbove && !M.edited.milestones ? '' : o.chart ? `<p style="margin:6px 0 8px;"><img src="${o.chart.src}" width="600" height="${o.chart.h}" alt="${termText('Milestone progress')}" style="width:600px;max-width:100%;height:auto;border:1px solid #D8E2EC;"></p>` : ''}${o.picAbove && !M.edited.milestones ? '' : (!o.chart || M.edited.milestones ? list('milestones') : '')}
     ${head('week')}${list('week')}
     ${M.deliv && M.deliv.en.length ? head('deliv') + list('deliv') : ''}
     ${head('attention')}${list('attention')}
@@ -4805,7 +4811,7 @@ function reBody(M, o){
   const lang = rePref('lang', 'both'), pic = rePref('chart', '1') === '1' ? rePic(M) : null,
         chart = pic ? { src: o.chartSrc || pic.url, h: Math.round(600 * pic.h / pic.w) } : null;
   const sep = `<hr style="border:none;border-top:1px solid #D8E2EC;margin:24px 0;">`;
-  const en = () => reHTML('en', M, { edit:o.edit, chart }), ar = () => reHTML('ar', M, { edit:o.edit, chart: lang === 'both' ? null : chart });
+  const en = () => reHTML('en', M, { edit:o.edit, chart }), ar = () => reHTML('ar', M, { edit:o.edit, chart: lang === 'both' ? null : chart, picAbove: lang === 'both' && !!chart });
   return lang === 'en' ? en() : lang === 'ar' ? ar() : en() + sep + ar();
 }
 
@@ -4830,7 +4836,7 @@ function reShow(){
       <button class="btn secondary" onclick="renderEmailLocked()">🔒 Re-lock</button>
     </div>
     <div class="re-subject"><span>Subject</span><b dir="auto" id="reSubject">${escapeHtml(subj)}</b><button class="btn secondary cp-mini" onclick="reCopySubject()">📋</button></div>
-    ${lang === 'both' ? `<div class="re-two" id="reportBody"><div class="re-paper">${reHTML('en', M, { edit:true, chart: chartOn ? (p=>({ src:p.url, h: Math.round(600 * p.h / p.w) }))(rePic(M)) : null })}</div><div class="re-paper">${reHTML('ar', M, { edit:true, chart: null })}</div></div>`   /* one chart only, as in the email that is sent */
+    ${lang === 'both' ? `<div class="re-two" id="reportBody"><div class="re-paper">${reHTML('en', M, { edit:true, chart: chartOn ? (p=>({ src:p.url, h: Math.round(600 * p.h / p.w) }))(rePic(M)) : null })}</div><div class="re-paper">${reHTML('ar', M, { edit:true, chart: null, picAbove: chartOn })}</div></div>`   /* one chart only, as in the email that is sent */
       : `<div class="re-paper" id="reportBody">${reBody(M, { edit:true })}</div>`}
     <p class="note" style="margin-top:10px;">Built from the same numbers as the Client View. ✏️ rewords one part for this week only (${escapeHtml(reWeekId()==='first' ? 'until the first Close Week' : 'after ' + reWeekId())}); next week it is generated again.</p>`;
   reEnsureCards();
