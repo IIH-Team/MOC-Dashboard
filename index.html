@@ -1125,7 +1125,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .cal-note{text-align:center;color:var(--muted);font-size:12px;margin:0 0 10px;}
 
 /* "needs filling" markers */
-/* N/A = empty field. Grey normally; red only while the "Incomplete" filter is on */
+/* N/A = empty field. Grey normally; red only while the "Missing info" filter is on */
 .na-pill{display:inline-block;background:var(--surface2);color:var(--muted);border:1px dashed #B8C2D3;border-radius:6px;padding:1px 6px;font-size:10.5px;font-weight:700;letter-spacing:.03em;white-space:nowrap;}
 .missing-mode .na-pill{background:#FDECEA;color:var(--red);border-color:var(--red);font-weight:800;}
 .missing-mode[data-mf] .na-pill{background:var(--surface2);color:var(--muted);border-color:#B8C2D3;font-weight:700;}
@@ -5243,7 +5243,7 @@ function renderTasks(){
       <button class="btn" id="addTaskBtn" data-can="addTask">+ Add Task</button>
       <div class="view-toggle" id="taskScopeToggle"><button data-scope="mine">👤 My Tasks</button><button data-scope="all">👥 All Tasks</button></div>
       <button class="btn secondary" data-can="deleteTask" onclick="openTrash()" title="Deleted tasks">🗑️ Deleted</button>
-      <button class="btn missing-btn" id="missingBtn" title="Show only tasks with empty fields (Purpose, Epic, Department, Assignee, Due Date)"></button>
+      <button class="btn missing-btn" id="missingBtn" title="Filter: show only the tasks that have empty fields (information not filled in yet). It is not about the task status."></button>
       <input type="text" id="taskSearchInput" placeholder="Search by title or notes...">
       <div id="msContainer" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
       <div class="view-toggle" style="margin-inline-start:auto;">
@@ -5317,7 +5317,7 @@ function renderTasks(){
     mb.style.display = (n || saved) ? '' : 'none';
     mb.classList.toggle('active', saved);
     const fLabel = taskFilterState.missingField ? (TASK_REQUIRED.find(x=>x[0]===taskFilterState.missingField)||[])[1] : null;
-    mb.innerHTML = saved ? `✕ ${fLabel ? 'No ' + fLabel : 'Incomplete'} only` : `📝 Incomplete <span class="cnt">${n}</span>`;
+    mb.innerHTML = saved ? `✕ ${fLabel ? 'No ' + fLabel : 'Missing info'} only` : `📝 Missing info <span class="cnt">${n}</span>`;
   };
   el.querySelector('#missingBtn').onclick = ()=>{
     taskFilterState.missing = !taskFilterState.missing;
@@ -7810,14 +7810,14 @@ function renderGaps(){
     <div class="gap-kpis">
       <div class="gap-kpi total" data-go="">
         <div class="n">${withGaps.length} <span style="font-size:13px;font-weight:700;opacity:.8;">/ ${all.length}</span></div>
-        <div class="l">Tasks incomplete · ${pct(withGaps.length, all.length)}%</div>
+        <div class="l">Tasks with missing info · ${pct(withGaps.length, all.length)}%</div>
       </div>
       ${fields.map(f=>`<div class="gap-kpi" data-go="${f.k}"><div class="n">${f.n}</div><div class="l">No ${f.label}</div></div>`).join('')}
     </div>
     <div class="card" style="overflow-x:auto;">
       <h3 style="margin:0 0 10px;font-size:14px;">By person</h3>
       <table class="gap-table">
-        <tr><th>Person</th><th style="text-align:center;">Tasks</th><th style="text-align:center;">Incomplete</th><th>% of their tasks</th><th style="text-align:center;">Share of all gaps</th>
+        <tr><th>Person</th><th style="text-align:center;">Tasks</th><th style="text-align:center;">Missing info</th><th>% of their tasks</th><th style="text-align:center;">Share of all gaps</th>
             ${TASK_REQUIRED.map(([,l])=>`<th style="text-align:center;">${l}</th>`).join('')}</tr>
         ${rows.map(r=>`<tr data-person="${escapeHtml(r.name)}">
           <td><b>${escapeHtml(r.name)}</b></td>
@@ -7827,7 +7827,7 @@ function renderGaps(){
           ${TASK_REQUIRED.map(([k])=>cell(r.f[k], k)).join('')}
         </tr>`).join('')}
       </table>
-      <p class="note" style="margin:10px 0 0;">"Incomplete" = at least one of: ${TASK_REQUIRED.map(x=>x[1]).join(', ')} is empty. Tasks with no assignee are the PM's to assign.</p>
+      <p class="note" style="margin:10px 0 0;">"Missing info" = at least one of: ${TASK_REQUIRED.map(x=>x[1]).join(', ')} is empty. Tasks with no assignee are the PM's to assign.</p>
     </div>
   </div>`;
   const openTasks = (person, field)=>{
