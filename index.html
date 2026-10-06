@@ -4608,7 +4608,7 @@ function renderRisk(){
    in settings/clientPage → reportEmail). English + Arabic. Copy for Outlook, or export as Word.
    ===================================================================== */
 const RE_KEY = 'reportEmail';
-const RE_SECTIONS = { intro:['Greeting','التحية'], week:['Key accomplishments','أبرز الإنجازات'], milestones:['Key milestones','الـMilestones الرئيسية'],
+const RE_SECTIONS = { intro:['Greeting','التحية'], week:['Key accomplishments','أبرز الإنجازات'], milestones:['Workstreams progress to-date','تقدّم الـMilestones حتى تاريخه'],
   deliv:['Deliverables','المخرجات'], attention:['Needs attention','يحتاج إلى متابعة'], asks:['Decisions / support needed','قرارات ودعم مطلوب'], plan:["Next week's plan",'خطة الأسبوع القادم'],
   next:['Key dates','مواعيد مهمة'], closing:['Closing','الخاتمة'] };
 Object.keys(RE_SECTIONS).forEach(k=>{ RE_SECTIONS[k] = RE_SECTIONS[k].map(termText); });   // headings follow TERMS
@@ -7044,7 +7044,7 @@ function renderClientView(){
         <button class="btn secondary" onclick="downloadClientPptx('editable')" title="Slides built from real PowerPoint shapes and text you can edit">📊 PowerPoint · Editable</button>` : ''}</span></div>` : ''}
 
     <section class="cv-sec report-zone"><button class="zone-shot-btn" onclick="captureSlide(this.nextElementSibling)" title="Copy this section as an image for a slide">📷 Copy as Image</button><div class="cv-slide">
-      <h2 class="view-title">Key Milestones ${editBtn('editClientWs()','Short names and icons of the milestone cards')}</h2>
+      <h2 class="view-title">Workstreams Progress To-Date ${editBtn('editClientWs()','Short names and icons of the milestone cards')}</h2>
       <p class="view-sub">${ms.length} milestones · current progress snapshot${upd ? ' · updated ' + fmtDate(upd) : ''}<span class="no-shot">. Click a card for details.</span></p>
       <div class="ws-cards">
         ${ms.map((m,i)=>{ const meta = WSM[normKey(m.name)] || { icon:'pin', short:m.name }; const c = WS_COL[i % WS_COL.length];
@@ -7061,7 +7061,7 @@ function renderClientView(){
     </div></section>
 
     <section class="cv-sec report-zone"><button class="zone-shot-btn" onclick="captureSlide(this.nextElementSibling)" title="Copy this section as an image for a slide">📷 Copy as Image</button><div class="cv-slide">
-      <h2 class="view-title">Where We Stand Today</h2>
+      <h2 class="view-title">AI Strategy and Use Cases</h2>
       <p class="view-sub">Live figures from the delivery tracker · as of ${fmtDate(upd || new Date())}</p>
       <div class="fact-cards">
         <div class="fact"><div class="fact-n" style="color:#1F4E6B;">${ms.length}</div><div class="fact-l">Milestones</div><div class="fact-s">${escapeHtml([...new Set(ms.map(m=>((WSM[normKey(m.name)]||{}).short || m.name).split(' · ')[0]))].slice(0,4).join(', '))}${ms.length > 4 ? ' &amp; more' : ''}</div></div>
@@ -7256,7 +7256,7 @@ const saveCP = (key, value, label) => FB.saveClientPage(key, value, label, CP_NO
 
 window.editClientWs = function(){
   const meta = cfgWsMeta();
-  openListEditor({ title:'Key Milestones - cards', sub:'What the client sees on each milestone card. The % always comes from the data.',
+  openListEditor({ title:'Workstreams Progress To-Date - cards', sub:'What the client sees on each milestone card. The % always comes from the data.',
     top:`<div class="missing-banner" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
       <span><b>Milestone</b> = the real name (the epics follow it, used in every tab). To rename it everywhere use Manage Milestones.<br><b>Name on the card</b> = only what the client reads. <b>Show to client</b> off = hidden from the client page only (it stays in all your tabs).</span>
       <button class="btn secondary" style="white-space:nowrap;" onclick="closeDetailModal();openMilestonesModal()">✏️ Manage Milestones</button></div>`,
@@ -7264,7 +7264,7 @@ window.editClientWs = function(){
     rows: MILESTONES_DATA.map(m=>({ show: !(meta[normKey(m.name)]||{}).hidden, name:m.name, short:(meta[normKey(m.name)]||{}).short || m.name, icon:(meta[normKey(m.name)]||{}).icon || 'pin' })),
     note:'Icons: ' + Object.keys(LINE_ICONS).map(k=>`${lineIcon(k,16)} ${k}`).join(' &nbsp; '),
     validate: rows => rows.some(r=>r.show) ? '' : 'Show at least one milestone to the client.',
-    onSave: rows => saveCP('wsMeta', Object.fromEntries(rows.map(r=>[normKey(r.name), { short: r.short || r.name, icon: r.icon, ...(r.show ? {} : { hidden:true }) }])), 'Key Milestones cards') });
+    onSave: rows => saveCP('wsMeta', Object.fromEntries(rows.map(r=>[normKey(r.name), { short: r.short || r.name, icon: r.icon, ...(r.show ? {} : { hidden:true }) }])), 'Workstreams Progress To-Date cards') });
 };
 window.editClientBusiness = function(){
   const cur = cfgBusiness();
@@ -7569,6 +7569,13 @@ async function slideShot(srcNode, parts, aspect, baseW){
   }
   if(hi !== lo) for(let k=0; k<16; k++){ const W = (lo+hi)/2; if(tooTall(W)) lo = W; else hi = W; }
   stage.style.width = hi + 'px';
+  if(baseW){            // shorter than the slide: the boxes grow a little (padding only) instead of leaving an empty band below
+    const slack = hi / aspect - stage.scrollHeight - 4;
+    const tiles = [...stage.querySelectorAll('.ws-card,.fact,.jr-card,.dl-card,.ba-card,.ba-ok,.rm-row')];
+    const rows = new Set(tiles.map(t=>Math.round(t.getBoundingClientRect().top))).size;
+    if(slack > 10 && rows){ const add = Math.min(26, slack / rows / 2);
+      tiles.forEach(t=>{ const cs = getComputedStyle(t); t.style.paddingTop = (parseFloat(cs.paddingTop) + add) + 'px'; t.style.paddingBottom = (parseFloat(cs.paddingBottom) + add) + 'px'; }); }
+  }
   await new Promise(r=>setTimeout(r, 40));   // let the page finish rewording (TERMS: Milestone -> Workstream) before the photo
   try{
     return await html2canvas(stage, { backgroundColor:'#FFFFFF', scale: Math.max(1.5, 2600/hi), useCORS:true });
@@ -7661,7 +7668,7 @@ window.downloadClientPptx = async function(mode){
     const secs = [...document.querySelectorAll('#view-client section.cv-sec .cv-slide')];
     const subOf = i => { const e = secs[i] && secs[i].querySelector('.view-sub'); if(!e) return ''; const c = e.cloneNode(true); c.querySelectorAll('.no-shot').forEach(x=>x.remove()); return c.textContent.trim(); };
     const specs = [
-      { i:0, title:'Key Milestones', parts:null }, { i:1, title:'Where We Stand Today', parts:null },
+      { i:0, title:'Workstreams Progress To-Date', parts:null }, { i:1, title:'AI Strategy and Use Cases', parts:null },
       { i:2, title:'The Journey So Far', parts:['phases','opp'] },
       { i:2, title:'Delivered to Date', parts:['deliv'], sub:'AI Strategy engagement · key deliverables and where each one stands' },
       { i:3, title:'Blockers & Required Actions', parts:null },
@@ -7682,7 +7689,7 @@ window.downloadClientPptx = async function(mode){
   // ---- 2. Key Milestones ----
   { const ms = P.milestones || [], WSM = (P.cfg && P.cfg.wsMeta) || {};
     const WS_HEX = ['E88B00','C0266A','7A8AA0','2D6CDF','00845A','1F4E6B','7651C9','1A7FA8'];
-    const sl = content('Key Milestones', `${ms.length} milestones · current progress snapshot · ${dateLong}`);
+    const sl = content('Workstreams Progress To-Date', `${ms.length} milestones · current progress snapshot · ${dateLong}`);
     const cols = 4, gap = 0.22, w = (12.33 - gap*(cols-1))/cols, h = 2.55;
     ms.forEach((m,i)=>{ const x = 0.5 + (i%cols)*(w+gap), y = 1.55 + Math.floor(i/cols)*(h+0.25); const c = WS_HEX[i % WS_HEX.length];
       const meta = WSM[normKey(m.name)] || { short:m.name };
@@ -7697,7 +7704,7 @@ window.downloadClientPptx = async function(mode){
 
   // ---- 3. Where We Stand Today ----
   { const T0 = P.tasks || { total:0, byStatus:{} }, done = (T0.byStatus||{})['Completed'] || 0, biz = P.business || [], eps = P.epics || [], ms = P.milestones || [];
-    const sl = content('Where We Stand Today', `Live figures from the delivery tracker · as of ${dateLong}`);
+    const sl = content('AI Strategy and Use Cases', `Live figures from the delivery tracker · as of ${dateLong}`);
     const facts = [
       [ms.length, 'MILESTONES', TEAL], [T0.total||0, 'TASKS CREATED', TEAL], [(T0.total ? Math.round(done*100/T0.total) : 0) + '%', 'TASKS COMPLETED', GREEN],
       [biz.length, 'BUSINESS DEPARTMENTS', TEAL], [P.adhocDone||0, 'AD HOC REQUESTS COMPLETED', PLUM] ];
