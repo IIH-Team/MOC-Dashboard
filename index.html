@@ -1195,6 +1195,12 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 .cv-sakkal .dl-name,.cv-sakkal .rm-name{font-size:18px;} .cv-sakkal .dl-desc,.cv-sakkal .rm-desc{font-size:14.5px;} .cv-sakkal .rm-cnt{font-size:13px;} .cv-sakkal .rm-st{font-size:15px;} .cv-sakkal .rm-by{font-size:13.5px;}
 .cv-sakkal .note,.cv-sakkal p{font-size:15px;} .cv-sakkal .ws-table td,.cv-sakkal .ws-table th{font-size:14.5px;}
 .cv-sakkal .cv-bar-lg i span{font-size:12.5px;} .cv-sakkal .cv-acc-meta{font-size:14px;}
+/* slide photo only: a section that is too tall for the slide is tightened before its text is allowed to shrink */
+.cv-dense .fact-cards{gap:8px;margin-bottom:8px;} .cv-dense .fact{padding:8px 8px;} .cv-dense .fact-n{font-size:32px !important;} .cv-dense .fact-l{margin-top:3px;} .cv-dense .fact-s{margin-top:2px;}
+.cv-dense .cv-grid,.cv-dense .ba-grid{gap:10px;margin-bottom:0;} .cv-dense .card{padding:10px 14px;margin-bottom:0;} .cv-dense .cv-cap{margin-bottom:6px;} .cv-dense .card h3.cv-cap ~ h3.cv-cap{margin-top:8px;}
+.cv-dense .scope-box{padding:6px 10px 2px;margin-bottom:6px;} .cv-dense .scope-h{margin-bottom:3px;} .cv-dense .cv-dep{margin-bottom:2px;}
+.cv-dense .port-n{font-size:32px !important;} .cv-dense .port-row{margin-top:0;} .cv-dense .port-split{margin:8px 0 4px;} .cv-dense .pm-row{padding:1px 0;} .cv-dense .cv-note{margin-top:4px;}
+.cv-dense .rm-row{padding-top:5px;padding-bottom:5px;margin-bottom:5px;} .cv-dense .ba-card{padding-top:7px;padding-bottom:7px;margin-bottom:6px;}
 .cv-edit{padding:2px 9px !important;font-size:11px !important;vertical-align:middle;margin-inline-start:8px;text-transform:none;letter-spacing:0;font-weight:600;}
 .modal.detail-modal:has(.le-table){max-width:1100px;}
 .le-table{table-layout:fixed;width:100%;}
@@ -7541,7 +7547,8 @@ window.setCvFont = function(f){ try{ localStorage.setItem('cvFont', f); }catch(e
 /* ---- render one section (or part of it) into a hidden box shaped like the slide's content area, then photograph it ----
    aspect = width / height of the target box. The box width is searched so the content fills it with no empty band. */
 const SLIDE_BOX = { x:0.5, y:1.45, w:12.33, h:5.5 };
-async function slideShot(srcNode, parts, aspect){
+const SLIDE_BASE_W = 1100;   // px a section is laid out at for a slide: 12.33in / 1100px = 0.8pt per px -> 15px text = 12pt on every slide
+async function slideShot(srcNode, parts, aspect, baseW){
   const stage = document.createElement('div');
   stage.className = 'client-view cv-stage' + (cvFont()==='sakkal' ? ' cv-sakkal' : '');
   stage.style.cssText = 'position:fixed;left:0;top:0;z-index:9998;background:#FFFFFF;padding:10px;box-sizing:border-box;';
@@ -7554,7 +7561,13 @@ async function slideShot(srcNode, parts, aspect){
   c.querySelectorAll('[data-part]').forEach((x,i)=>{ if(i===0){ x.style.marginTop = '0'; const h = x.querySelector('h3'); if(h) h.style.marginTop = '0'; } });
   stage.appendChild(c); document.body.appendChild(stage);
   let lo = 820, hi = 1750;
-  for(let k=0; k<16; k++){ const W = (lo+hi)/2; stage.style.width = W + 'px'; if(stage.scrollHeight / W > 1/aspect) lo = W; else hi = W; }
+  const tooTall = W => { stage.style.width = W + 'px'; return stage.scrollHeight / W > 1/aspect; };
+  if(baseW){            // slides: same width (= same text size) for every section; tighten, then widen only if it still does not fit
+    lo = baseW;
+    if(!tooTall(baseW)) hi = baseW;
+    else { stage.classList.add('cv-dense'); if(!tooTall(baseW)) hi = baseW; }
+  }
+  if(hi !== lo) for(let k=0; k<16; k++){ const W = (lo+hi)/2; if(tooTall(W)) lo = W; else hi = W; }
   stage.style.width = hi + 'px';
   await new Promise(r=>setTimeout(r, 40));   // let the page finish rewording (TERMS: Milestone -> Workstream) before the photo
   try{
@@ -7591,7 +7604,8 @@ window.downloadClientPptx = async function(mode){
   const now = new Date(), MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()];
   const dateLong = now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
   let page = 0;
-  const T = (sl, text, x, y, w, h, o={}) => sl.addText(termText(String(text)), { x, y, w, h, fontFace:FONT, fontSize:12, color:NAVY, margin:0, valign:'middle', ...o });
+  const READ = fs => fs >= 16 ? fs : Math.max(12, fs + 1.5);   // small text must stay readable in Sakkal Majalla (it draws small)
+  const T = (sl, text, x, y, w, h, o={}) => sl.addText(termText(String(text)), { x, y, w, h, fontFace:FONT, color:NAVY, margin:0, valign:'middle', ...o, fontSize: READ(o.fontSize || 12) });
   const R = (sl, x, y, w, h, fill, o={}) => sl.addShape(o.round ? pptx.ShapeType.roundRect : pptx.ShapeType.rect, { x, y, w, h, fill:{ color:fill }, line:{ color: o.line || fill, width: o.line ? 0.75 : 0 }, rectRadius: o.round ? (o.r || 0.08) : undefined });
   const BAR = (sl, x, y, w, h, pct, color, bg) => { R(sl, x, y, w, h, bg || 'E6EBF1', { round:true, r:h/2 }); if(pct > 0) R(sl, x, y, Math.max(h, w*Math.min(pct,100)/100), h, color, { round:true, r:h/2 }); };
   const CARDBOX = (sl, x, y, w, h, fill) => R(sl, x, y, w, h, fill || CARD, { round:true, line:LINE, r:0.1 });
@@ -7600,8 +7614,8 @@ window.downloadClientPptx = async function(mode){
     T(sl, title, 0.5, 0.38, 10.9, 0.62, { fontSize:40, bold:true, valign:'top' });
     if(sub) T(sl, sub, 0.52, 0.97, 10.9, 0.3, { fontSize:16, color:GREY });
     sl.addImage({ data: REPORT_ASSETS.mocLogo, x:11.83, y:0.48, w:1.0, h:0.61 });
-    T(sl, 'Restricted - Internal Use Only', 4.17, 7.12, 5.0, 0.28, { fontSize:9, color:GREY, align:'center' });
-    T(sl, 'Page ' + page, 11.5, 7.12, 1.33, 0.28, { fontSize:10.5, color:GREY, align:'right' });
+    T(sl, 'Restricted - Internal Use Only', 4.17, 7.12, 5.0, 0.28, { fontSize:11, color:GREY, align:'center' });
+    T(sl, 'Page ' + page, 11.5, 7.12, 1.33, 0.28, { fontSize:11, color:GREY, align:'right' });
     return sl;
   };
   const cap = (sl, text, x, y, w) => T(sl, text.toUpperCase(), x, y, w, 0.28, { fontSize:13, bold:true, color:GREY, charSpacing:2 });
@@ -7657,11 +7671,11 @@ window.downloadClientPptx = async function(mode){
       for(const sp of specs){
         const src = secs[sp.i]; if(!src) continue;
         busyOverlay(true, '📊 Building the PowerPoint… ' + sp.title);
-        const cv = await slideShot(src, sp.parts, SLIDE_BOX.w / SLIDE_BOX.h);
+        const cv = await slideShot(src, sp.parts, SLIDE_BOX.w / SLIDE_BOX.h, SLIDE_BASE_W);
         const sl = content(sp.title, sp.sub || subOf(sp.i));
         const r = cv.width / cv.height, br = SLIDE_BOX.w / SLIDE_BOX.h;
         const w = r > br ? SLIDE_BOX.w : SLIDE_BOX.h * r, h = r > br ? SLIDE_BOX.w / r : SLIDE_BOX.h;
-        sl.addImage({ data: cv.toDataURL('image/png'), x: SLIDE_BOX.x + (SLIDE_BOX.w - w)/2, y: SLIDE_BOX.y + (SLIDE_BOX.h - h)/2, w, h });
+        sl.addImage({ data: cv.toDataURL('image/png'), x: SLIDE_BOX.x + (SLIDE_BOX.w - w)/2, y: SLIDE_BOX.y, w, h });
       }
     } finally { busyOverlay(false); }
   } else {
@@ -7692,7 +7706,7 @@ window.downloadClientPptx = async function(mode){
     const fw = (12.33 - 0.2*4)/5;
     facts.forEach((f,i)=>{ const x = 0.5 + i*(fw+0.2); CARDBOX(sl, x, 1.5, fw, 1.3);
       T(sl, f[0], x, 1.55, fw, 0.6, { fontSize:40, bold:true, color:f[2], align:'center' });
-      T(sl, f[1], x+0.08, 2.15, fw-0.16, 0.28, { fontSize:11, bold:true, align:'center', charSpacing:1 });
+      T(sl, f[1], x+0.03, 2.15, fw-0.06, 0.28, { fontSize: f[1].length > 20 ? 9.5 : 11, bold:true, align:'center', charSpacing: f[1].length > 20 ? 0 : 1 });
       T(sl, subs[i], x+0.08, 2.42, fw-0.16, 0.3, { fontSize:10, color:GREY, align:'center' }); });
     // completion by department
     CARDBOX(sl, 0.5, 3.0, 6.95, 3.95, 'FFFFFF'); cap(sl, 'Completion by department', 0.7, 3.1, 5);
@@ -7769,7 +7783,7 @@ window.downloadClientPptx = async function(mode){
       else T(sl, 'no tasks yet', 7.95, y+h/2-0.12, 2.1, 0.24, { fontSize:9.5, color:GREY });
       T(sl, p.status, 10.3, y+0.12, 2.35, 0.3, { fontSize:14, bold:true, color: c==='1F4E6B' ? NAVY : c, align:'right' });
       const dd = x => new Date(x).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-      if(p.expected) sl.addText([{ text:(p.by ? dd(p.by) : ''), options:{ strike:'sngStrike', color:GREY, bold:false } }, { text:'  Expected: ' + dd(p.expected), options:{ color: p.expectedOpen === false ? '667085' : 'C0392B' } }], { x:9.3, y:y+0.45, w:3.35, h:0.28, fontFace:FONT, fontSize:11, bold:true, align:'right', margin:0, valign:'middle' });
+      if(p.expected) sl.addText([{ text:(p.by ? dd(p.by) : ''), options:{ strike:'sngStrike', color:GREY, bold:false } }, { text:'  Expected: ' + dd(p.expected), options:{ color: p.expectedOpen === false ? '667085' : 'C0392B' } }], { x:9.3, y:y+0.45, w:3.35, h:0.28, fontFace:FONT, fontSize:READ(11), bold:true, align:'right', margin:0, valign:'middle' });
       else if(p.by) T(sl, 'By: ' + dd(p.by), 10.3, y+0.45, 2.35, 0.28, { fontSize:11, bold:true, color:AMBER, align:'right' }); }); }
 
   }   // end of editable slides
@@ -7778,9 +7792,9 @@ window.downloadClientPptx = async function(mode){
   { const sl = pptx.addSlide();
     sl.addImage({ data: REPORT_ASSETS.tyBg, x:-0.38, y:0, w:13.71, h:7.5 });
     sl.addShape(pptx.ShapeType.rect, { x:-0.38, y:0, w:13.71, h:7.5, fill:{ color:'000000', transparency:55 }, line:{ color:'000000', transparency:100 } });
-    T(sl, 'Thank you', 3.69, 3.38, 9.42, 1.23, { fontSize:54, color:'FFFFFF', align:'right' });
+    T(sl, 'Thank you', 3.69, 3.38, 9.08, 1.23, { fontSize:54, color:'FFFFFF', align:'right' });
     sl.addImage({ data: REPORT_ASSETS.tyLogo, x:11.08, y:0.29, w:1.69, h:1.18 });
-    sl.addImage({ data: REPORT_ASSETS.tyBar, x:11.94, y:3.44, w:0.16, h:2.18, rotate:90 }); }   // the underline (rotated, as in the deck)
+    sl.addImage({ data: REPORT_ASSETS.tyBar, x:11.6, y:3.44, w:0.16, h:2.18, rotate:90 }); }   // the underline (rotated, as in the deck)
 
   const fname = `AI Strategy Engagement - MoC - Weekly Report - ${String(now.getDate()).padStart(2,'0')}.${MON}.${now.getFullYear()}${mode === 'editable' ? ' (editable)' : ''}.pptx`;
   try{ await pptx.writeFile({ fileName: fname }); showInfoToast('✓ ' + fname); }
